@@ -1,4 +1,4 @@
-# Booking CRMBackend
+# Booking CRM Backend
 
 This is a primary backend part for the application.
 
