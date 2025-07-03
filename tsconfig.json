@@ -1,5 +1,10 @@
 {
   "compilerOptions": {
+    "lib": ["es2015", "dom"],
+    "moduleResolution": "node",
+    "typeRoots": ["types", "node_modules/@types"],
+    "esModuleInterop": true,
+    "strict": true,
     "module": "commonjs",
     "declaration": true,
     "removeComments": true,
@@ -16,6 +21,10 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false
-  }
+    "noFallthroughCasesInSwitch": false,
+    "paths": {
+      "@app/*": ["src/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts", "drizzle.config.ts"]
 }
