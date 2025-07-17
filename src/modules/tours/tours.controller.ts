@@ -30,7 +30,9 @@ export class ToursController {
 
   @Post()
   @UsePipes(new ValidationPipe({ transform: true }))
-  @UseInterceptors(FileInterceptor('file', { storage: multer.memoryStorage() }))
+  @UseInterceptors(
+    FileInterceptor('photos', { storage: multer.memoryStorage() }),
+  )
   async createTour(
     @Body() createTourDto: CreateTourDto,
     @UploadedFile() file: Express.Multer.File,
@@ -40,7 +42,7 @@ export class ToursController {
         const uploadResult = await this.cloudinaryService.uploadImage(
           file.buffer,
         );
-        createTourDto.photos.push(uploadResult);
+        createTourDto.photos = [{ url: uploadResult.secure_url }];
       }
       const createdTour = await this.toursService.createTour(createTourDto);
       return createdTour;

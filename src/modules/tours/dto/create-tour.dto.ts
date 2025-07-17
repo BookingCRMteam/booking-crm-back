@@ -82,6 +82,7 @@ export class CreateTourDto {
   @IsNotEmpty({ message: 'endDate cannot be empty.' })
   endDate: string;
 
+  @Type(() => Number)
   @IsNumber({}, { message: 'availableSpots must be a number.' })
   @IsNotEmpty({ message: 'availableSpots cannot be empty.' })
   @Min(1, { message: 'There must be at least 1 available spot.' })
@@ -100,6 +101,7 @@ export class CreateTourDto {
   @IsOptional()
   photos: TourPhotoDto[];
 
+  @Type(() => Boolean)
   @IsBoolean({ message: 'isActive must be a boolean value.' })
   @IsOptional()
   isActive?: boolean; // Дозволити оператору вирішувати, чи активний тур відразу

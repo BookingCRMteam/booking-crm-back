@@ -126,6 +126,9 @@ export class ToursService {
         orderBy: orderFunction(orderByColumn), // Правильне використання Drizzle orderBy
         limit: limit,
         offset: offset,
+        with: {
+          photos: true,
+        },
       });
 
       // Отримання загальної кількості турів з тими ж умовами фільтрації
