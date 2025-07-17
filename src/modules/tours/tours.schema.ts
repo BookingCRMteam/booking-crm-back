@@ -5,14 +5,14 @@ import {
   decimal,
   integer,
   pgTable,
-  serial,
   text,
   timestamp,
   varchar,
+  uuid,
 } from 'drizzle-orm/pg-core';
 
 export const tours = pgTable('tours', {
-  id: serial('id').primaryKey(),
+  id: uuid('id').primaryKey(),
   operatorId: integer('operator_id').notNull(),
   title: varchar('title', { length: 255 }).notNull(),
   description: text('description'),
@@ -31,7 +31,7 @@ export const tours = pgTable('tours', {
 });
 
 export const tourPhotos = pgTable('tour_photos', {
-  id: serial('id').primaryKey(),
+  id: uuid('id').primaryKey(),
   tourId: integer('tour_id').notNull(),
   url: varchar('url', { length: 255 }).unique().notNull(),
   description: text('description'),

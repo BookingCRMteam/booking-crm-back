@@ -54,7 +54,7 @@ export class ToursService {
       }
     });
   }
-  async getAllTours(query: GetToursQueryDto) {
+  async findAllTours(query: GetToursQueryDto) {
     const {
       country,
       city,
