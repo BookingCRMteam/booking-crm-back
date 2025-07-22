@@ -1,10 +1,15 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateTourDto } from './dto/create-tour.dto';
 import { db } from '@app/db';
 import { Tour } from './tours.types';
 import { tourPhotos, tours } from './tours.schema';
 import { GetToursQueryDto, SortOrder } from './dto/get-tours-query.dto';
 import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm';
+import { UpdateTourDto } from './dto/update-tour.dto';
 @Injectable()
 export class ToursService {
   constructor() {}
@@ -63,15 +68,14 @@ export class ToursService {
       endDate,
       minPrice,
       maxPrice,
-      limit = 10, // Значення за замовчуванням
-      offset = 0, // Значення за замовчуванням
-      sortBy = 'startDate', // Значення за замовчуванням
-      sortOrder = SortOrder.ASC, // Значення за замовчуванням
+      limit = 10,
+      offset = 0,
+      sortBy = 'startDate',
+      sortOrder = SortOrder.ASC,
     } = query;
 
     const whereConditions = [];
 
-    // Додаємо умови фільтрації, якщо вони присутні в запиті
     if (country) {
       whereConditions.push(eq(tours.country, country));
     }
@@ -82,13 +86,8 @@ export class ToursService {
       whereConditions.push(eq(tours.type, type));
     }
     if (startDate && endDate) {
-      // Фільтруємо тури, які перетинаються з заданим діапазоном дат
-      // (початок туру до endDate запиту І кінець туру після startDate запиту)
       whereConditions.push(
-        and(
-          lte(tours.startDate, endDate), // Тур починається до або в день закінчення запиту
-          gte(tours.endDate, startDate), // Тур закінчується після або в день початку запиту
-        ),
+        and(lte(tours.startDate, endDate), gte(tours.endDate, startDate)),
       );
     } else if (startDate) {
       whereConditions.push(gte(tours.startDate, startDate));
@@ -101,10 +100,8 @@ export class ToursService {
     if (maxPrice !== undefined) {
       whereConditions.push(lte(tours.price, sql`${maxPrice}`));
     }
-    // Забезпечуємо, що ми повертаємо тільки активні тури
     whereConditions.push(eq(tours.isActive, true));
 
-    // Визначаємо поле для сортування та функцію сортування (asc/desc)
     let orderByColumn: typeof tours.price | typeof tours.startDate; // Типізуємо orderByColumn
     switch (sortBy) {
       case 'price':
@@ -122,16 +119,14 @@ export class ToursService {
     try {
       // Виконання запиту до бази даних
       const allTours = await db.query.tours.findMany({
-        where: and(...whereConditions), // Застосовуємо всі умови фільтрації
-        orderBy: orderFunction(orderByColumn), // Правильне використання Drizzle orderBy
+        where: and(...whereConditions),
+        orderBy: orderFunction(orderByColumn),
         limit: limit,
         offset: offset,
         with: {
           photos: true,
         },
       });
-
-      // Отримання загальної кількості турів з тими ж умовами фільтрації
 
       const totalCountResult = await db
         .select({ count: sql`count(*)` })
@@ -155,15 +150,108 @@ export class ToursService {
     return `This action returns all tours`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} tour`;
+  async findOne(id: number) {
+    const tour = await db.query.tours.findFirst({
+      where: eq(tours.id, id),
+      with: {
+        //@TODO:
+        // Завантажуємо зв'язані дані (фотографії, відгуки, оператора)
+        photos: true,
+        // reviews: true,
+        // operator: {
+        //   columns: {
+        //     companyName: true, // Повертаємо тільки назву компанії оператора
+        //     contactPerson: true,
+        //     website: true,
+        //   },
+        // },
+      },
+    });
+
+    if (!tour || !tour.isActive) {
+      throw new NotFoundException(
+        `Tour with ID ${id} not found or is inactive.`,
+      );
+    }
+
+    return tour;
   }
 
-  // update(id: number, updateTourDto: UpdateTourDto) {
-  //   return `This action updates a #${id} tour` + updateTourDto;
-  // }
+  async update(id: number, updateTourDto: UpdateTourDto, operatorId: number) {
+    return await db.transaction(async (tx) => {
+      const existingTour = await tx.query.tours.findFirst({
+        where: and(eq(tours.id, id), eq(tours.operatorId, operatorId)),
+      });
 
-  remove(id: number) {
-    return `This action removes a #${id} tour`;
+      if (!existingTour) {
+        throw new NotFoundException(
+          `Tour with ID ${id} not found or you don't have permission to update it.`,
+        );
+      }
+      const [updatedTour] = await tx
+        .update(tours)
+        .set({
+          ...updateTourDto,
+          price: updateTourDto.price && updateTourDto.price.toFixed(2),
+          updatedAt: new Date(),
+        })
+        .where(eq(tours.id, id))
+        .returning();
+
+      if (!updatedTour) {
+        throw new BadRequestException('Failed to update tour data.');
+      }
+
+      if (updateTourDto.photos !== undefined) {
+        await tx.delete(tourPhotos).where(eq(tourPhotos.tourId, id));
+
+        if (updateTourDto.photos.length > 0) {
+          const newPhotosToInsert = updateTourDto.photos.map((photo) => ({
+            tourId: id,
+            url: photo.url,
+            description: photo.description,
+            isMain: photo.isMain,
+          }));
+          await tx.insert(tourPhotos).values(newPhotosToInsert);
+        }
+      }
+
+      const tourWithPhotos = await tx.query.tours.findFirst({
+        where: eq(tours.id, updatedTour.id),
+        with: { photos: true },
+      });
+
+      return {
+        ...tourWithPhotos,
+        price: parseFloat(tourWithPhotos.price),
+        createdAt: tourWithPhotos.createdAt.toISOString(),
+        updatedAt: tourWithPhotos.updatedAt.toISOString(),
+      };
+    });
+  }
+
+  async remove(id: number, operatorId: number) {
+    // 1. Перевіряємо, чи тур існує і чи належить він цьому оператору
+    const existingTour = await db.query.tours.findFirst({
+      where: and(eq(tours.id, id), eq(tours.operatorId, operatorId)),
+    });
+
+    if (!existingTour) {
+      throw new NotFoundException(
+        `Tour with ID ${id} not found or you don't have permission to delete it.`,
+      );
+    }
+
+    const [deletedTour] = await db
+      .update(tours)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(tours.id, id))
+      .returning();
+
+    if (!deletedTour) {
+      throw new BadRequestException('Failed to deactivate tour.');
+    }
+
+    return { message: `Tour with ID ${id} has been deactivated.` };
   }
 }

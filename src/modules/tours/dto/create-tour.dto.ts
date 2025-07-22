@@ -14,7 +14,6 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-// DTO для фотографій туру
 export class TourPhotoDto {
   @IsUrl({}, { message: 'URL must be a valid URL address.' })
   @IsNotEmpty({ message: 'URL cannot be empty.' })
@@ -53,7 +52,7 @@ export class CreateTourDto {
   @IsString({ message: 'Type must be a string.' })
   @IsNotEmpty({ message: 'Type cannot be empty.' })
   @MaxLength(100, { message: 'Type cannot exceed 100 characters.' })
-  type: string; // Наприклад: "екскурсійний", "пляжний", "гірськолижний"
+  type: string;
 
   @IsNotEmpty({ message: 'Price cannot be empty.' })
   @Type(() => Number)
@@ -96,13 +95,13 @@ export class CreateTourDto {
   @ArrayMinSize(1, {
     message: 'At least one photo URL is required for a tour.',
   })
-  @ValidateNested({ each: true }) // Валідує кожен елемент масиву за DTO TourPhotoDto
-  @Type(() => TourPhotoDto) // Трансформує елементи масиву до типу TourPhotoDto
+  @ValidateNested({ each: true })
+  @Type(() => TourPhotoDto)
   @IsOptional()
   photos: TourPhotoDto[];
 
   @Type(() => Boolean)
   @IsBoolean({ message: 'isActive must be a boolean value.' })
   @IsOptional()
-  isActive?: boolean; // Дозволити оператору вирішувати, чи активний тур відразу
+  isActive?: boolean;
 }

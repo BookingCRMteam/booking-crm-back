@@ -12,6 +12,9 @@ import {
   Query,
   UseInterceptors,
   UploadedFile,
+  ParseIntPipe,
+  Patch,
+  HttpCode,
 } from '@nestjs/common';
 import { ToursService } from './tours.service';
 import { CreateTourDto } from './dto/create-tour.dto';
@@ -20,6 +23,7 @@ import { GetToursQueryDto } from './dto/get-tours-query.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import multer from 'multer';
 import { CloudinaryService } from '@app/cloudinary/cloudinary.service';
+import { UpdateTourDto } from './dto/update-tour.dto';
 
 @Controller('tours')
 export class ToursController {
@@ -60,8 +64,6 @@ export class ToursController {
   }
 
   @Get()
-  // Важливо: ValidationPipe з { transform: true } дозволяє автоматично
-  // перетворювати рядки з Query на відповідні типи (Number, Date) у DTO.
   @UsePipes(
     new ValidationPipe({
       transform: true,
@@ -92,17 +94,72 @@ export class ToursController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.toursService.findOne(+id);
+  async asyncfindOne(@Param('id', ParseIntPipe) id: number) {
+    const tour = await this.toursService.findOne(id);
+    return {
+      message: 'Tour retrieved successfully',
+      data: tour,
+    };
   }
 
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateTourDto: UpdateTourDto) {
-  //   return this.toursService.update(+id, updateTourDto);
-  // }
+  @Patch(':id') // Оновлення туру
+  @UsePipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
+  )
+  @UseInterceptors(
+    FileInterceptor('photos', { storage: multer.memoryStorage() }),
+  )
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateTourDto: UpdateTourDto,
+    @UploadedFile() file: Express.Multer.File,
+    //@TODO:
+    // @Req() req: Request,
+  ) {
+    try {
+      // const operatorId = (req.user as any).operatorId;
+      // if (!operatorId) {
+      //   throw new BadRequestException('Operator ID not found.');
+      // }
+
+      if (file) {
+        const uploadResult = await this.cloudinaryService.uploadImage(
+          file.buffer,
+        );
+        updateTourDto.photos = [{ url: uploadResult.secure_url }];
+      }
+      const updatedTour = await this.toursService.update(id, updateTourDto, 1);
+      return { message: 'Tour updated successfully', data: updatedTour };
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Error in updateTour:', error.message);
+      } else {
+        console.error('Error in updateTour:', error);
+      }
+      throw new HttpException(
+        'Failed to update tour',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.toursService.remove(+id);
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async remove(
+    @Param('id', ParseIntPipe) id: number,
+    //@TODO:
+    // @Req() req: Request,
+  ) {
+    // const operatorId = (req.user as any).operatorId;
+    // if (!operatorId) {
+    //   throw new BadRequestException('Operator ID not found.');
+    // }
+
+    const res = await this.toursService.remove(id, 1);
+    return res.message;
   }
 }
