@@ -24,6 +24,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import multer from 'multer';
 import { CloudinaryService } from '@app/cloudinary/cloudinary.service';
 import { UpdateTourDto } from './dto/update-tour.dto';
+import { ApiConsumes } from '@nestjs/swagger';
 
 @Controller('tours')
 export class ToursController {
@@ -37,6 +38,7 @@ export class ToursController {
   @UseInterceptors(
     FileInterceptor('photos', { storage: multer.memoryStorage() }),
   )
+  @ApiConsumes('multipart/form-data') // <--- Ось де ви використовуєте
   async createTour(
     @Body() createTourDto: CreateTourDto,
     @UploadedFile() file: Express.Multer.File,
