@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { config } from 'dotenv';
+import { auth } from 'express-oauth2-jwt-bearer';
 
 config({ path: `.env.${process.env.NODE_ENV || 'development'}` });
 
@@ -18,6 +19,14 @@ async function bootstrap() {
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, documentFactory);
   app.setGlobalPrefix('api/v1');
+
+  const jwtCheck = auth({
+    audience: process.env.AUDIENCE,
+    issuerBaseURL: process.env.ISSUER,
+    tokenSigningAlg: 'RS256',
+  });
+  app.use(jwtCheck);
+
   await app.listen(process.env.PORT ?? 3000);
 }
 void bootstrap();
