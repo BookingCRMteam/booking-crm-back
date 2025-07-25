@@ -16,39 +16,16 @@ import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class TourPhotoDto {
-  @ApiProperty({
-    description: 'URL of the tour photo',
-    example: 'https://example.com/tour-photo-1.jpg',
-  })
   @IsUrl({}, { message: 'URL must be a valid URL address.' })
   @IsNotEmpty({ message: 'URL cannot be empty.' })
   url: string;
-
-  @ApiProperty({
-    description: 'Optional description for the photo',
-    required: false,
-    example: 'Beautiful landscape of the Alps',
-  })
-  @IsString({ message: 'Description must be a string.' })
-  @IsOptional()
-  @MaxLength(500, { message: 'Description cannot exceed 500 characters.' })
-  description?: string;
-
-  @ApiProperty({
-    description: 'Is this the main photo for the tour?',
-    required: false,
-    default: false,
-  })
-  @IsBoolean({ message: 'isMain must be a boolean value.' })
-  @IsOptional()
-  isMain?: boolean;
 }
 
 export class CreateTourDto {
   @ApiProperty({
-    description: 'Title of the tour',
-    example: 'Weekend Getaway to Paris',
+    description: 'Title of the tour (e.g. "Weekend Getaway to Paris")',
     maxLength: 255,
+    default: '',
   })
   @IsString({ message: 'Title must be a string.' })
   @IsNotEmpty({ message: 'Title cannot be empty.' })
@@ -56,18 +33,19 @@ export class CreateTourDto {
   title: string;
 
   @ApiProperty({
-    description: 'Detailed description of the tour program',
+    description:
+      'Detailed description of the tour program (e.g. "Explore the Eiffel Tower, Louvre Museum, and enjoy a Seine river cruise.")',
     required: false,
-    example:
-      'Explore the Eiffel Tower, Louvre Museum, and enjoy a Seine river cruise.',
+    default: '',
   })
   @IsString({ message: 'Description must be a string.' })
   @IsOptional()
   description?: string;
 
   @ApiProperty({
-    description: 'Country where the tour takes place',
-    example: 'France',
+    description: 'Country where the tour takes place (e.g., "France")',
+    default: '',
+
     maxLength: 100,
   })
   @IsString({ message: 'Country must be a string.' })
@@ -76,9 +54,10 @@ export class CreateTourDto {
   country: string;
 
   @ApiProperty({
-    description: 'City or region where the tour takes place (optional)',
+    description:
+      'City or region where the tour takes place (optional) (e.g., "Paris")',
+    default: '',
     required: false,
-    example: 'Paris',
     maxLength: 100,
   })
   @IsString({ message: 'City must be a string.' })
@@ -88,7 +67,7 @@ export class CreateTourDto {
 
   @ApiProperty({
     description: 'Type of the tour (e.g., "Sightseeing", "Beach", "Adventure")',
-    example: 'Sightseeing',
+    default: '',
     maxLength: 100,
   })
   @IsString({ message: 'Type must be a string.' })
@@ -97,8 +76,8 @@ export class CreateTourDto {
   type: string;
 
   @ApiProperty({
-    description: 'Price per person for the tour',
-    example: '1250.75',
+    description: 'Price per person for the tour (e.g., 1250.75)',
+    default: '',
     type: String,
     pattern: '^\\d+(\\.\\d{1,2})?$',
   })
@@ -122,8 +101,9 @@ export class CreateTourDto {
   currency?: string;
 
   @ApiProperty({
-    description: 'Start date of the tour in YYYY-MM-DD format',
-    example: '2025-08-15',
+    description:
+      'Start date of the tour in YYYY-MM-DD format (e.g., 2025-08-15)',
+    default: '',
   })
   @IsDateString(
     {},
@@ -133,8 +113,8 @@ export class CreateTourDto {
   startDate: string;
 
   @ApiProperty({
-    description: 'End date of the tour in YYYY-MM-DD format',
-    example: '2025-08-22',
+    description: 'End date of the tour in YYYY-MM-DD format (e.g., 2025-08-22)',
+    default: '',
   })
   @IsDateString(
     {},
@@ -144,8 +124,8 @@ export class CreateTourDto {
   endDate: string;
 
   @ApiProperty({
-    description: 'Number of available spots for the tour',
-    example: 20,
+    description: 'Number of available spots for the tour (e.g., 20)',
+    default: '',
     minimum: 1,
   })
   @Type(() => Number)
@@ -156,22 +136,22 @@ export class CreateTourDto {
 
   @ApiProperty({
     description:
-      'Terms and conditions for the tour (e.g., inclusions, exclusions)',
+      'Terms and conditions for the tour (e.g. "Includes accommodation, breakfast. Excludes flights.") ',
+    default: '',
     required: false,
-    example: 'Includes accommodation, breakfast. Excludes flights.',
   })
   @IsString({ message: 'Conditions must be a string.' })
   @IsOptional()
   conditions?: string;
-
   @ApiProperty({
-    description:
-      'Array of tour photos with URLs and optional descriptions/main status',
+    description: 'Array of image files to upload for the tour.',
     type: 'array',
     items: {
       type: 'string',
-      format: 'binary',
+      format: 'binary', // Це вказує Swagger, що очікується файл
     },
+    required: true,
+    default: true,
   })
   @IsArray({ message: 'Photos must be an array.' })
   @ArrayMinSize(1, {

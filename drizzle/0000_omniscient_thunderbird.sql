@@ -1,9 +1,16 @@
+CREATE TABLE "health" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"email" text NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "health_email_unique" UNIQUE("email")
+);
+--> statement-breakpoint
 CREATE TABLE "tour_photos" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"tour_id" integer NOT NULL,
 	"url" varchar(255) NOT NULL,
-	"description" text,
-	"is_main" boolean DEFAULT false,
 	CONSTRAINT "tour_photos_url_unique" UNIQUE("url")
 );
 --> statement-breakpoint

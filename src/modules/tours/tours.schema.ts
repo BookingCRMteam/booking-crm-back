@@ -34,8 +34,6 @@ export const tourPhotos = pgTable('tour_photos', {
   id: serial('id').primaryKey(),
   tourId: integer('tour_id').notNull(),
   url: varchar('url', { length: 255 }).unique().notNull(),
-  description: text('description'),
-  isMain: boolean('is_main').default(false),
 });
 
 export const toursRelations = relations(tours, ({ many }) => ({

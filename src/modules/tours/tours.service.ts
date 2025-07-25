@@ -38,8 +38,6 @@ export class ToursService {
           const tourPhotosToInsert = createTourDto.photos.map((photo) => ({
             tourId: newTour.id,
             url: photo.url,
-            description: photo.description,
-            isMain: photo.isMain,
           }));
 
           await tx.insert(tourPhotos).values(tourPhotosToInsert);
@@ -209,8 +207,6 @@ export class ToursService {
           const newPhotosToInsert = updateTourDto.photos.map((photo) => ({
             tourId: id,
             url: photo.url,
-            description: photo.description,
-            isMain: photo.isMain,
           }));
           await tx.insert(tourPhotos).values(newPhotosToInsert);
         }

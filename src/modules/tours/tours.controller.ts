@@ -11,16 +11,16 @@ import {
   HttpStatus,
   Query,
   UseInterceptors,
-  UploadedFile,
   ParseIntPipe,
   Patch,
   HttpCode,
+  UploadedFiles,
 } from '@nestjs/common';
 import { ToursService } from './tours.service';
 import { CreateTourDto } from './dto/create-tour.dto';
 import { Tour } from './tours.types';
 import { GetToursQueryDto } from './dto/get-tours-query.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import multer from 'multer';
 import { CloudinaryService } from '@app/cloudinary/cloudinary.service';
 import { UpdateTourDto } from './dto/update-tour.dto';
@@ -36,28 +36,29 @@ export class ToursController {
   @Post()
   @UsePipes(new ValidationPipe({ transform: true }))
   @UseInterceptors(
-    FileInterceptor('photos', { storage: multer.memoryStorage() }),
+    FilesInterceptor('photos', 10, { storage: multer.memoryStorage() }),
   )
-  @ApiConsumes('multipart/form-data') // <--- Ось де ви використовуєте
+  @ApiConsumes('multipart/form-data')
   async createTour(
     @Body() createTourDto: CreateTourDto,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFiles() files: Express.Multer.File[],
   ): Promise<Tour> {
     try {
-      if (file) {
-        const uploadResult = await this.cloudinaryService.uploadImage(
-          file.buffer,
+      if (files && files.length > 0) {
+        const uploadedPhotos = await Promise.all(
+          files.map((file) =>
+            this.cloudinaryService.uploadImage(file.buffer).then((res) => ({
+              url: res.secure_url,
+            })),
+          ),
         );
-        createTourDto.photos = [{ url: uploadResult.secure_url }];
+        createTourDto.photos = uploadedPhotos;
       }
+
       const createdTour = await this.toursService.createTour(createTourDto);
       return createdTour;
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error('Error in createTour:', error.message);
-      } else {
-        console.error('Error in createTour:', error);
-      }
+    } catch (error) {
+      console.error('Error in createTour:', error);
       throw new HttpException(
         'Failed to create tour',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -113,12 +114,13 @@ export class ToursController {
     }),
   )
   @UseInterceptors(
-    FileInterceptor('photos', { storage: multer.memoryStorage() }),
+    FilesInterceptor('photos', 10, { storage: multer.memoryStorage() }),
   )
+  @ApiConsumes('multipart/form-data')
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateTourDto: UpdateTourDto,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFiles() files: Express.Multer.File[],
     //@TODO:
     // @Req() req: Request,
   ) {
@@ -128,12 +130,17 @@ export class ToursController {
       //   throw new BadRequestException('Operator ID not found.');
       // }
 
-      if (file) {
-        const uploadResult = await this.cloudinaryService.uploadImage(
-          file.buffer,
+      if (files && files.length > 0) {
+        const uploadedPhotos = await Promise.all(
+          files.map((file) =>
+            this.cloudinaryService.uploadImage(file.buffer).then((res) => ({
+              url: res.secure_url,
+            })),
+          ),
         );
-        updateTourDto.photos = [{ url: uploadResult.secure_url }];
+        updateTourDto.photos = uploadedPhotos;
       }
+
       const updatedTour = await this.toursService.update(id, updateTourDto, 1);
       return { message: 'Tour updated successfully', data: updatedTour };
     } catch (error: unknown) {
