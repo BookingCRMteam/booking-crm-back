@@ -143,6 +143,7 @@ export class CreateTourDto {
   @IsString({ message: 'Conditions must be a string.' })
   @IsOptional()
   conditions?: string;
+
   @ApiProperty({
     description: 'Array of image files to upload for the tour.',
     type: 'array',

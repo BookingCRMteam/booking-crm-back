@@ -26,6 +26,11 @@
       "@app/*": ["src/*"]
     }
   },
-  "include": ["src/**/*.ts", "test/**/*.ts", "drizzle.config.ts"],
+  "include": [
+    "src/**/*.ts",
+    "test/**/*.ts",
+    "drizzle.config.ts",
+    "scripts/**/*.ts"
+  ],
   "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
 }
