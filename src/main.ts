@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { config } from 'dotenv';
 import { auth } from 'express-oauth2-jwt-bearer';
+import { ValidationPipe } from '@nestjs/common';
 
 config({ path: `.env.${process.env.NODE_ENV || 'development'}` });
 
@@ -27,6 +28,13 @@ async function bootstrap() {
   });
   app.use(jwtCheck);
 
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
   await app.listen(process.env.PORT ?? 3000);
 }
 void bootstrap();

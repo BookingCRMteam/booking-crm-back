@@ -39,6 +39,7 @@
     "cloudinary": "^2.7.0",
     "dotenv": "^17.0.1",
     "drizzle-orm": "^0.44.2",
+    "express-oauth2-jwt-bearer": "^1.6.1",
     "jwks-rsa": "^3.2.0",
     "multer": "^2.0.1",
     "passport-jwt": "^4.0.1",
