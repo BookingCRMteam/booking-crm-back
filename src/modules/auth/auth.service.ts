@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { JWTPayload } from '@app/types/jwt.payload';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import * as userSchema from 'src/user/user.schema';
+import * as userSchema from '@app/modules/user/user.schema';
 
 @Injectable()
 export class AuthService {
