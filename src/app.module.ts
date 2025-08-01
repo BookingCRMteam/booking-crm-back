@@ -9,6 +9,8 @@ import { CloudinaryService } from './cloudinary/cloudinary.service';
 import { CloudinaryController } from './cloudinary/cloudinary.controller';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { ConfigModule } from '@nestjs/config';
+import { CountriesModule } from './modules/countries/countries.module';
+import { CitiesModule } from './modules/cities/cities.module';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { ConfigModule } from '@nestjs/config';
     ToursModule,
     CloudinaryModule,
     AuthModule,
+    CountriesModule,
+    CitiesModule,
   ],
   controllers: [AppController, CloudinaryController],
   providers: [AppService, CloudinaryService],
