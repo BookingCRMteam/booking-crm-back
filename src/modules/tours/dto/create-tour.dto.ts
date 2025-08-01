@@ -172,4 +172,64 @@ export class CreateTourDto {
   @IsBoolean({ message: 'isActive must be a boolean value.' })
   @IsOptional()
   isActive?: boolean;
+
+  @ApiProperty({
+    example: 2,
+    description: 'Number of adults in the tour (e.g., 2)',
+    minimum: 1,
+    required: false,
+    default: '',
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  @Type(() => Number)
+  adults?: number = 1;
+
+  @ApiProperty({
+    example: 1,
+    description: 'Number of children in the tour (e.g., 1)',
+    minimum: 0,
+    required: false,
+    default: '',
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  @Type(() => Number)
+  children?: number = 0;
+
+  @ApiProperty({
+    example: false,
+    description: 'Are pets allowed on the tour? (default: false)',
+    type: Boolean,
+    required: false,
+    default: '',
+  })
+  @IsBoolean()
+  @IsOptional()
+  petsAllowed?: boolean = false;
+
+  @ApiProperty({
+    example: 1,
+    description: 'ID of the departure city (reference to the cities table)',
+    default: '',
+    required: false,
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  departureCityId?: number;
+
+  @ApiProperty({
+    example: 1,
+    description:
+      'ID of the departure country (reference to the countries table)',
+    required: false,
+    default: '',
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  departureCountryId?: number;
 }

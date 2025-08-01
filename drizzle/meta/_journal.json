@@ -15,6 +15,20 @@
       "when": 1753380806504,
       "tag": "0001_wooden_mercury",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1754033487604,
+      "tag": "0002_closed_shatterstar",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1754033635683,
+      "tag": "0003_absurd_wallflower",
+      "breakpoints": true
     }
   ]
 }
