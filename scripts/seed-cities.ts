@@ -6,7 +6,7 @@ import * as dotenv from 'dotenv';
 import * as schema from '../src/db/schema'; // Ваш імпорт головної схеми
 import { CITIES_DATA } from '../data/cities';
 
-dotenv.config({ path: '../.env.development' });
+dotenv.config({ path: '.env.development' });
 
 async function seedCities() {
   if (!process.env.DATABASE_URL) {

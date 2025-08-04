@@ -43,6 +43,13 @@
       "when": 1754316673200,
       "tag": "0005_brainy_the_fallen",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1754329260744,
+      "tag": "0006_sour_puff_adder",
+      "breakpoints": true
     }
   ]
 }
