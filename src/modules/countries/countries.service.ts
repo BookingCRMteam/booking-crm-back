@@ -1,14 +1,18 @@
 // src/countries/countries.service.ts
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { CreateCountryDto } from './dto/create-country.dto';
 import { UpdateCountryDto } from './dto/update-country.dto';
 import { countries } from './countries.schema';
-
+import * as schema from '@app/db/schema'; // Імпортуємо основну схему Drizzle
 @Injectable()
 export class CountriesService {
-  constructor(private db: NodePgDatabase<Record<string, unknown>> = this.db) {}
+  constructor(
+    // Правильний спосіб ін'єкції Drizzle DB в NestJS
+    @Inject('DRIZZLE_CLIENT')
+    private db: NodePgDatabase<typeof schema>, // <-- Типізуйте db згідно з вашою основною схемою
+  ) {}
 
   async create(createCountryDto: CreateCountryDto) {
     // Перевіряємо, чи країна з такою назвою вже існує

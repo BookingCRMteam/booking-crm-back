@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Inject,
 } from '@nestjs/common';
 import { eq, and } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -13,7 +14,11 @@ import { UpdateCityDto } from './dto/update-city.dto';
 
 @Injectable()
 export class CitiesService {
-  constructor(private db: NodePgDatabase<typeof schema>) {}
+  constructor(
+    // Правильний спосіб ін'єкції Drizzle DB в NestJS
+    @Inject('DRIZZLE_CLIENT')
+    private db: NodePgDatabase<typeof schema>, // <-- Типізуйте db згідно з вашою основною схемою
+  ) {}
 
   async create(createCityDto: CreateCityDto) {
     // Перевірка, чи існує країна з таким countryId

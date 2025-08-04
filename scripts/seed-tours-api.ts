@@ -20,11 +20,11 @@ interface City {
   countryId: number;
 }
 
-interface Operator {
-  id: number;
-  name: string;
-  // Додайте інші поля оператора, якщо вони потрібні
-}
+// interface Operator {
+//   id: number;
+//   name: string;
+//   // Додайте інші поля оператора, якщо вони потрібні
+// }
 
 interface TourResponse {
   id: number;
@@ -37,7 +37,7 @@ const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000/api/v1';
 const TOURS_ENDPOINT = '/tours';
 const CITIES_ENDPOINT = '/cities';
 const COUNTRIES_ENDPOINT = '/countries';
-const OPERATORS_ENDPOINT = '/operators'; // Якщо у вас є endpoint для операторів
+// const OPERATORS_ENDPOINT = '/operators'; // Якщо у вас є endpoint для операторів
 
 const NUMBER_OF_TOURS_TO_CREATE = 10; // Кількість турів для створення
 
@@ -111,21 +111,21 @@ async function fetchCities(): Promise<City[]> {
 }
 
 // Функція для отримання операторів з API
-async function fetchOperators(): Promise<Operator[]> {
-  try {
-    const response = await axios.get<Operator[]>(
-      `${API_BASE_URL}${OPERATORS_ENDPOINT}`,
-    );
-    console.log(`Fetched ${response.data.length} operators.`);
-    return response.data;
-  } catch (error) {
-    console.error(
-      'Error fetching operators:',
-      axios.isAxiosError(error) ? error.message : error,
-    );
-    return [];
-  }
-}
+// async function fetchOperators(): Promise<Operator[]> {
+//   try {
+//     const response = await axios.get<Operator[]>(
+//       `${API_BASE_URL}${OPERATORS_ENDPOINT}`,
+//     );
+//     console.log(`Fetched ${response.data.length} operators.`);
+//     return response.data;
+//   } catch (error) {
+//     console.error(
+//       'Error fetching operators:',
+//       axios.isAxiosError(error) ? error.message : error,
+//     );
+//     return [];
+//   }
+// }
 
 // Функція для генерації дати в майбутньому
 function getRandomDateInFuture(
@@ -144,7 +144,7 @@ function getRandomDateInFuture(
 async function createTour(
   allCountries: Country[],
   allCities: City[],
-  allOperators: Operator[],
+  // allOperators: Operator[],
 ): Promise<void> {
   // Вибираємо випадкову країну призначення
   const destinationCountry = faker.helpers.arrayElement(allCountries);
@@ -189,13 +189,13 @@ async function createTour(
   }
 
   // Вибираємо випадкового оператора
-  const operator = faker.helpers.arrayElement(allOperators);
-  if (!operator) {
-    console.error(
-      'No operators available to create a tour. Please create at least one operator.',
-    );
-    return;
-  }
+  // const operator = faker.helpers.arrayElement(allOperators);
+  // if (!operator) {
+  //   console.error(
+  //     'No operators available to create a tour. Please create at least one operator.',
+  //   );
+  //   return;
+  // }
 
   const title = faker.lorem.words({ min: 3, max: 8 });
   const description = faker.lorem.paragraphs({ min: 1, max: 3 });
@@ -232,7 +232,7 @@ async function createTour(
   formData.append('availableSpots', availableSpots.toString());
   formData.append('conditions', conditions);
   formData.append('isActive', isActive.toString());
-  formData.append('operatorId', operator.id.toString());
+  // formData.append('operatorId', operator.id.toString());
   formData.append('adults', adults.toString());
   formData.append('children', children.toString());
   formData.append('petsAllowed', petsAllowed.toString());
@@ -325,7 +325,7 @@ async function seedToursDatabase() {
   // Отримуємо всі необхідні дані з API перед початком створення турів
   const allCountries = await fetchCountries();
   const allCities = await fetchCities();
-  const allOperators = await fetchOperators(); // Отримуємо операторів
+  // const allOperators = await fetchOperators(); // Отримуємо операторів
 
   if (allCountries.length === 0) {
     console.error(
@@ -339,12 +339,12 @@ async function seedToursDatabase() {
     );
     // return; // Можливо, ви хочете дозволити тури без міст, але з країнами
   }
-  if (allOperators.length === 0) {
-    console.error(
-      'No operators found in the API. Please create at least one operator.',
-    );
-    return;
-  }
+  // if (allOperators.length === 0) {
+  //   console.error(
+  //     'No operators found in the API. Please create at least one operator.',
+  //   );
+  //   return;
+  // }
 
   console.log(`Starting to create ${NUMBER_OF_TOURS_TO_CREATE} tours...`);
 
@@ -352,7 +352,7 @@ async function seedToursDatabase() {
     console.log(
       `\n--- Creating tour ${i + 1}/${NUMBER_OF_TOURS_TO_CREATE} ---`,
     );
-    await createTour(allCountries, allCities, allOperators);
+    await createTour(allCountries, allCities /*allOperators*/);
     // Додайте невелику затримку, щоб уникнути перевантаження API
     await new Promise((resolve) => setTimeout(resolve, 1000)); // Затримка 1 секунда
   }
