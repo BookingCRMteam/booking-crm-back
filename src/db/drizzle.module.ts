@@ -40,6 +40,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       inject: [ConfigService],
     },
   ],
-  exports: ['DRIZZLE_'],
+  exports: ['DRIZZLE_CLIENT'],
 })
 export class DrizzleModule {}
