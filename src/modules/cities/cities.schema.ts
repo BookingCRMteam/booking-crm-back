@@ -1,11 +1,5 @@
 // src/schema/cities.ts
-import {
-  pgTable,
-  serial,
-  varchar,
-  integer,
-  uniqueIndex,
-} from 'drizzle-orm/pg-core';
+import { pgTable, serial, varchar, integer } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { countries } from '../countries/countries.schema';
 import { tours } from '../tours/tours.schema';
@@ -19,15 +13,13 @@ export const cities = pgTable(
       .notNull()
       .references(() => countries.id), // Зовнішній ключ до таблиці країн
   },
-  (table) => {
-    // Додаємо унікальний індекс на комбінацію 'name' та 'country_id'
-    return {
-      nameCountryUnique: uniqueIndex('name_country_unique').on(
-        table.name,
-        table.countryId,
-      ),
-    };
-  },
+  (table) => ({
+    // Додайте другий аргумент для індексів
+    nameCountryUnique: {
+      columns: [table.name, table.countryId], // Використовуйте table.name, table.countryId
+      unique: true,
+    },
+  }),
 );
 
 export const cityRelations = relations(cities, ({ one, many }) => ({

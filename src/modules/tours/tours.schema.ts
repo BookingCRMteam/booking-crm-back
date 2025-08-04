@@ -57,18 +57,22 @@ export const toursRelations = relations(tours, ({ one, many }) => ({
   country: one(countries, {
     fields: [tours.countryId],
     references: [countries.id],
+    relationName: 'destinationCountry',
   }),
   city: one(cities, {
     fields: [tours.cityId],
     references: [cities.id],
+    relationName: 'destinationCity', // Додаємо ім'я відношення для кращої читабельності
   }),
   departureCity: one(cities, {
     fields: [tours.departureCityId],
     references: [cities.id],
+    relationName: 'departureCity',
   }),
   departureCountry: one(countries, {
     fields: [tours.departureCountryId],
     references: [countries.id],
+    relationName: 'departureCountry',
   }),
   // operator: one(operators, {
   //   fields: [tours.operatorId],

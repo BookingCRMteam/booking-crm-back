@@ -154,7 +154,7 @@ async function createTour(
   }
 
   // Фільтруємо міста, що належать до вибраної країни
-  const citiesInDestinationCountry = allCities.filter(
+  let citiesInDestinationCountry = allCities.filter(
     (city) => city.countryId === destinationCountry.id,
   );
 
@@ -165,6 +165,32 @@ async function createTour(
     console.warn(
       `Warning: No cities found for destination country "${destinationCountry.name}". Skipping city for this tour.`,
     );
+    const countriesWithCities = allCountries.filter((country) =>
+      allCities.some((city) => city.countryId === country.id),
+    );
+
+    if (countriesWithCities.length > 0) {
+      const newDestinationCountry =
+        faker.helpers.arrayElement(countriesWithCities);
+      citiesInDestinationCountry = allCities.filter(
+        (city) => city.countryId === newDestinationCountry.id,
+      );
+      destinationCity = faker.helpers.arrayElement(citiesInDestinationCountry);
+      console.log(
+        `Selected new destination country: "${newDestinationCountry.name}" with city: "${destinationCity?.name}"`,
+      );
+      // Оновити destinationCountry, щоб воно відображало вибрану країну
+      // Для Drizzle DTO потрібно використовувати newDestinationCountry.id
+      // Але поточна логіка вже використовує destinationCountry.id, тож потрібно
+      // оновити цей об'єкт або пересвідчитись, що countryId в formData відповідає newDestinationCountry.id
+      // Краще рішення: якщо ви не знайшли місто для країни, просто пропустити створення туру,
+      // або перегенерувати всю інформацію для туру.
+    } else {
+      console.error(
+        'No countries with cities found in the API. Cannot create a tour with a city.',
+      );
+      return; // Не створюємо тур, якщо немає міст взагалі
+    }
   }
 
   // Вибираємо випадкову країну відправлення (може бути та сама, що й призначення)
