@@ -13,7 +13,7 @@ import {
   MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class TourPhotoDto {
   @IsUrl({}, { message: 'URL must be a valid URL address.' })
@@ -43,27 +43,24 @@ export class CreateTourDto {
   description?: string;
 
   @ApiProperty({
-    description: 'Country where the tour takes place (e.g., "France")',
-    default: '',
-
-    maxLength: 100,
+    example: 3, // Приклад ID країни, наприклад, Туреччина
+    description: 'ID країни призначення туру (посилання на таблицю countries)',
   })
-  @IsString({ message: 'Country must be a string.' })
-  @IsNotEmpty({ message: 'Country cannot be empty.' })
-  @MaxLength(100, { message: 'Country cannot exceed 100 characters.' })
-  country: string;
+  @Type(() => Number)
+  @IsNumber()
+  @IsNotEmpty()
+  @Min(1)
+  countryId: number;
 
-  @ApiProperty({
-    description:
-      'City or region where the tour takes place (optional) (e.g., "Paris")',
-    default: '',
-    required: false,
-    maxLength: 100,
+  @ApiPropertyOptional({
+    example: 5, // Приклад ID міста, наприклад, Анталія
+    description: 'ID міста призначення туру (посилання на таблицю cities)',
   })
-  @IsString({ message: 'City must be a string.' })
+  @Type(() => Number)
+  @IsNumber()
   @IsOptional()
-  @MaxLength(100, { message: 'City cannot exceed 100 characters.' })
-  city?: string;
+  @Min(1)
+  cityId?: number;
 
   @ApiProperty({
     description: 'Type of the tour (e.g., "Sightseeing", "Beach", "Adventure")',
@@ -87,18 +84,16 @@ export class CreateTourDto {
   @Min(0, { message: 'Price cannot be negative.' })
   price: number;
 
-  @ApiProperty({
-    description: 'Currency of the tour price (e.g., UAH, USD, EUR)',
-    required: false,
-    default: 'UAH',
+  @ApiPropertyOptional({
+    example: 'USD',
+    description: 'Валюта туру (за замовчуванням UAH)',
     maxLength: 3,
+    enum: ['UAH', 'USD', 'EUR'], // Можливо, варто використовувати enum
   })
-  @IsString({ message: 'Currency must be a string.' })
+  @IsString()
   @IsOptional()
-  @MaxLength(3, {
-    message: 'Currency must be a 3-letter code (e.g., UAH, USD).',
-  })
-  currency?: string;
+  @MaxLength(3)
+  currency?: string = 'UAH';
 
   @ApiProperty({
     description:
@@ -172,4 +167,67 @@ export class CreateTourDto {
   @IsBoolean({ message: 'isActive must be a boolean value.' })
   @IsOptional()
   isActive?: boolean;
+
+  @ApiProperty({
+    example: 2,
+    description: 'Number of adults in the tour (e.g., 2)',
+    minimum: 1,
+    required: false,
+    default: '',
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  @Type(() => Number)
+  adults?: number = 1;
+
+  @ApiProperty({
+    example: 1,
+    description: 'Number of children in the tour (e.g., 1)',
+    minimum: 0,
+    required: false,
+    default: '',
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  @Type(() => Number)
+  children?: number = 0;
+
+  @ApiProperty({
+    example: false,
+    description: 'Are pets allowed on the tour? (default: false)',
+    type: Boolean,
+    required: false,
+    default: '',
+  })
+  @Type(() => Boolean)
+  @IsBoolean()
+  @IsOptional()
+  petsAllowed?: boolean = false;
+
+  @ApiProperty({
+    example: 1,
+    description: 'ID of the departure city (reference to the cities table)',
+    default: '',
+    required: false,
+  })
+  @Type(() => Number)
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  departureCityId?: number;
+
+  @ApiProperty({
+    example: 1,
+    description:
+      'ID of the departure country (reference to the countries table)',
+    required: false,
+    default: '',
+  })
+  @Type(() => Number)
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  departureCountryId?: number;
 }

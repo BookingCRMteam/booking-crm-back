@@ -1,13 +1,15 @@
+// src/modules/tours/dto/get-tours-query.dto.ts
 import {
-  IsString,
   IsOptional,
   IsNumber,
+  IsString,
   IsDateString,
   Min,
   IsEnum,
+  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ApiPropertyOptional } from '@nestjs/swagger'; // Імпорт для Swagger
+import { ApiProperty } from '@nestjs/swagger';
 
 export enum SortOrder {
   ASC = 'asc',
@@ -15,97 +17,204 @@ export enum SortOrder {
 }
 
 export class GetToursQueryDto {
-  @ApiPropertyOptional({
-    description: 'Filter tours by country',
+  @ApiProperty({
+    example: 1,
+    description: 'ID of the destination country',
+    required: false,
   })
-  @IsString({ message: 'Country must be a string.' })
+  @IsNumber()
   @IsOptional()
-  country?: string;
+  @Min(1)
+  @Type(() => Number)
+  countryId?: number;
 
-  @ApiPropertyOptional({ description: 'Filter tours by city' })
-  @IsString({ message: 'City must be a string.' })
-  @IsOptional()
-  city?: string;
-
-  @ApiPropertyOptional({
-    description: 'Filter tours by type (e.g., "Sightseeing")',
+  @ApiProperty({
+    example: 1,
+    description: 'ID of the destination city',
+    required: false,
   })
-  @IsString({ message: 'Type must be a string.' })
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  @Type(() => Number)
+  cityId?: number;
+
+  @ApiProperty({
+    example: 'Adventure',
+    description: 'Type of the tour (e.g., Adventure, Sightseeing)',
+    required: false,
+  })
+  @IsString()
   @IsOptional()
   type?: string;
 
-  @ApiPropertyOptional({
-    description: 'Filter tours starting on or after this date (YYYY-MM-DD)',
+  // Нові поля для діапазону дат
+  @ApiProperty({
+    example: '2025-03-01',
+    description: 'Minimum start date for the tour search (YYYY-MM-DD)',
+    required: false,
   })
-  @IsDateString(
-    {},
-    { message: 'startDate must be a valid date string (YYYY-MM-DD).' },
-  )
+  @IsDateString()
   @IsOptional()
-  startDate?: string;
+  minStartDate?: string;
 
-  @ApiPropertyOptional({
-    description: 'Filter tours ending on or before this date (YYYY-MM-DD)',
+  @ApiProperty({
+    example: '2025-12-31',
+    description: 'Maximum start date for the tour search (YYYY-MM-DD)',
+    required: false,
   })
-  @IsDateString(
-    {},
-    { message: 'endDate must be a valid date string (YYYY-MM-DD).' },
-  )
+  @IsDateString()
   @IsOptional()
-  endDate?: string;
+  maxStartDate?: string;
 
-  @ApiPropertyOptional({
-    description: 'Filter tours with price greater than or equal to this value',
-    type: Number,
+  @ApiProperty({
+    example: '2025-03-10',
+    description: 'Minimum end date for the tour search (YYYY-MM-DD)',
+    required: false,
   })
+  @IsDateString()
+  @IsOptional()
+  minEndDate?: string;
+
+  @ApiProperty({
+    example: '2026-01-15',
+    description: 'Maximum end date for the tour search (YYYY-MM-DD)',
+    required: false,
+  })
+  @IsDateString()
+  @IsOptional()
+  maxEndDate?: string;
+
+  @ApiProperty({
+    example: 500,
+    description: 'Minimum price for the tour',
+    required: false,
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
   @Type(() => Number)
-  @IsNumber({}, { message: 'minPrice must be a number.' })
-  @Min(0, { message: 'minPrice cannot be negative.' })
-  @IsOptional()
   minPrice?: number;
 
-  @ApiPropertyOptional({
-    description: 'Filter tours with price less than or equal to this value',
-    type: Number,
+  @ApiProperty({
+    example: 2000,
+    description: 'Maximum price for the tour',
+    required: false,
   })
-  @Type(() => Number)
-  @IsNumber({}, { message: 'maxPrice must be a number.' })
-  @Min(0, { message: 'maxPrice cannot be negative.' })
+  @IsNumber()
   @IsOptional()
+  @Min(0)
+  @Type(() => Number)
   maxPrice?: number;
 
-  @ApiPropertyOptional({
-    description: 'Number of tours to return per page',
+  @ApiProperty({
+    example: 2,
+    description: 'Number of adults in the tour (e.g., 2)',
+    minimum: 1,
+    required: false,
+    default: 1, // Змінив default
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  @Type(() => Number)
+  adults?: number; // Зняв default тут, щоб @IsOptional працював коректно
+
+  @ApiProperty({
+    example: 1,
+    description: 'Number of children in the tour (e.g., 1)',
+    minimum: 0,
+    required: false,
+    default: 0, // Змінив default
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  @Type(() => Number)
+  children?: number; // Зняв default
+
+  @ApiProperty({
+    example: false,
+    description: 'Are pets allowed on the tour? (default: false)',
+    type: Boolean,
+    required: false,
+    default: false, // Змінив default
+  })
+  @Type(() => Boolean)
+  @IsBoolean()
+  @IsOptional()
+  petsAllowed?: boolean; // Зняв default
+
+  @ApiProperty({
+    example: 1,
+    description: 'ID of the departure city (reference to the cities table)',
+    default: '',
+    required: false,
   })
   @Type(() => Number)
-  @IsNumber({}, { message: 'Limit must be a number.' })
-  @Min(1, { message: 'Limit must be at least 1.' })
+  @IsNumber()
   @IsOptional()
-  limit: number = 10;
+  @Min(1)
+  departureCityId?: number;
 
-  @ApiPropertyOptional({
-    description: 'Offset for pagination (number of tours to skip)',
+  @ApiProperty({
+    example: 1,
+    description:
+      'ID of the departure country (reference to the countries table)',
+    required: false,
+    default: '',
   })
   @Type(() => Number)
-  @IsNumber({}, { message: 'Offset must be a number.' })
-  @Min(0, { message: 'Offset cannot be negative.' })
+  @IsNumber()
   @IsOptional()
-  offset: number = 0;
+  @Min(1)
+  departureCountryId?: number;
 
-  @ApiPropertyOptional({
-    description: 'Field to sort tours by (e.g., "startDate", "price")',
+  @ApiProperty({
+    example: 10,
+    description: 'Limit for pagination',
+    required: false,
+    minimum: 1,
+    default: 10,
   })
-  @IsString({ message: 'sortBy must be a string.' })
+  @IsNumber()
   @IsOptional()
-  sortBy?: string = 'startDate';
+  @Min(1)
+  @Type(() => Number)
+  limit?: number;
 
-  @ApiPropertyOptional({
-    description: 'Sort order (ascending or descending)',
+  @ApiProperty({
+    example: 0,
+    description: 'Offset for pagination',
+    required: false,
+    minimum: 0,
+    default: 0,
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  @Type(() => Number)
+  offset?: number;
+
+  @ApiProperty({
+    example: 'startDate',
+    description: 'Field to sort by (e.g., startDate, price)',
+    required: false,
+    enum: ['startDate', 'price'],
+    default: 'startDate',
+  })
+  @IsString()
+  @IsOptional()
+  sortBy?: 'startDate' | 'price';
+
+  @ApiProperty({
+    example: 'asc',
+    description: 'Sort order (asc or desc)',
+    required: false,
     enum: SortOrder,
-    example: SortOrder.ASC,
     default: SortOrder.ASC,
   })
-  @IsEnum(SortOrder, { message: 'sortOrder must be either "asc" or "desc".' })
+  @IsEnum(SortOrder)
   @IsOptional()
-  sortOrder?: SortOrder = SortOrder.ASC;
+  sortOrder?: SortOrder;
 }
