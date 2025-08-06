@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 // src/db/index.ts
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg'; // Використовуємо Pool для керування підключеннями
