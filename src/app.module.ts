@@ -11,6 +11,8 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { ConfigModule } from '@nestjs/config';
 import { CountriesModule } from './modules/countries/countries.module';
 import { CitiesModule } from './modules/cities/cities.module';
+import { BookingsModule } from './modules/bookings/bookings.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { CitiesModule } from './modules/cities/cities.module';
     AuthModule,
     CountriesModule,
     CitiesModule,
+    BookingsModule,
+    PaymentsModule,
   ],
   controllers: [AppController, CloudinaryController],
   providers: [AppService, CloudinaryService],

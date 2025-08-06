@@ -4,3 +4,4 @@ export * from '@app/modules/tours/tours.schema';
 export * from '@app/modules/tours/tours.schema';
 export * from '@app/modules/countries/countries.schema';
 export * from '@app/modules/cities/cities.schema';
+export * from '@app/modules/bookings/bookings.schema';
