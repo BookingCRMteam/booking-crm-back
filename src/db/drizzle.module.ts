@@ -19,7 +19,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       useFactory: (
         configService: ConfigService,
       ): NodePgDatabase<typeof schema> => {
-        const databaseUrl = configService.get<string>('DATABASE_URL'); // <-- ConfigService вже краще типізує
+        const databaseUrl = configService.get<string>('DATABASE_URL');
 
         if (!databaseUrl) {
           throw new Error('DATABASE_URL is not set in environment variables.');
