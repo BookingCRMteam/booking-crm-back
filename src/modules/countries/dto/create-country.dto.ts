@@ -4,9 +4,9 @@ import { IsString, IsNotEmpty, MaxLength } from 'class-validator';
 export class CreateCountryDto {
   @ApiProperty({
     example: 'Ukraine', // Приклад значення
-    description: 'The name of the country', // Опис поля
+    description: 'The name of the country,minimum 1 character, maximum 100 ', // Опис поля
     maxLength: 100,
-    default: '', // Максимальна довжина (для документації)
+    default: '',
   })
   @IsString()
   @IsNotEmpty()

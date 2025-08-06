@@ -1,5 +1,10 @@
 // src/countries/countries.service.ts
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { CreateCountryDto } from './dto/create-country.dto';
@@ -16,6 +21,7 @@ export class CountriesService {
 
   async create(createCountryDto: CreateCountryDto) {
     // Перевіряємо, чи країна з такою назвою вже існує
+
     const existingCountry = await this.db
       .select()
       .from(countries)
@@ -23,7 +29,7 @@ export class CountriesService {
       .limit(1);
 
     if (existingCountry.length > 0) {
-      throw new Error(
+      throw new ConflictException(
         `Country with name '${createCountryDto.name}' already exists.`,
       );
     }
