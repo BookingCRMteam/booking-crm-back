@@ -10,7 +10,7 @@ import { tourPhotos, tours } from './tours.schema';
 import { GetToursQueryDto, SortOrder } from './dto/get-tours-query.dto';
 import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm';
 import { UpdateTourDto } from './dto/update-tour.dto';
-import * as schema from 'src/db/schema';
+import * as schema from '@app/db/schema';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 @Injectable()
 export class ToursService {
