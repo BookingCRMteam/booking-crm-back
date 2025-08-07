@@ -21,22 +21,24 @@ export class CountriesService {
 
   async create(createCountryDto: CreateCountryDto) {
     // Перевіряємо, чи країна з такою назвою вже існує
-
+    let processedName = createCountryDto.name.trim();
+    processedName = processedName.replace(/\s\s+/g, ' ');
+    const countryToInsert = { ...createCountryDto, name: processedName };
     const existingCountry = await this.db
       .select()
       .from(countries)
-      .where(eq(countries.name, createCountryDto.name))
+      .where(eq(countries.name, countryToInsert.name))
       .limit(1);
 
     if (existingCountry.length > 0) {
       throw new ConflictException(
-        `Country with name '${createCountryDto.name}' already exists.`,
+        `Country with name '${countryToInsert.name}' already exists.`,
       );
     }
 
     const [newCountry] = await this.db
       .insert(countries)
-      .values(createCountryDto)
+      .values(countryToInsert)
       .returning(); // Повертаємо створену країну
     return newCountry;
   }
