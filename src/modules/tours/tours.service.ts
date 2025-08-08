@@ -1,35 +1,83 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateTourDto } from './dto/create-tour.dto';
-import { db } from '@app/db';
 import { Tour } from './tours.types';
 import { tourPhotos, tours } from './tours.schema';
 import { GetToursQueryDto, SortOrder } from './dto/get-tours-query.dto';
 import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm';
 import { UpdateTourDto } from './dto/update-tour.dto';
+import * as schema from '@app/db/schema';
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 @Injectable()
 export class ToursService {
-  constructor() {}
+  constructor(
+    // Правильний спосіб ін'єкції Drizzle DB в NestJS
+    @Inject('DRIZZLE_CLIENT')
+    private db: NodePgDatabase<typeof schema>, // <-- Типізуйте db згідно з вашою основною схемою
+  ) {}
   async createTour(createTourDto: CreateTourDto): Promise<Tour> {
-    return await db.transaction(async (tx): Promise<Tour> => {
+    return await this.db.transaction(async (tx): Promise<Tour> => {
       try {
+        // const tourData = {
+        //   operatorId: 1,
+        //   title: createTourDto.title,
+        //   description: createTourDto.description,
+        //   countryId: createTourDto.countryId,
+        //   cityId: createTourDto.cityId,
+        //   type: createTourDto.type,
+        //   price: createTourDto.price.toFixed(2),
+        //   currency: createTourDto.currency,
+        //   startDate: createTourDto.startDate,
+        //   endDate: createTourDto.endDate,
+        //   availableSpots: createTourDto.availableSpots,
+        //   conditions: createTourDto.conditions,
+        //   isActive: createTourDto.isActive,
+        // };
+
+        const [country] = await tx
+          .select()
+          .from(schema.countries)
+          .where(eq(schema.countries.id, createTourDto.countryId))
+          .limit(1);
+
+        if (!country) {
+          throw new BadRequestException(
+            `Country with ID ${createTourDto.countryId} not found.`,
+          );
+        }
+
+        if (createTourDto.departureCountryId) {
+          const [departureCountry] = await tx
+            .select()
+            .from(schema.countries)
+            .where(eq(schema.countries.id, createTourDto.departureCountryId))
+            .limit(1);
+          if (!departureCountry) {
+            throw new BadRequestException(
+              `Departure country with ID ${createTourDto.departureCountryId} not found.`,
+            );
+          }
+        }
+        if (createTourDto.departureCityId) {
+          const [departureCity] = await tx
+            .select()
+            .from(schema.cities)
+            .where(eq(schema.cities.id, createTourDto.departureCityId))
+            .limit(1);
+          if (!departureCity) {
+            throw new BadRequestException(
+              `Departure city with ID ${createTourDto.departureCityId} not found.`,
+            );
+          }
+        }
         const tourData = {
           operatorId: 1,
-          title: createTourDto.title,
-          description: createTourDto.description,
-          country: createTourDto.country,
-          city: createTourDto.city,
-          type: createTourDto.type,
+          ...createTourDto,
           price: createTourDto.price.toFixed(2),
-          currency: createTourDto.currency,
-          startDate: createTourDto.startDate,
-          endDate: createTourDto.endDate,
-          availableSpots: createTourDto.availableSpots,
-          conditions: createTourDto.conditions,
-          isActive: createTourDto.isActive,
         };
         const result = await tx.insert(tours).values(tourData).returning();
         const newTour = result[0];
@@ -43,12 +91,7 @@ export class ToursService {
           await tx.insert(tourPhotos).values(tourPhotosToInsert);
         }
 
-        return {
-          ...newTour,
-          price: parseFloat(newTour.price),
-          createdAt: newTour.createdAt.toISOString(),
-          updatedAt: newTour.updatedAt.toISOString(),
-        };
+        return newTour;
       } catch (error) {
         console.error('Error creating tour:', error);
         throw new BadRequestException(
@@ -59,55 +102,95 @@ export class ToursService {
   }
   async findAllTours(query: GetToursQueryDto) {
     const {
-      country,
-      city,
+      countryId,
+      cityId,
       type,
-      startDate,
-      endDate,
+      minStartDate, // Нове поле
+      maxStartDate, // Нове поле
+      minEndDate, // Нове поле
+      maxEndDate, // Нове поле
       minPrice,
       maxPrice,
+      adults, // Нове поле
+      children, // Нове поле
+      petsAllowed, // Нове поле
+      departureCityId, // Нове поле
+      departureCountryId, // Нове поле
       limit = 10,
       offset = 0,
       sortBy = 'startDate',
       sortOrder = SortOrder.ASC,
     } = query;
 
-    const whereConditions = [];
+    const whereConditions = [eq(schema.tours.isActive, true)]; // Починаємо з обов'язкових умов
 
-    if (country) {
-      whereConditions.push(eq(tours.country, country));
+    if (countryId) {
+      whereConditions.push(eq(schema.tours.countryId, countryId));
     }
-    if (city) {
-      whereConditions.push(eq(tours.city, city));
+    if (cityId) {
+      whereConditions.push(eq(schema.tours.cityId, cityId));
+    }
+    if (departureCountryId) {
+      // Додано фільтр
+      whereConditions.push(
+        eq(schema.tours.departureCountryId, departureCountryId),
+      );
+    }
+    if (departureCityId) {
+      // Додано фільтр
+      whereConditions.push(eq(schema.tours.departureCityId, departureCityId));
     }
     if (type) {
-      whereConditions.push(eq(tours.type, type));
+      whereConditions.push(eq(schema.tours.type, type));
     }
-    if (startDate && endDate) {
-      whereConditions.push(
-        and(lte(tours.startDate, endDate), gte(tours.endDate, startDate)),
-      );
-    } else if (startDate) {
-      whereConditions.push(gte(tours.startDate, startDate));
-    } else if (endDate) {
-      whereConditions.push(lte(tours.endDate, endDate));
+
+    // Фільтрація за діапазоном startDate
+    if (minStartDate) {
+      whereConditions.push(gte(schema.tours.startDate, minStartDate));
     }
+    if (maxStartDate) {
+      whereConditions.push(lte(schema.tours.startDate, maxStartDate));
+    }
+
+    // Фільтрація за діапазоном endDate
+    if (minEndDate) {
+      whereConditions.push(gte(schema.tours.endDate, minEndDate));
+    }
+    if (maxEndDate) {
+      whereConditions.push(lte(schema.tours.endDate, maxEndDate));
+    }
+
+    // Для price, оскільки це DECIMAL, використовуємо sql`...` для порівняння
+    // Або просто number, якщо ваш DTO та схема Drizzle правильно обробляють це
     if (minPrice !== undefined) {
-      whereConditions.push(gte(tours.price, sql`${minPrice}`));
+      whereConditions.push(gte(schema.tours.price, sql`${minPrice}`));
     }
     if (maxPrice !== undefined) {
-      whereConditions.push(lte(tours.price, sql`${maxPrice}`));
+      whereConditions.push(lte(schema.tours.price, sql`${maxPrice}`));
     }
-    whereConditions.push(eq(tours.isActive, true));
 
-    let orderByColumn: typeof tours.price | typeof tours.startDate; // Типізуємо orderByColumn
+    // Додано фільтри для adults, children, petsAllowed
+    if (adults !== undefined) {
+      whereConditions.push(gte(schema.tours.adults, adults)); // Або eq, якщо точна кількість
+    }
+    if (children !== undefined) {
+      whereConditions.push(gte(schema.tours.children, children)); // Або eq
+    }
+    if (petsAllowed !== undefined) {
+      whereConditions.push(eq(schema.tours.petsAllowed, petsAllowed));
+    }
+
+    // Типізуємо orderByColumn коректно, використовуючи columns з schema.tours
+    let orderByColumn:
+      | typeof schema.tours.price
+      | typeof schema.tours.startDate;
     switch (sortBy) {
       case 'price':
-        orderByColumn = tours.price;
+        orderByColumn = schema.tours.price;
         break;
       case 'startDate':
       default:
-        orderByColumn = tours.startDate;
+        orderByColumn = schema.tours.startDate;
         break;
     }
 
@@ -116,19 +199,25 @@ export class ToursService {
 
     try {
       // Виконання запиту до бази даних
-      const allTours = await db.query.tours.findMany({
+      const allTours = await this.db.query.tours.findMany({
+        // Використовуйте this.db
         where: and(...whereConditions),
         orderBy: orderFunction(orderByColumn),
         limit: limit,
         offset: offset,
         with: {
-          photos: true,
+          photos: true, // Якщо у вас є relations для photos
+          country: true, // Дозволить отримати об'єкт країни
+          city: true, // Дозволить отримати об'єкт міста
+          departureCountry: true,
+          departureCity: true,
+          // operator: true,
         },
       });
 
-      const totalCountResult = await db
-        .select({ count: sql`count(*)` })
-        .from(tours)
+      const totalCountResult = await this.db // Використовуйте this.db
+        .select({ count: sql<number>`count(*)` }) // Явно вказуємо, що count - це число
+        .from(schema.tours) // Використовуйте schema.tours
         .where(and(...whereConditions));
       const totalCount = totalCountResult[0].count;
 
@@ -140,7 +229,7 @@ export class ToursService {
       };
     } catch (error) {
       console.error('Error fetching tours:', error);
-      throw new Error('Could not retrieve tours. Please try again later.'); // Обробка помилок
+      throw new Error('Could not retrieve tours. Please try again later.');
     }
   }
 
@@ -149,7 +238,7 @@ export class ToursService {
   }
 
   async findOne(id: number) {
-    const tour = await db.query.tours.findFirst({
+    const tour = await this.db.query.tours.findFirst({
       where: eq(tours.id, id),
       with: {
         //@TODO:
@@ -176,7 +265,7 @@ export class ToursService {
   }
 
   async update(id: number, updateTourDto: UpdateTourDto, operatorId: number) {
-    return await db.transaction(async (tx) => {
+    return await this.db.transaction(async (tx) => {
       const existingTour = await tx.query.tours.findFirst({
         where: and(eq(tours.id, id), eq(tours.operatorId, operatorId)),
       });
@@ -228,7 +317,7 @@ export class ToursService {
 
   async remove(id: number, operatorId: number) {
     // 1. Перевіряємо, чи тур існує і чи належить він цьому оператору
-    const existingTour = await db.query.tours.findFirst({
+    const existingTour = await this.db.query.tours.findFirst({
       where: and(eq(tours.id, id), eq(tours.operatorId, operatorId)),
     });
 
@@ -238,7 +327,7 @@ export class ToursService {
       );
     }
 
-    const [deletedTour] = await db
+    const [deletedTour] = await this.db
       .update(tours)
       .set({ isActive: false, updatedAt: new Date() })
       .where(eq(tours.id, id))
