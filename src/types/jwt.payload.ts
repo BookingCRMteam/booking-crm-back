@@ -8,4 +8,5 @@ export interface JWTPayload {
   scope: string;
   azp: string;
   permissions: string[];
+  email: string;
 }

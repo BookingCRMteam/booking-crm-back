@@ -9,6 +9,11 @@ import { CloudinaryService } from './cloudinary/cloudinary.service';
 import { CloudinaryController } from './cloudinary/cloudinary.controller';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { ConfigModule } from '@nestjs/config';
+import { OperatorController } from './modules/operator/operator.controller';
+import { OperatorModule } from './modules/operator/operator.module';
+import { UserModule } from './modules/user/user.module';
+import { OperatorService } from './modules/operator/operator.service';
+import { UserService } from './modules/user/user.service';
 
 @Module({
   imports: [
@@ -18,8 +23,10 @@ import { ConfigModule } from '@nestjs/config';
     ToursModule,
     CloudinaryModule,
     AuthModule,
+    OperatorModule,
+    UserModule,
   ],
-  controllers: [AppController, CloudinaryController],
-  providers: [AppService, CloudinaryService],
+  controllers: [AppController, CloudinaryController, OperatorController],
+  providers: [AppService, CloudinaryService, OperatorService, UserService],
 })
 export class AppModule {}
