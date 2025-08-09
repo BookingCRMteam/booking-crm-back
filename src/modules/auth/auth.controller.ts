@@ -1,7 +1,7 @@
 import { Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { JWTPayload } from '@app/types/jwt.payload';
+import { AuthenticatedRequest } from '../../types/authenticated.request';
 
 @Controller('auth')
 export class AuthController {
@@ -12,8 +12,4 @@ export class AuthController {
   create(@Req() req: AuthenticatedRequest) {
     return this.authService.create(req.user);
   }
-}
-
-interface AuthenticatedRequest extends Request {
-  user: JWTPayload;
 }
