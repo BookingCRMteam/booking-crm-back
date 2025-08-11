@@ -7,8 +7,9 @@ export const operators = pgTable('operators', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   userId: integer('user_id')
-    .references(() => users.id)
-    .notNull(),
+    .references(() => users.id, { onDelete: 'cascade' })
+    .notNull()
+    .unique(),
   companyName: text('company_name').notNull(),
   description: text('description').notNull(),
   contactPerson: text('contact_person').notNull(),

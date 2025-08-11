@@ -1,4 +1,5 @@
 import { Body, Controller, Patch, Req, UseGuards } from '@nestjs/common';
+import { ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { OperatorService } from './operator.service';
 import { OperatorInfoDto } from './dto/operatorInfo.dto';
 import { JwtAuthGuard } from '@app/common/guards/jwt-auth.guard';
@@ -10,6 +11,50 @@ export class OperatorController {
 
   @UseGuards(JwtAuthGuard)
   @Patch()
+  @ApiConsumes('application/json')
+  @ApiBody({
+    description: 'Додати нового оператора',
+    schema: {
+      type: 'object',
+      required: [
+        'email',
+        'companyName',
+        'description',
+        'contactPerson',
+        'website',
+        'phone',
+        'userId',
+      ],
+      properties: {
+        email: {
+          type: 'string',
+          format: 'email',
+          example: 'operator@example.com',
+        },
+        companyName: {
+          type: 'string',
+          example: 'ТОВ Євро-Тур',
+        },
+        description: {
+          type: 'string',
+          example: 'Надійний туроператор з досвідом понад 10 років',
+        },
+        contactPerson: {
+          type: 'string',
+          example: 'Іван Іванович',
+        },
+        website: {
+          type: 'string',
+          format: 'uri',
+          example: 'https://example.com',
+        },
+        phone: {
+          type: 'string',
+          example: '+380501234567',
+        },
+      },
+    },
+  })
   addOperator(
     @Body() operatorInfoDTO: OperatorInfoDto,
     @Req() req: AuthenticatedRequest,
