@@ -1,6 +1,6 @@
 import { IsOptional, IsInt, Min } from 'class-validator';
 import { Type } from 'class-transformer';
-import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { PaginationDto } from '@app/common/dto/pagination.dto';
 
 export class FilterCityDto extends PaginationDto {
   @IsOptional()
