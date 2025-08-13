@@ -5,6 +5,7 @@ import LiqPay from 'liqpayjs-sdk'; // <-- Змінено тут
 import Stripe from 'stripe';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq } from 'drizzle-orm';
+import { CreateBookingDto } from './dto/create-booking.dto';
 
 @Injectable()
 export class BookingsService {
@@ -27,11 +28,7 @@ export class BookingsService {
     );
   }
 
-  async createBooking(data: {
-    tourId: number;
-    userId: number;
-    paymentProvider: 'stripe' | 'liqpay';
-  }) {
+  async createBooking(data: CreateBookingDto) {
     // 1. Отримати інформацію про тур і розрахувати ціну
     const tour = await this.db.query.tours.findFirst({
       where: (tours, { eq }) => eq(tours.id, data.tourId),
@@ -93,6 +90,8 @@ export class BookingsService {
         order_id: orderId,
         server_url: `${process.env.API_URL}/payments/liqpay-webhook`,
         result_url: `${process.env.FRONTEND_URL}/booking/${newBooking.id}?success=true`,
+        version: 3,
+        language: 'en',
       };
       let liqpayPayment: string | undefined;
       try {
