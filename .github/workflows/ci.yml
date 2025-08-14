@@ -37,7 +37,8 @@ jobs:
           npm -v
           npx tsc --version
           npx eslint --version
-          npm list typescript eslint @typescript-eslint/eslint-plugin @typescript-eslint/parser
+      - name: Check TypeScript ESLint versions
+        run: npm list --depth=0 @typescript-eslint/eslint-plugin @typescript-eslint/parser
       - name: Run linter
         run: pnpm run lint
 
