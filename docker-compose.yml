@@ -13,4 +13,4 @@ services:
       - .env.development
     environment:
       NODE_ENV: development
-    command: sh -c "pnpm install && pnpm run start:dev"
+    command: sh -c "pnpm install && pnpm run start:docker"
