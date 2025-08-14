@@ -31,7 +31,13 @@ jobs:
 
       - name: Build project
         run: pnpm run build
-
+      - name: Check tool versions
+        run: |
+          node -v
+          npm -v
+          npx tsc --version
+          npx eslint --version
+          npm list --depth=0 | grep '@typescript-eslint'
       - name: Run linter
         run: pnpm run lint
 
