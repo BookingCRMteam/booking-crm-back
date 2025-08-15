@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { HealthModule } from './modules/health/health.module';
 import { DrizzleModule } from './db/drizzle.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -34,7 +32,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
     BookingsModule,
     PaymentsModule,
   ],
-  controllers: [AppController, CloudinaryController, OperatorController],
-  providers: [AppService, CloudinaryService, OperatorService, UserService],
+  controllers: [CloudinaryController, OperatorController],
+  providers: [CloudinaryService, OperatorService, UserService],
 })
 export class AppModule {}

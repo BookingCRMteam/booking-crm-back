@@ -12,11 +12,7 @@ jobs:
   build-and-test:
     name: Build and Test
     runs-on: ubuntu-latest
-    env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-      LIQPAY_PUBLIC_KEY: ${{ secrets.LIQPAY_PUBLIC_KEY }}
-      LIQPAY_PRIVATE_KEY: ${{ secrets.LIQPAY_PRIVATE_KEY }}
+
     steps:
       - name: Install pnpm
         run: npm install -g pnpm
@@ -50,3 +46,6 @@ jobs:
 
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          LIQPAY_PUBLIC_KEY: ${{ secrets.LIQPAY_PUBLIC_KEY }}
+          LIQPAY_PRIVATE_KEY: ${{ secrets.LIQPAY_PRIVATE_KEY }}
