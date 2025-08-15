@@ -1,5 +1,7 @@
 # ===== Builder Stage =====
 FROM node:22-alpine AS builder
+# FROM node:20-bullseye AS builder
+
 
 # Встановлюємо pnpm
 RUN npm install -g pnpm
@@ -14,6 +16,11 @@ RUN pnpm install
 
 # Копіюємо код
 COPY . .
+# Перевірка ESLint
+RUN pnpm run lint
+
+# Перевірка TypeScript
+RUN pnpm exec tsc --noEmit
 
 # Збираємо проєкт
 RUN pnpm run build

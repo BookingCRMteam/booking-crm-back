@@ -1,9 +1,12 @@
 import { Module, Global } from '@nestjs/common';
 import { Pool } from 'pg';
 import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
-import * as schema from './schema';
+import * as schemaImport from './schema';
+import type { AnyPgTable } from 'drizzle-orm/pg-core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-
+import type { PoolConfig } from 'pg'; // тип конфігурації
+type SchemaType = Record<string, AnyPgTable>;
+const schema = schemaImport as unknown as SchemaType;
 @Global()
 @Module({
   imports: [
@@ -17,23 +20,20 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       provide: 'DRIZZLE_CLIENT',
       useFactory: (
         configService: ConfigService,
-      ): NodePgDatabase<typeof schema> => {
+      ): NodePgDatabase<SchemaType> => {
         const databaseUrl = configService.get<string>('DATABASE_URL');
 
         if (!databaseUrl) {
           throw new Error('DATABASE_URL is not set in environment variables.');
         }
-
-        const pool: Pool = new Pool({
+        const poolConfig: PoolConfig = {
           connectionString: databaseUrl,
           ssl: { rejectUnauthorized: false },
-        });
+        };
 
-        if (!pool) {
-          throw new Error('Failed to create pool');
-        }
+        const pool = new Pool(poolConfig);
 
-        return drizzle<typeof schema>(pool, { schema });
+        return drizzle<SchemaType>(pool, { schema });
       },
       inject: [ConfigService],
     },
