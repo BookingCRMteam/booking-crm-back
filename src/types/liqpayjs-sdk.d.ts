@@ -1,17 +1,19 @@
 // liqpayjs-sdk.d.ts
 
 declare module 'liqpayjs-sdk' {
-  interface LiqPayParams {
+  export interface LiqPayParams {
     public_key?: string;
-    version?: number;
+    version?: number | string;
     action: string;
-    amount: string;
+    amount: number | string;
     currency: string;
     description: string;
     order_id: string;
     server_url: string;
     result_url: string;
-    [key: string]: any; // Дозволяємо інші параметри
+    language?: string;
+    sandbox?: boolean | 0 | 1;
+    [key: string]: unknown; // Дозволяємо інші параметри
   }
 
   interface LiqPayCnbForm {

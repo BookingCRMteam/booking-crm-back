@@ -1,7 +1,10 @@
-import { Request } from 'express';
-
-declare module 'express' {
-  export interface Request {
-    rawBody: Buffer;
+declare global {
+  namespace Express {
+    // Optional to avoid type errors where rawBody isn't set
+    interface Request {
+      rawBody?: Buffer;
+    }
   }
 }
+
+export {};

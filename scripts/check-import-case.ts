@@ -2,16 +2,21 @@ import fs from 'fs';
 import path from 'path';
 import { Project } from 'ts-morph';
 
-function fileExistsCaseSensitive(filepath: string) {
-  const dir = path.dirname(filepath);
-  const filename = path.basename(filepath);
+function pathExistsCaseSensitive(targetPath: string) {
+  const abs = path.resolve(targetPath);
+  const { root } = path.parse(abs);
+  const rel = path.relative(root, abs);
+  const segments = rel.split(path.sep).filter(Boolean);
 
-  if (!fs.existsSync(dir)) return false;
-
-  const files = fs.readdirSync(dir);
-  return files.includes(filename);
+  let current = root || path.sep;
+  for (const segment of segments) {
+    if (!fs.existsSync(current)) return false;
+    const entries = fs.readdirSync(current);
+    if (!entries.includes(segment)) return false; // exact-case match
+    current = path.join(current, segment);
+  }
+  return fs.existsSync(current);
 }
-
 const project = new Project({
   tsConfigFilePath: './tsconfig.json',
 });
@@ -29,17 +34,29 @@ project.getSourceFiles().forEach((sourceFile) => {
       path.dirname(sourceFile.getFilePath()),
       modulePath,
     );
+    // Resolve an existing target (file or index file) first, then verify case against the typed import path.
+    const exts = ['.ts', '.tsx', '.js', '.jsx', '.mts', '.cts', '.mjs', '.cjs'];
+    const existingTarget =
+      (fs.existsSync(absPath) && fs.statSync(absPath).isFile()
+        ? absPath
+        : undefined) ??
+      exts.map((ext) => absPath + ext).find((p) => fs.existsSync(p)) ??
+      exts
+        .map((ext) => path.join(absPath, 'index' + ext))
+        .find((p) => fs.existsSync(p));
 
-    const filePathWithExt = fs.existsSync(absPath)
-      ? absPath
-      : ['.ts', '.js', '.tsx', '.jsx']
-          .map((ext) => absPath + ext)
-          .find((p) => fs.existsSync(p));
+    if (!existingTarget) return;
 
-    if (!filePathWithExt) return;
+    // Construct the path exactly as written in the import (preserving casing) for the case check.
+    const typedCandidate =
+      existingTarget === absPath
+        ? absPath
+        : existingTarget.startsWith(path.join(absPath, 'index'))
+          ? path.join(absPath, path.basename(existingTarget)) // .../dir/index.ext
+          : absPath + path.extname(existingTarget); // .../file.ext
 
-    if (!fileExistsCaseSensitive(filePathWithExt)) {
-      console.log(
+    if (!pathExistsCaseSensitive(typedCandidate)) {
+      console.error(
         `❌ Case mismatch in import: "${modulePath}" in file "${sourceFile.getFilePath()}"`,
       );
       hasError = true;

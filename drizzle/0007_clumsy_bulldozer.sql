@@ -28,3 +28,9 @@ CREATE TABLE "bookings" (
 --> statement-breakpoint
 ALTER TABLE "operators" ADD CONSTRAINT "operators_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "bookings" ADD CONSTRAINT "bookings_tour_id_tours_id_fk" FOREIGN KEY ("tour_id") REFERENCES "public"."tours"("id") ON DELETE no action ON UPDATE no action;
++--> statement-breakpoint
++ALTER TABLE "bookings" ADD CONSTRAINT "bookings_user_id_users_id_fk"
++  FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
++--> statement-breakpoint
++CREATE INDEX IF NOT EXISTS "bookings_user_id_idx" ON "bookings" ("user_id");
++CREATE INDEX IF NOT EXISTS "bookings_tour_id_idx" ON "bookings" ("tour_id");

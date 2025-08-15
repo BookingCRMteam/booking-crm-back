@@ -32,11 +32,14 @@ jobs:
       - name: Build project
         run: pnpm run build
       - name: Check tool versions
+        if: always()
         run: |
-          node -v
-          npm -v
-          npx tsc --version
-          npx eslint --version
+          echo "Node: $(node -v)"
+          echo "pnpm: $(pnpm -v)"
+          pnpm exec tsc --version
+          pnpm exec eslint --version
+          # Show installed @typescript-eslint packages if present, but do not fail if absent
+          pnpm list --depth=0 | grep -E '@typescript-eslint' || true
 
       - name: Run linter
         run: pnpm run lint
