@@ -17,10 +17,11 @@ describe('AppController (e2e)', () => {
   });
 
   it('/ (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/api/v1')
-      .expect(404)
-      .expect('Not Found');
+    return request(app.getHttpServer()).get('/api/v1').expect(404).expect({
+      message: 'Cannot GET /api/v1',
+      error: 'Not Found',
+      statusCode: 404,
+    });
   });
   it('/health (GET)', () => {
     return request(app.getHttpServer())
