@@ -37,8 +37,14 @@ jobs:
           npm -v
           npx tsc --version
           npx eslint --version
-      - name: Check TypeScript ESLint versions
-        run: npm list --depth=0 @typescript-eslint/eslint-plugin @typescript-eslint/parser
+      - name: Show ESLint plugin versions
+        run: |
+          npm list @typescript-eslint/eslint-plugin @typescript-eslint/parser --all --json \| jq -r '
+            .. | objects 
+            | select(has("version")) 
+            | select(.name=="@typescript-eslint/eslint-plugin" or .name=="@typescript-eslint/parser") 
+            | "\(.name)@\(.version)"' | sort -u
+
       - name: Run linter
         run: pnpm run lint
 
