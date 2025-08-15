@@ -31,6 +31,15 @@ jobs:
 
       - name: Build project
         run: pnpm run build
+      - name: Check tool versions
+        if: always()
+        run: |
+          echo "Node: $(node -v)"
+          echo "pnpm: $(pnpm -v)"
+          pnpm exec tsc --version
+          pnpm exec eslint --version
+          # Show installed @typescript-eslint packages if present, but do not fail if absent
+          pnpm list --depth=0 | grep -E '@typescript-eslint' || true
 
       - name: Run linter
         run: pnpm run lint
@@ -40,3 +49,6 @@ jobs:
 
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          LIQPAY_PUBLIC_KEY: ${{ secrets.LIQPAY_PUBLIC_KEY }}
+          LIQPAY_PRIVATE_KEY: ${{ secrets.LIQPAY_PRIVATE_KEY }}

@@ -1,0 +1,33 @@
+# Node.js
+node_modules
+.pnpm-store
+npm-debug.log
+yarn-error.log
+
+# Logs
+logs
+*.log
+*.tmp
+
+# Build output
+dist
+build
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Git
+.git
+.gitignore
+
+# Docker files
+Dockerfile
+Dockerfile.*
+docker-compose.yml
+docker-compose.*.yml
+
+# OS files
+.DS_Store
+Thumbs.db

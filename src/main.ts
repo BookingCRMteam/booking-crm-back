@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { config } from 'dotenv';
 import { ValidationPipe } from '@nestjs/common';
+import { json, Request } from 'express';
 
 config({ path: `.env.${process.env.NODE_ENV || 'development'}` });
 
@@ -25,6 +26,13 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+    }),
+  );
+  app.use(
+    json({
+      verify: (req: Request, res, buf) => {
+        req.rawBody = buf;
+      },
     }),
   );
   await app.listen(process.env.PORT ?? 3000);
