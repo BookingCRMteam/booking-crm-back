@@ -20,7 +20,8 @@ export class OperatorController {
         'email',
         'companyName',
         'description',
-        'contactPerson',
+        'firstName',
+        'lastName',
         'website',
         'phone',
         'userId',
@@ -39,9 +40,13 @@ export class OperatorController {
           type: 'string',
           example: 'Надійний туроператор з досвідом понад 10 років',
         },
-        contactPerson: {
+        firstName: {
           type: 'string',
-          example: 'Іван Іванович',
+          example: 'Іван',
+        },
+        lastName: {
+          type: 'string',
+          example: 'Іванов',
         },
         website: {
           type: 'string',
