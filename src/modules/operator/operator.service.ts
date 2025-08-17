@@ -20,7 +20,8 @@ export class OperatorService {
       .values({
         companyName: dto.companyName,
         description: dto.description,
-        contactPerson: dto.contactPerson,
+        firstName: dto.firstName,
+        lastName: dto.lastName,
         phone: dto.phone,
         website: dto.website,
         userId: user.id,

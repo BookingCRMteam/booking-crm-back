@@ -23,11 +23,18 @@ export class OperatorInfoDto {
   phone: string;
 
   @IsString()
-  @IsNotEmpty({ message: 'Contact person is required' })
+  @IsNotEmpty({ message: 'Firstname is required' })
   @Length(2, 50, {
-    message: 'Contact person name must be between 5 and 50 characters',
+    message: 'First name must be between 2 and 50 characters',
   })
-  contactPerson: string;
+  firstName: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'LastName is required' })
+  @Length(2, 50, {
+    message: 'Last name must be between 2 and 50 characters',
+  })
+  lastName: string;
 
   @IsString()
   @IsNotEmpty({ message: 'Website is required' })
