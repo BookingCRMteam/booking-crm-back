@@ -9,4 +9,7 @@ export interface JWTPayload {
   azp: string;
   permissions: string[];
   email: string;
+  given_name: string;
+  family_name: string;
+  nickname: string;
 }

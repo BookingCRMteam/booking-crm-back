@@ -12,7 +12,8 @@ export const operators = pgTable('operators', {
     .unique(),
   companyName: text('company_name').notNull(),
   description: text('description').notNull(),
-  contactPerson: text('contact_person').notNull(),
+  firstName: text('first_name').notNull(),
+  lastName: text('last_name').notNull(),
   website: text('website').notNull(),
   phone: text('phone').notNull(),
 });

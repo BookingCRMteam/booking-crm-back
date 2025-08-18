@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { JWTPayload } from '@app/types/jwt.payload';
 import * as userSchema from '@app/modules/user/user.schema';
+import { mapToUserEntity } from '@app/types/user_mapper';
 
 @Injectable()
 export class UserService {
@@ -13,9 +14,15 @@ export class UserService {
       where: (users, { eq }) => eq(users.sub, userJWT.sub),
     });
     if (!userInDb) {
+      const userData = mapToUserEntity(userJWT);
       const newUser = await this.db
         .insert(userSchema.users)
-        .values({ sub: userJWT.sub })
+        .values({
+          sub: userJWT.sub,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          email: userJWT.email,
+        })
         .returning();
       return newUser[0];
     }
