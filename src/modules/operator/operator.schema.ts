@@ -1,5 +1,6 @@
 import { users } from '@app/db/schema';
-import { pgTable, serial, text, timestamp, integer } from 'drizzle-orm/pg-core';
+import { pgTable } from 'drizzle-orm/pg-core';
+import { serial, text, timestamp, integer } from 'drizzle-orm/pg-core';
 
 export const operators = pgTable('operators', {
   id: serial('id').primaryKey(),
@@ -16,4 +17,5 @@ export const operators = pgTable('operators', {
   lastName: text('last_name').notNull(),
   website: text('website').notNull(),
   phone: text('phone').notNull(),
+  status: text('status').default('pending').notNull(),
 });
