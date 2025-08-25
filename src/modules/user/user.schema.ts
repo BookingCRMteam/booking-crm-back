@@ -8,9 +8,9 @@ export const users = pgTable('users', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   operatorId: integer('operator_id'),
   firstPersonName: text('first_person_name'),
-  firstPersonSurame: text('first_person_surame'),
+  firstPersonSurname: text('first_person_surname'),
   secondPersonName: text('second_person_name'),
-  secondPersonSurame: text('second_person_surame'),
+  secondPersonSurname: text('second_person_surname'),
   phone: text('phone'),
   role: text('role').default('traveler').notNull(),
 });

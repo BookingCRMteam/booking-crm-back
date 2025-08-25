@@ -20,7 +20,7 @@ export class UserService {
         .values({
           sub: userJWT.sub,
           firstPersonName: userData.firstPersonName,
-          firstPersonSurame: userData.firtsPersonSurname,
+          firstPersonSurname: userData.firtsPersonSurname,
           email: userJWT.email,
         })
         .returning();

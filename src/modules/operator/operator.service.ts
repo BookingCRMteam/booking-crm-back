@@ -34,16 +34,22 @@ export class OperatorService {
 
   async updateOperator(dto: UpdateOperatorDto, userJWT: JWTPayload) {
     const user = await this.userService.createOrGetUser(userJWT);
+
+    const updateData: Partial<typeof operatorSchema.operators.$inferInsert> =
+      {};
+    if (dto.companyName !== undefined) updateData.companyName = dto.companyName;
+    if (dto.description !== undefined) updateData.description = dto.description;
+    if (dto.firstName !== undefined) updateData.firstName = dto.firstName;
+    if (dto.lastName !== undefined) updateData.lastName = dto.lastName;
+    if (dto.phone !== undefined) updateData.phone = dto.phone;
+    if (dto.website !== undefined) updateData.website = dto.website;
+    if (Object.keys(updateData).length > 0) {
+      updateData.updatedAt = new Date();
+    }
+
     const updatedOperator = await this.db
       .update(operatorSchema.operators)
-      .set({
-        companyName: dto.companyName,
-        description: dto.description,
-        firstName: dto.firstName,
-        lastName: dto.lastName,
-        phone: dto.phone,
-        website: dto.website,
-      })
+      .set(updateData)
       .where(eq(operatorSchema.operators.id, user.id))
       .returning();
     return updatedOperator[0];
