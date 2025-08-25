@@ -1,115 +1,129 @@
 // src/cities/cities.service.ts
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-  Inject,
-} from '@nestjs/common';
-import { eq, and } from 'drizzle-orm';
-import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import * as schema from '../../db/schema';
-import { CreateCityDto } from './dto/create-city.dto';
-import { FilterCityDto } from './dto/filter-city.dto';
-import { UpdateCityDto } from './dto/update-city.dto';
+import { Inject, Injectable } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
+import { firstValueFrom } from 'rxjs';
+import { ResponseCityDto } from './dto/response-city.dto';
+import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 
 @Injectable()
 export class CitiesService {
+  private readonly apiUrl: string;
+  private readonly apiKey: string;
+
   constructor(
-    // Правильний спосіб ін'єкції Drizzle DB в NestJS
-    @Inject('DRIZZLE_CLIENT')
-    private db: NodePgDatabase<typeof schema>, // <-- Типізуйте db згідно з вашою основною схемою
-  ) {}
+    @Inject(CACHE_MANAGER)
+    private cacheManager: Cache,
+    private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
+  ) {
+    this.apiUrl = this.configService.get<string>('API_COUNTRY_STATE_CITY_URL');
+    this.apiKey = this.configService.get<string>('API_COUNTRY_STATE_CITY_KEY');
+  }
+  async findAllByCountry(
+    countryCode: string,
+    query?: string,
+  ): Promise<ResponseCityDto[]> {
+    const cacheKey = `cities-${countryCode}`;
 
-  async create(createCityDto: CreateCityDto) {
-    // Перевірка, чи існує країна з таким countryId
-    const [country] = await this.db
-      .select()
-      .from(schema.countries)
-      .where(eq(schema.countries.id, createCityDto.countryId))
-      .limit(1);
+    console.log('🔍 Starting findAllByCountry for:', countryCode);
 
-    if (!country) {
-      throw new BadRequestException(
-        `Country with ID ${createCityDto.countryId} not found.`,
+    console.log('🔑 Cache key:', cacheKey);
+    console.log('🔌 Cache manager exists:', !!this.cacheManager);
+
+    try {
+      // Отримуємо дані з кешу
+      console.log('📖 Attempting to get data from cache...');
+      const cachedData = await this.cacheManager.get<string>(cacheKey);
+      console.log('📊 Cache response type:', typeof cachedData);
+      console.log('📊 Cache response length:', cachedData?.length || 0);
+
+      if (cachedData) {
+        console.log('Cities found in cache');
+        const parsedData = JSON.parse(cachedData) as ResponseCityDto[];
+
+        if (query) {
+          const lowerCaseQuery = query.toLowerCase();
+          return parsedData.filter((city) =>
+            city.name.toLowerCase().startsWith(lowerCaseQuery),
+          );
+        }
+        return parsedData;
+      }
+    } catch (error) {
+      console.error('Error getting data from cache:', error);
+      // Продовжуємо виконання, якщо є помилка з кешем
+    }
+
+    console.log('Cities not found in cache, fetching from API...');
+
+    try {
+      const headers = { 'X-CSCAPI-KEY': this.apiKey };
+      const response = await firstValueFrom(
+        this.httpService.get(`${this.apiUrl}/countries/${countryCode}/cities`, {
+          headers,
+        }),
       );
+
+      const cities = response.data as ResponseCityDto[];
+      console.log('Fetched cities from API:', cities.length);
+
+      // Зберігаємо дані в кеші
+      try {
+        console.log('💾 Attempting to save to cache...');
+        console.log('💾 Data to save length:', cities.length);
+        console.log('💾 JSON string length:', JSON.stringify(cities).length);
+
+        // Спробуємо різні способи збереження
+        const dataToSave = JSON.stringify(cities);
+        const saveResult = await this.cacheManager.set(
+          cacheKey,
+          dataToSave,
+          86400000,
+        ); // TTL в мілісекундах
+        console.log('💾 Save result length:', saveResult.length);
+
+        // Негайна перевірка
+        console.log('🔍 Immediate cache check...');
+        const immediateCheck = await this.cacheManager.get(cacheKey);
+        console.log(
+          '🔍 Immediate check result:',
+          immediateCheck ? 'FOUND' : 'NOT FOUND',
+        );
+        console.log('🔍 Immediate check type:', typeof immediateCheck);
+
+        if (immediateCheck) {
+          console.log('✅ Data saved to cache successfully');
+        } else {
+          console.log('❌ Data NOT saved to cache');
+
+          // Спробуємо альтернативний метод збереження
+          console.log('🔄 Trying alternative save method...');
+          await this.cacheManager.set(cacheKey, dataToSave);
+
+          const altCheck = await this.cacheManager.get(cacheKey);
+          console.log(
+            '🔄 Alternative check result:',
+            altCheck ? 'FOUND' : 'NOT FOUND',
+          );
+        }
+      } catch (cacheError) {
+        console.error('❌ Error saving to cache:', cacheError);
+        console.error('❌ Cache error stack:', (cacheError as Error).stack);
+      }
+
+      // Фільтруємо дані
+      if (query) {
+        const lowerCaseQuery = query.toLowerCase();
+        return cities.filter((city) =>
+          city.name.toLowerCase().startsWith(lowerCaseQuery),
+        );
+      }
+
+      return cities;
+    } catch (apiError) {
+      console.error('Error fetching from API:', apiError);
+      throw apiError;
     }
-
-    // Перевірка, чи місто з такою назвою вже існує в цій країні
-    const existingCity = await this.db
-      .select()
-      .from(schema.cities)
-      .where(
-        and(
-          eq(schema.cities.name, createCityDto.name),
-          eq(schema.cities.countryId, createCityDto.countryId),
-        ),
-      )
-      .limit(1);
-
-    if (existingCity.length > 0) {
-      throw new Error(
-        `City with name '${createCityDto.name}' already exists in this country.`,
-      );
-    }
-
-    const [newCity] = await this.db
-      .insert(schema.cities)
-      .values(createCityDto)
-      .returning();
-    return newCity;
-  }
-
-  async findAll(filterDto: FilterCityDto) {
-    const { countryId, page, limit } = filterDto;
-
-    const query = this.db.select().from(schema.cities).$dynamic(); // Використовуємо $dynamic для умовних виразів
-
-    if (countryId) {
-      query.where(eq(schema.cities.countryId, countryId));
-    }
-
-    // Додаємо пагінацію
-    const offset = (page - 1) * limit;
-    query.offset(offset).limit(limit);
-
-    return query.execute();
-  }
-
-  async findOne(id: number) {
-    const [city] = await this.db
-      .select()
-      .from(schema.cities)
-      .where(eq(schema.cities.id, id))
-      .limit(1);
-
-    if (!city) {
-      throw new NotFoundException(`City with ID ${id} not found.`);
-    }
-    return city;
-  }
-
-  async update(id: number, updateCityDto: UpdateCityDto) {
-    const city = await this.findOne(id);
-    if (!city) {
-      throw new NotFoundException(`City with ID ${id} not found.`);
-    }
-    return this.db
-      .update(schema.cities)
-      .set(updateCityDto)
-      .where(eq(schema.cities.id, id))
-      .returning();
-  }
-
-  async remove(id: number) {
-    const city = await this.findOne(id);
-    const result = await this.db
-      .delete(schema.cities)
-      .where(eq(schema.cities.id, id))
-      .returning();
-
-    if (result.length === 0) {
-      throw new NotFoundException(`City with ID ${id} not found.`);
-    }
-    return city;
   }
 }

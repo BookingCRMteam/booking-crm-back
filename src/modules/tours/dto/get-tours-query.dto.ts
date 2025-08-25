@@ -19,14 +19,12 @@ export enum SortOrder {
 export class GetToursQueryDto {
   @ApiProperty({
     example: 1,
-    description: 'ID of the destination country',
+    description: 'ISO2 code of the destination country',
     required: false,
   })
-  @IsNumber()
+  @IsString()
   @IsOptional()
-  @Min(1)
-  @Type(() => Number)
-  countryId?: number;
+  countryISO2Code?: string;
 
   @ApiProperty({
     example: 1,
@@ -146,7 +144,7 @@ export class GetToursQueryDto {
   petsAllowed?: boolean; // Зняв default
 
   @ApiProperty({
-    example: 1,
+    example: 109897,
     description: 'ID of the departure city (reference to the cities table)',
     default: '',
     required: false,
@@ -158,17 +156,16 @@ export class GetToursQueryDto {
   departureCityId?: number;
 
   @ApiProperty({
-    example: 1,
+    example: 'UA',
     description:
-      'ID of the departure country (reference to the countries table)',
+      'ISO2 code of the departure country (reference to the countries table)',
     required: false,
     default: '',
   })
-  @Type(() => Number)
-  @IsNumber()
+  @IsString()
   @IsOptional()
-  @Min(1)
-  departureCountryId?: number;
+  @Min(2)
+  departureCountryISO2Code?: string;
 
   @ApiProperty({
     example: 10,

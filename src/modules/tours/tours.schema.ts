@@ -10,21 +10,18 @@ import {
   varchar,
   serial,
 } from 'drizzle-orm/pg-core';
-import { cities } from '../cities/cities.schema';
-import { countries } from '../countries/countries.schema';
 
 export const tours = pgTable('tours', {
   id: serial('id').primaryKey(),
   operatorId: integer('operator_id').notNull(),
   title: varchar('title', { length: 255 }).notNull(),
   description: text('description'),
+  countryISO2Code: varchar('country_iso2_code', { length: 2 })
+    .notNull()
+    .default('UA'),
 
   // Тепер використовуємо зовнішні ключі до таблиць countries та cities
-  countryId: integer('country_id')
-    .notNull()
-    .references(() => countries.id),
-  cityId: integer('city_id').references(() => cities.id), // Місто може бути необов'язковим
-
+  cityId: integer('city_id'), // Місто може бути необов'язковим
   type: varchar('type', { length: 100 }).notNull(),
   price: decimal('price', { precision: 10, scale: 2 }).notNull(),
   currency: varchar('currency', { length: 3 }).default('UAH'),
@@ -41,10 +38,10 @@ export const tours = pgTable('tours', {
   petsAllowed: boolean('pets_allowed').default(false).notNull(),
 
   // Місто та країна виїзду також можуть бути посиланнями
-  departureCityId: integer('departure_city_id').references(() => cities.id),
-  departureCountryId: integer('departure_country_id').references(
-    () => countries.id,
-  ),
+  departureCityId: integer('departure_city_id'),
+  departureCountryISO2Code: varchar('departure_country_iso2_code', {
+    length: 2,
+  }),
 });
 
 export const tourPhotos = pgTable('tour_photos', {
@@ -53,27 +50,7 @@ export const tourPhotos = pgTable('tour_photos', {
   url: varchar('url', { length: 255 }).unique().notNull(),
 });
 
-export const toursRelations = relations(tours, ({ one, many }) => ({
-  country: one(countries, {
-    fields: [tours.countryId],
-    references: [countries.id],
-    relationName: 'destinationCountry',
-  }),
-  city: one(cities, {
-    fields: [tours.cityId],
-    references: [cities.id],
-    relationName: 'destinationCity', // Додаємо ім'я відношення для кращої читабельності
-  }),
-  departureCity: one(cities, {
-    fields: [tours.departureCityId],
-    references: [cities.id],
-    relationName: 'departureCity',
-  }),
-  departureCountry: one(countries, {
-    fields: [tours.departureCountryId],
-    references: [countries.id],
-    relationName: 'departureCountry',
-  }),
+export const toursRelations = relations(tours, ({ many }) => ({
   // operator: one(operators, {
   //   fields: [tours.operatorId],
   //   references: [operators.id],

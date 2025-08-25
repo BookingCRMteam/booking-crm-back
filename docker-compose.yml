@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: booking-crm-back-dev
+    container_name: booking-crm
     ports:
       - '3003:3000'
     volumes:
@@ -11,6 +11,45 @@ services:
       - /usr/src/app/node_modules
     env_file:
       - .env.development
+    depends_on:
+      redis:
+        condition: service_healthy
     environment:
-      NODE_ENV: development
-    command: sh -c "pnpm install && pnpm run start:docker"
+      - REDIS_PORT=6379
+      - REDIS_HOST=redis
+    command: sh -c "pnpm install && sleep 5 && pnpm run start:docker"
+    networks:
+      - redis-net
+  # Сервіс для Redis
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    networks:
+      - redis-net
+    healthcheck: # <-- Додаємо healthcheck для Redis
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 1s
+      timeout: 3s
+      retries: 5
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: redisinsight
+    ports:
+      - '5540:5540'
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - redis-net
+
+volumes:
+  redis_data:
+
+networks:
+  redis-net:
+    driver: bridge

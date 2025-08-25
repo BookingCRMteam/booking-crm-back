@@ -2,33 +2,50 @@
 import {
   Controller,
   Get,
-  Post,
-  Body,
-  Param,
-  ParseIntPipe,
-  HttpCode,
+  HttpException,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { CountriesService } from './countries.service';
-import { CreateCountryDto } from './dto/create-country.dto';
+import { ResponseCounrtryDto } from './dto/response-country.dto';
+import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 
 @Controller('countries')
 export class CountriesController {
   constructor(private readonly countriesService: CountriesService) {}
 
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createCountryDto: CreateCountryDto) {
-    return this.countriesService.create(createCountryDto);
-  }
-
   @Get()
-  async findAll() {
-    return this.countriesService.findAll();
-  }
+  @ApiOperation({
+    summary: 'Get a list of countries ',
+  })
+  @ApiQuery({
+    name: 'q', // Назва параметра запиту
+    description: 'Search term for country name',
+    required: false, // Зробіть його необов’язковим
+    example: 'Ukraine',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of countries retrieved successfully',
+    type: [ResponseCounrtryDto],
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request: Country code are required',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Not Found: No countries found for the specified country',
+  })
+  async findAll(@Query('q') query?: string) {
+    const countries = await this.countriesService.findAll(query);
+    if (!countries || countries.length === 0) {
+      throw new HttpException(
+        'No countries found for the specified country and state.',
+        HttpStatus.NOT_FOUND,
+      );
+    }
 
-  @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.countriesService.findOne(id);
+    return countries;
   }
 }

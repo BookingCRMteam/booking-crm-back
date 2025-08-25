@@ -9,7 +9,7 @@ export interface Tour {
   operatorId: number;
   title: string;
   description?: string | null;
-  countryId: number; // Змінено на countryId
+  countryISO2Code: string; // Змінено на countryId
   cityId?: number | null; // Змінено на cityId
   type: string;
   price: string; // Або number, залежить від вашої логіки
@@ -25,11 +25,6 @@ export interface Tour {
   children?: number;
   petsAllowed?: boolean;
   departureCityId?: number | null;
-  departureCountryId?: number | null;
-  // Якщо ви "джойните" країни/міста, то можете додати їх сюди
-  country?: { id: number; name: string };
-  city?: { id: number; name: string };
-  departureCity?: { id: number; name: string };
-  departureCountry?: { id: number; name: string };
+  departureCountryISO2Code?: string | null;
   photos?: TourPhoto[]; // Якщо ви використовуєте 'with: { photos: true }'
 }

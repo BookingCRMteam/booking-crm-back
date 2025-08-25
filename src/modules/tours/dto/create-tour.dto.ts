@@ -43,18 +43,17 @@ export class CreateTourDto {
   description?: string;
 
   @ApiProperty({
-    example: 3, // Приклад ID країни, наприклад, Туреччина
-    description: 'ID країни призначення туру (посилання на таблицю countries)',
+    example: 'UA',
+    description:
+      'ISO2 код країни призначення туру (ISO2 код країни отриманий з /countries)',
   })
-  @Type(() => Number)
-  @IsNumber()
+  @IsString({ message: 'Country ID must be a string.' })
   @IsNotEmpty()
-  @Min(1)
-  countryId: number;
+  countryISO2Code: string;
 
   @ApiPropertyOptional({
-    example: 5, // Приклад ID міста, наприклад, Анталія
-    description: 'ID міста призначення туру (посилання на таблицю cities)',
+    example: 109897,
+    description: 'ID міста призначення туру (отрмане з /cities)',
   })
   @Type(() => Number)
   @IsNumber()
@@ -207,8 +206,8 @@ export class CreateTourDto {
   petsAllowed?: boolean = false;
 
   @ApiProperty({
-    example: 1,
-    description: 'ID of the departure city (reference to the cities table)',
+    example: 109897,
+    description: 'ID of the departure city (get from endpoint /cities)',
     default: '',
     required: false,
   })
@@ -221,13 +220,11 @@ export class CreateTourDto {
   @ApiProperty({
     example: 1,
     description:
-      'ID of the departure country (reference to the countries table)',
+      'ISO2 code of the departure country ( get from endpoint /countries)',
     required: false,
     default: '',
   })
-  @Type(() => Number)
-  @IsNumber()
+  @IsString({ message: 'Country ID must be a string.' })
   @IsOptional()
-  @Min(1)
-  departureCountryId?: number;
+  departureCountryISO2Code?: string;
 }
