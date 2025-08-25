@@ -7,12 +7,14 @@ import {
   Min,
   IsEnum,
   IsBoolean,
-  Length,
-  IsUppercase,
-  IsISO31661Alpha2,
+  MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
+import {
+  CountryISO2CodeEnum,
+  getCountryCodes,
+} from '@app/db/schema/enums/country-code.enum';
 
 export enum SortOrder {
   ASC = 'asc',
@@ -22,15 +24,15 @@ export enum SortOrder {
 export class GetToursQueryDto {
   @ApiProperty({
     example: 'UA',
-    description: 'ISO2 code of the destination country',
-    required: false,
+    description: 'ISO2 код країни призначення туру ',
+    enum: getCountryCodes(),
   })
-  @IsString()
-  @Length(2, 2)
-  @IsUppercase()
-  @IsISO31661Alpha2()
+  @IsEnum(getCountryCodes(), {
+    message: 'countryISO2Code must be a valid ISO2 country code.',
+  })
+  @MaxLength(2, { message: 'countryISO2Code must be exactly 2 characters.' })
   @IsOptional()
-  countryISO2Code?: string;
+  countryISO2Code: CountryISO2CodeEnum;
 
   @ApiProperty({
     example: 1,

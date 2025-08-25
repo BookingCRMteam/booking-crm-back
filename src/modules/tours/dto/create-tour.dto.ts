@@ -11,12 +11,14 @@ import {
   ValidateNested,
   IsUrl,
   MaxLength,
-  Length,
-  IsUppercase,
-  IsISO31661Alpha2,
+  IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  CountryISO2CodeEnum,
+  getCountryCodes,
+} from '@app/db/schema/enums/country-code.enum';
 
 export class TourPhotoDto {
   @IsUrl({}, { message: 'URL must be a valid URL address.' })
@@ -47,19 +49,15 @@ export class CreateTourDto {
 
   @ApiProperty({
     example: 'UA',
-    description:
-      'ISO2 код країни призначення туру (ISO 3166-1 alpha-2, отриманий з /countries)',
+    description: 'ISO2 код країни призначення туру ',
+    enum: getCountryCodes(),
   })
-  @IsString({ message: 'countryISO2Code must be a string.' })
-  @MaxLength(2, { message: 'countryISO2Code must be exactly 2 characters.' })
-  @Type(() => String)
-  @IsNotEmpty()
-  @Length(2, 2, { message: 'countryISO2Code must be exactly 2 characters.' })
-  @IsUppercase({ message: 'countryISO2Code must be uppercase.' })
-  @IsISO31661Alpha2({
+  @IsEnum(getCountryCodes(), {
     message: 'countryISO2Code must be a valid ISO2 country code.',
   })
-  countryISO2Code: string;
+  @MaxLength(2, { message: 'countryISO2Code must be exactly 2 characters.' })
+  @IsNotEmpty()
+  countryISO2Code: CountryISO2CodeEnum;
 
   @ApiPropertyOptional({
     example: 109897,
@@ -229,19 +227,13 @@ export class CreateTourDto {
 
   @ApiProperty({
     example: 'UA',
-    description:
-      'ISO2 code of the departure country (ISO 3166-1 alpha-2, from /countries)',
-    required: false,
+    description: 'ISO2 код країни призначення туру ',
+    enum: getCountryCodes(),
   })
-  @IsString({ message: 'departureCountryISO2Code must be a string.' })
-  @MaxLength(2, {
-    message: 'departureCountryISO2Code must be exactly 2 characters.',
-  })
-  @Length(2, 2, { message: 'countryISO2Code must be exactly 2 characters.' })
-  @IsUppercase({ message: 'countryISO2Code must be uppercase.' })
-  @IsISO31661Alpha2({
+  @IsEnum(getCountryCodes(), {
     message: 'countryISO2Code must be a valid ISO2 country code.',
   })
+  @MaxLength(2, { message: 'countryISO2Code must be exactly 2 characters.' })
   @IsOptional()
-  departureCountryISO2Code?: string;
+  departureCountryISO2Code?: CountryISO2CodeEnum;
 }

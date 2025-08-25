@@ -1,4 +1,4 @@
-import { countryCodeEnum } from '@app/db/enums/country-code.enum';
+import { countryCodeEnum } from '@app/db/schema/enums/country-code.enum';
 import { relations } from 'drizzle-orm';
 import {
   boolean,
@@ -17,7 +17,7 @@ export const tours = pgTable('tours', {
   operatorId: integer('operator_id').notNull(),
   title: varchar('title', { length: 255 }).notNull(),
   description: text('description'),
-  countryIso2Code: countryCodeEnum('country_iso2_code').notNull().default('UA'),
+  countryISO2Code: countryCodeEnum('country_iso2_code').notNull().default('UA'),
 
   // Тепер використовуємо зовнішні ключі до таблиць countries та cities
   cityId: integer('city_id'), // Місто може бути необов'язковим

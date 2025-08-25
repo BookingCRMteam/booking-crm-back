@@ -2,7 +2,7 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as dotenv from 'dotenv';
-import * as schema from '../src/db/schema'; // Шлях до вашої головної схеми Drizzle
+import * as schema from '../src/db/schema/schema'; // Шлях до вашої головної схеми Drizzle
 import { COUNTRIES_DATA } from '../data/countries'; // <--- Імпортуємо дані країн
 
 dotenv.config({ path: '.env.development' }); // Завантажуємо змінні середовища з .env.development
@@ -12,7 +12,7 @@ async function seedCountries() {
     console.error('DATABASE_URL is not set in environment variables.');
     process.exit(1);
   }
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
   });
@@ -59,7 +59,6 @@ async function seedCountries() {
     }
   } finally {
     if (pool) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       await pool.end(); // Закриваємо з'єднання з базою даних
       console.log('Database connection closed.');
     }

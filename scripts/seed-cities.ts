@@ -1,9 +1,8 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 // scripts/seed-cities.ts
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as dotenv from 'dotenv';
-import * as schema from '../src/db/schema'; // Ваш імпорт головної схеми
+import * as schema from '../src/db/schema/schema'; // Ваш імпорт головної схеми
 import { CITIES_DATA } from '../data/cities';
 
 dotenv.config({ path: '.env.development' });
@@ -13,7 +12,7 @@ async function seedCities() {
     console.error('DATABASE_URL is not set in environment variables.');
     process.exit(1);
   }
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
   });
@@ -93,7 +92,6 @@ async function seedCities() {
     process.exit(1);
   } finally {
     if (pool) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       await pool.end(); // Закриваємо з'єднання з базою даних
       console.log('Database connection closed.');
     }

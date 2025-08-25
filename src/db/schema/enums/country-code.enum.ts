@@ -251,3 +251,9 @@ export const countryCodeEnum = pgEnum('country_code', [
   'ZM',
   'ZW',
 ]);
+export type CountryISO2CodeEnum = (typeof countryCodeEnum.enumValues)[number];
+
+// Допоміжна функція для отримання значень для class-validator
+export function getCountryCodes(): string[] {
+  return countryCodeEnum.enumValues as unknown as string[];
+}
