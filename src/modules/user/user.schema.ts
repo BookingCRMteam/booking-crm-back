@@ -7,9 +7,10 @@ export const users = pgTable('users', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   operatorId: integer('operator_id'),
-  passwordHash: text('password_hash'),
-  firstName: text('firstName'),
-  lastName: text('lastName'),
+  firstPersonName: text('first_person_name'),
+  firstPersonSurame: text('first_person_surame'),
+  secondPersonName: text('second_person_name'),
+  secondPersonSurame: text('second_person_surame'),
   phone: text('phone'),
   role: text('role').default('traveler').notNull(),
 });

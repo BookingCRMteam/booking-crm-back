@@ -19,8 +19,8 @@ export class UserService {
         .insert(userSchema.users)
         .values({
           sub: userJWT.sub,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
+          firstPersonName: userData.firstPersonName,
+          firstPersonSurame: userData.firtsPersonSurname,
           email: userJWT.email,
         })
         .returning();

@@ -71,6 +71,13 @@
       "when": 1756039195996,
       "tag": "0009_windy_shockwave",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1756050153808,
+      "tag": "0010_illegal_rogue",
+      "breakpoints": true
     }
   ]
 }
