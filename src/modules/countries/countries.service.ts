@@ -3,7 +3,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
-import { ResponseCounrtryDto } from './dto/response-country.dto';
+import { ResponseCountryDto } from './dto/response-country.dto';
 import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
 
 @Injectable()
@@ -21,13 +21,13 @@ export class CountriesService {
     this.apiKey = this.configService.get<string>('API_COUNTRY_STATE_CITY_KEY');
   }
 
-  async findAll(query?: string): Promise<ResponseCounrtryDto[]> {
+  async findAll(query?: string): Promise<ResponseCountryDto[]> {
     const cacheKey = `countries`;
     try {
       const cachedData = await this.cacheManager.get<string>(cacheKey);
       if (cachedData) {
         console.log('Countries found in cache');
-        const parsedData = JSON.parse(cachedData) as ResponseCounrtryDto[];
+        const parsedData = JSON.parse(cachedData) as ResponseCountryDto[];
 
         if (query) {
           const lowerCaseQuery = query.toLowerCase();
@@ -47,7 +47,7 @@ export class CountriesService {
       const response = await firstValueFrom(
         this.httpService.get(`${this.apiUrl}/countries`, { headers }),
       );
-      const countries = response.data as ResponseCounrtryDto[];
+      const countries = response.data as ResponseCountryDto[];
       try {
         const dataToSave = JSON.stringify(countries);
         await this.cacheManager.set(cacheKey, dataToSave);

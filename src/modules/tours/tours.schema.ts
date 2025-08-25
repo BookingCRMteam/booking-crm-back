@@ -1,3 +1,4 @@
+import { countryCodeEnum } from '@app/db/enums/country-code.enum';
 import { relations } from 'drizzle-orm';
 import {
   boolean,
@@ -16,9 +17,7 @@ export const tours = pgTable('tours', {
   operatorId: integer('operator_id').notNull(),
   title: varchar('title', { length: 255 }).notNull(),
   description: text('description'),
-  countryISO2Code: varchar('country_iso2_code', { length: 2 })
-    .notNull()
-    .default('UA'),
+  countryIso2Code: countryCodeEnum('country_iso2_code').notNull().default('UA'),
 
   // Тепер використовуємо зовнішні ключі до таблиць countries та cities
   cityId: integer('city_id'), // Місто може бути необов'язковим
@@ -36,12 +35,8 @@ export const tours = pgTable('tours', {
   adults: integer('adults').default(1).notNull(),
   children: integer('children').default(0).notNull(),
   petsAllowed: boolean('pets_allowed').default(false).notNull(),
-
-  // Місто та країна виїзду також можуть бути посиланнями
   departureCityId: integer('departure_city_id'),
-  departureCountryISO2Code: varchar('departure_country_iso2_code', {
-    length: 2,
-  }),
+  departureCountryISO2Code: countryCodeEnum('departure_country_iso2_code'),
 });
 
 export const tourPhotos = pgTable('tour_photos', {

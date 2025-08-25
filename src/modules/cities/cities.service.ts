@@ -1,15 +1,22 @@
 // src/cities/cities.service.ts
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { ResponseCityDto } from './dto/response-city.dto';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
+import { CountriesService } from '../countries/countries.service';
 
 @Injectable()
 export class CitiesService {
   private readonly apiUrl: string;
   private readonly apiKey: string;
+  private readonly logger = new Logger(CountriesService.name);
 
   constructor(
     @Inject(CACHE_MANAGER)
@@ -17,9 +24,15 @@ export class CitiesService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    this.apiUrl = this.configService.get<string>('API_COUNTRY_STATE_CITY_URL');
-    this.apiKey = this.configService.get<string>('API_COUNTRY_STATE_CITY_KEY');
+    this.apiUrl = this.configService.get<string>('API_COUNTRY_STATE_CITY_URL')!;
+    this.apiKey = this.configService.get<string>('API_COUNTRY_STATE_CITY_KEY')!;
+    if (!this.apiUrl || !this.apiKey) {
+      throw new ServiceUnavailableException(
+        'CountriesService is not configured: missing API url or key',
+      );
+    }
   }
+
   async findAllByCountry(
     countryCode: string,
     query?: string,

@@ -7,6 +7,9 @@ import {
   Min,
   IsEnum,
   IsBoolean,
+  Length,
+  IsUppercase,
+  IsISO31661Alpha2,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
@@ -18,11 +21,14 @@ export enum SortOrder {
 
 export class GetToursQueryDto {
   @ApiProperty({
-    example: 1,
+    example: 'UA',
     description: 'ISO2 code of the destination country',
     required: false,
   })
   @IsString()
+  @Length(2, 2)
+  @IsUppercase()
+  @IsISO31661Alpha2()
   @IsOptional()
   countryISO2Code?: string;
 

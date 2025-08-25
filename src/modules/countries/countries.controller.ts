@@ -7,7 +7,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { CountriesService } from './countries.service';
-import { ResponseCounrtryDto } from './dto/response-country.dto';
+import { ResponseCountryDto } from './dto/response-country.dto';
 import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 
 @Controller('countries')
@@ -27,7 +27,7 @@ export class CountriesController {
   @ApiResponse({
     status: 200,
     description: 'List of countries retrieved successfully',
-    type: [ResponseCounrtryDto],
+    type: [ResponseCountryDto],
   })
   @ApiResponse({
     status: 400,

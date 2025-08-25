@@ -11,6 +11,9 @@ import {
   ValidateNested,
   IsUrl,
   MaxLength,
+  Length,
+  IsUppercase,
+  IsISO31661Alpha2,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -45,10 +48,17 @@ export class CreateTourDto {
   @ApiProperty({
     example: 'UA',
     description:
-      'ISO2 код країни призначення туру (ISO2 код країни отриманий з /countries)',
+      'ISO2 код країни призначення туру (ISO 3166-1 alpha-2, отриманий з /countries)',
   })
-  @IsString({ message: 'Country ID must be a string.' })
+  @IsString({ message: 'countryISO2Code must be a string.' })
+  @MaxLength(2, { message: 'countryISO2Code must be exactly 2 characters.' })
+  @Type(() => String)
   @IsNotEmpty()
+  @Length(2, 2, { message: 'countryISO2Code must be exactly 2 characters.' })
+  @IsUppercase({ message: 'countryISO2Code must be uppercase.' })
+  @IsISO31661Alpha2({
+    message: 'countryISO2Code must be a valid ISO2 country code.',
+  })
   countryISO2Code: string;
 
   @ApiPropertyOptional({
@@ -218,13 +228,20 @@ export class CreateTourDto {
   departureCityId?: number;
 
   @ApiProperty({
-    example: 1,
+    example: 'UA',
     description:
-      'ISO2 code of the departure country ( get from endpoint /countries)',
+      'ISO2 code of the departure country (ISO 3166-1 alpha-2, from /countries)',
     required: false,
-    default: '',
   })
-  @IsString({ message: 'Country ID must be a string.' })
+  @IsString({ message: 'departureCountryISO2Code must be a string.' })
+  @MaxLength(2, {
+    message: 'departureCountryISO2Code must be exactly 2 characters.',
+  })
+  @Length(2, 2, { message: 'countryISO2Code must be exactly 2 characters.' })
+  @IsUppercase({ message: 'countryISO2Code must be uppercase.' })
+  @IsISO31661Alpha2({
+    message: 'countryISO2Code must be a valid ISO2 country code.',
+  })
   @IsOptional()
   departureCountryISO2Code?: string;
 }

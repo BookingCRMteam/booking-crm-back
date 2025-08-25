@@ -1,4 +1,4 @@
-export class ResponseCounrtryDto {
+export class ResponseCountryDto {
   readonly id: number;
   readonly name: string;
   readonly iso2: string;
