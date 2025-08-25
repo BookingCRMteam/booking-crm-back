@@ -165,15 +165,15 @@ export class GetToursQueryDto {
 
   @ApiProperty({
     example: 'UA',
-    description:
-      'ISO2 code of the departure country (reference to the countries table)',
-    required: false,
-    default: '',
+    description: 'ISO2 код країни призначення туру ',
+    enum: getCountryCodes(),
   })
-  @IsString()
+  @IsEnum(getCountryCodes(), {
+    message: 'countryISO2Code must be a valid ISO2 country code.',
+  })
+  @MaxLength(2, { message: 'countryISO2Code must be exactly 2 characters.' })
   @IsOptional()
-  @Min(2)
-  departureCountryISO2Code?: string;
+  departureCountryISO2Code?: CountryISO2CodeEnum;
 
   @ApiProperty({
     example: 10,
