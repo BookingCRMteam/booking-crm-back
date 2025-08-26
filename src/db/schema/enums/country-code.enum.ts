@@ -1,6 +1,5 @@
 import { pgEnum } from 'drizzle-orm/pg-core';
-
-export const countryCodeEnum = pgEnum('country_code', [
+export const COUNTRY_CODE_VALUES = [
   'AD',
   'AE',
   'AF',
@@ -250,8 +249,9 @@ export const countryCodeEnum = pgEnum('country_code', [
   'ZA',
   'ZM',
   'ZW',
-]);
-export type CountryISO2CodeEnum = (typeof countryCodeEnum.enumValues)[number];
+] as const;
+export const countryCodeEnum = pgEnum('country_code', COUNTRY_CODE_VALUES);
+export type CountryISO2CodeEnum = (typeof COUNTRY_CODE_VALUES)[number];
 
 // Допоміжна функція для отримання значень для class-validator
 export function getCountryCodes(): string[] {

@@ -1,15 +1,23 @@
 // src/countries/countries.service.ts
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { ResponseCountryDto } from './dto/response-country.dto';
 import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
+import { AxiosError } from 'axios';
 
 @Injectable()
 export class CountriesService {
   private readonly apiUrl: string;
   private readonly apiKey: string;
+  private readonly logger = new Logger(CountriesService.name);
+
   constructor(
     // Правильний спосіб ін'єкції Drizzle DB в NestJS
     @Inject(CACHE_MANAGER)
@@ -26,7 +34,7 @@ export class CountriesService {
     try {
       const cachedData = await this.cacheManager.get<string>(cacheKey);
       if (cachedData) {
-        console.log('Countries found in cache');
+        this.logger.debug('Countries found in cache');
         const parsedData = JSON.parse(cachedData) as ResponseCountryDto[];
 
         if (query) {
@@ -38,10 +46,12 @@ export class CountriesService {
         return parsedData;
       }
     } catch (error) {
-      console.error('Error getting data from cache:', error);
+      this.logger.warn(
+        `Error getting data from cache: ${(error as Error).message}`,
+      );
     }
 
-    console.log('Countries not found in cache, fetching from API...');
+    this.logger.debug('Countries not found in cache, fetching from API...');
     try {
       const headers = { 'X-CSCAPI-KEY': this.apiKey };
       const response = await firstValueFrom(
@@ -52,8 +62,9 @@ export class CountriesService {
         const dataToSave = JSON.stringify(countries);
         await this.cacheManager.set(cacheKey, dataToSave);
       } catch (cacheError) {
-        console.error('❌ Error saving to cache:', cacheError);
-        console.error('❌ Cache error stack:', (cacheError as Error).stack);
+        this.logger.warn(
+          `Error saving to cache: ${(cacheError as Error).message}`,
+        );
       }
       if (query) {
         const lowerCaseQuery = query.toLowerCase();
@@ -64,8 +75,14 @@ export class CountriesService {
 
       return countries;
     } catch (apiError) {
-      console.error('Error fetching from API:', apiError);
-      throw apiError;
+      const err = apiError as AxiosError;
+      const status = err.response?.status;
+      this.logger.error(
+        `Countries API error${status ? ` (${status})` : ''}: ${err.message}`,
+      );
+      throw new ServiceUnavailableException(
+        'Countries API is unavailable. Please try again later.',
+      );
     }
   }
 }

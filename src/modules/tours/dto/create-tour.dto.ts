@@ -11,7 +11,8 @@ import {
   ValidateNested,
   IsUrl,
   MaxLength,
-  IsEnum,
+  Length,
+  IsIn,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -52,16 +53,17 @@ export class CreateTourDto {
     description: 'ISO2 код країни призначення туру ',
     enum: getCountryCodes(),
   })
-  @IsEnum(getCountryCodes(), {
+  @IsIn(getCountryCodes(), {
     message: 'countryISO2Code must be a valid ISO2 country code.',
   })
-  @MaxLength(2, { message: 'countryISO2Code must be exactly 2 characters.' })
+  @Length(2, 2, { message: 'countryISO2Code must be exactly 2 characters.' })
   @IsNotEmpty()
   countryISO2Code: CountryISO2CodeEnum;
 
   @ApiPropertyOptional({
     example: 109897,
-    description: 'ID міста призначення туру (отрмане з /cities)',
+    description:
+      'ID міста призначення туру ((отримано з GET /countries/{countryCode}/cities))',
   })
   @Type(() => Number)
   @IsNumber()
@@ -225,15 +227,17 @@ export class CreateTourDto {
   @Min(1)
   departureCityId?: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'UA',
     description: 'ISO2 код країни призначення туру ',
     enum: getCountryCodes(),
   })
-  @IsEnum(getCountryCodes(), {
-    message: 'countryISO2Code must be a valid ISO2 country code.',
+  @IsIn(getCountryCodes(), {
+    message: 'departureCountryISO2Code must be a valid ISO2 country code.',
   })
-  @MaxLength(2, { message: 'countryISO2Code must be exactly 2 characters.' })
+  @Length(2, 2, {
+    message: 'departureCountryISO2Code must be exactly 2 characters.',
+  })
   @IsOptional()
   departureCountryISO2Code?: CountryISO2CodeEnum;
 }

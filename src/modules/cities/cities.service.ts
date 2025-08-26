@@ -2,7 +2,6 @@
 import {
   Inject,
   Injectable,
-  Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
@@ -10,13 +9,11 @@ import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { ResponseCityDto } from './dto/response-city.dto';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
-import { CountriesService } from '../countries/countries.service';
 
 @Injectable()
 export class CitiesService {
   private readonly apiUrl: string;
   private readonly apiKey: string;
-  private readonly logger = new Logger(CountriesService.name);
 
   constructor(
     @Inject(CACHE_MANAGER)
