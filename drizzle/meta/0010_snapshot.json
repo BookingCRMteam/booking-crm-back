@@ -1,6 +1,6 @@
 {
-  "id": "5eb26d7e-7c83-47bb-8545-061396ea1089",
-  "prevId": "a7c925ae-e53d-4fa4-9d86-a2fbe42cbba2",
+  "id": "cc6c641a-847f-4432-bbb8-d498e1f813fa",
+  "prevId": "8fa470ce-e289-45d4-aa45-cbd49b0e93a2",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -46,20 +46,26 @@
           "primaryKey": false,
           "notNull": false
         },
-        "password_hash": {
-          "name": "password_hash",
+        "first_person_name": {
+          "name": "first_person_name",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "firstName": {
-          "name": "firstName",
+        "first_person_surame": {
+          "name": "first_person_surame",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "lastName": {
-          "name": "lastName",
+        "second_person_name": {
+          "name": "second_person_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "second_person_surame": {
+          "name": "second_person_surame",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -221,13 +227,11 @@
           "primaryKey": false,
           "notNull": false
         },
-        "country_iso2_code": {
-          "name": "country_iso2_code",
-          "type": "country_code",
-          "typeSchema": "public",
+        "country_id": {
+          "name": "country_id",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'UA'"
+          "notNull": true
         },
         "city_id": {
           "name": "city_id",
@@ -326,16 +330,68 @@
           "primaryKey": false,
           "notNull": false
         },
-        "departure_country_iso2_code": {
-          "name": "departure_country_iso2_code",
-          "type": "country_code",
-          "typeSchema": "public",
+        "departure_country_id": {
+          "name": "departure_country_id",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "tours_country_id_countries_id_fk": {
+          "name": "tours_country_id_countries_id_fk",
+          "tableFrom": "tours",
+          "tableTo": "countries",
+          "columnsFrom": [
+            "country_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "tours_city_id_cities_id_fk": {
+          "name": "tours_city_id_cities_id_fk",
+          "tableFrom": "tours",
+          "tableTo": "cities",
+          "columnsFrom": [
+            "city_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "tours_departure_city_id_cities_id_fk": {
+          "name": "tours_departure_city_id_cities_id_fk",
+          "tableFrom": "tours",
+          "tableTo": "cities",
+          "columnsFrom": [
+            "departure_city_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "tours_departure_country_id_countries_id_fk": {
+          "name": "tours_departure_country_id_countries_id_fk",
+          "tableFrom": "tours",
+          "tableTo": "countries",
+          "columnsFrom": [
+            "departure_country_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -413,6 +469,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
         }
       },
       "indexes": {},

@@ -1,5 +1,5 @@
 {
-  "id": "a7c925ae-e53d-4fa4-9d86-a2fbe42cbba2",
+  "id": "8fa470ce-e289-45d4-aa45-cbd49b0e93a2",
   "prevId": "3bd4a3a8-2e30-4aad-a06f-f1c323bb7248",
   "version": "7",
   "dialect": "postgresql",
@@ -85,12 +85,16 @@
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
-          "columns": ["email"]
+          "columns": [
+            "email"
+          ]
         },
         "users_sub_unique": {
           "name": "users_sub_unique",
           "nullsNotDistinct": false,
-          "columns": ["sub"]
+          "columns": [
+            "sub"
+          ]
         }
       },
       "policies": {},
@@ -141,7 +145,9 @@
         "health_email_unique": {
           "name": "health_email_unique",
           "nullsNotDistinct": false,
-          "columns": ["email"]
+          "columns": [
+            "email"
+          ]
         }
       },
       "policies": {},
@@ -178,7 +184,9 @@
         "tour_photos_url_unique": {
           "name": "tour_photos_url_unique",
           "nullsNotDistinct": false,
-          "columns": ["url"]
+          "columns": [
+            "url"
+          ]
         }
       },
       "policies": {},
@@ -213,12 +221,11 @@
           "primaryKey": false,
           "notNull": false
         },
-        "country_iso2_code": {
-          "name": "country_iso2_code",
-          "type": "varchar(2)",
+        "country_id": {
+          "name": "country_id",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'UA'"
+          "notNull": true
         },
         "city_id": {
           "name": "city_id",
@@ -317,15 +324,68 @@
           "primaryKey": false,
           "notNull": false
         },
-        "departure_country_iso2_code": {
-          "name": "departure_country_iso2_code",
-          "type": "varchar(2)",
+        "departure_country_id": {
+          "name": "departure_country_id",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "tours_country_id_countries_id_fk": {
+          "name": "tours_country_id_countries_id_fk",
+          "tableFrom": "tours",
+          "tableTo": "countries",
+          "columnsFrom": [
+            "country_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "tours_city_id_cities_id_fk": {
+          "name": "tours_city_id_cities_id_fk",
+          "tableFrom": "tours",
+          "tableTo": "cities",
+          "columnsFrom": [
+            "city_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "tours_departure_city_id_cities_id_fk": {
+          "name": "tours_departure_city_id_cities_id_fk",
+          "tableFrom": "tours",
+          "tableTo": "cities",
+          "columnsFrom": [
+            "departure_city_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "tours_departure_country_id_countries_id_fk": {
+          "name": "tours_departure_country_id_countries_id_fk",
+          "tableFrom": "tours",
+          "tableTo": "countries",
+          "columnsFrom": [
+            "departure_country_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -403,6 +463,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
         }
       },
       "indexes": {},
@@ -411,8 +478,12 @@
           "name": "operators_user_id_users_id_fk",
           "tableFrom": "operators",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -422,12 +493,16 @@
         "operators_email_unique": {
           "name": "operators_email_unique",
           "nullsNotDistinct": false,
-          "columns": ["email"]
+          "columns": [
+            "email"
+          ]
         },
         "operators_user_id_unique": {
           "name": "operators_user_id_unique",
           "nullsNotDistinct": false,
-          "columns": ["user_id"]
+          "columns": [
+            "user_id"
+          ]
         }
       },
       "policies": {},
@@ -458,7 +533,9 @@
         "countries_name_unique": {
           "name": "countries_name_unique",
           "nullsNotDistinct": false,
-          "columns": ["name"]
+          "columns": [
+            "name"
+          ]
         }
       },
       "policies": {},
@@ -516,8 +593,12 @@
           "name": "cities_country_id_countries_id_fk",
           "tableFrom": "cities",
           "tableTo": "countries",
-          "columnsFrom": ["country_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "country_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -602,8 +683,12 @@
           "name": "bookings_tour_id_tours_id_fk",
           "tableFrom": "bookings",
           "tableTo": "tours",
-          "columnsFrom": ["tour_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "tour_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }

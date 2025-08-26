@@ -16,4 +16,5 @@ export const operators = pgTable('operators', {
   lastName: text('last_name').notNull(),
   website: text('website').notNull(),
   phone: text('phone').notNull(),
+  status: text('status').default('pending').notNull(),
 });
