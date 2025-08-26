@@ -8,6 +8,8 @@ import { json, Request } from 'express';
 config({ path: `.env.${process.env.NODE_ENV || 'development'}` });
 
 async function bootstrap() {
+  // Затримка на 5 секунд, щоб Redis повністю запустився
+
   const app = await NestFactory.create(AppModule);
   app.enableCors();
   const config = new DocumentBuilder()

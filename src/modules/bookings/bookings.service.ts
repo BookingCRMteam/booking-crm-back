@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import * as schema from 'src/db/schema';
+import * as schema from '@app/db/schema/schema';
 import { bookings } from './bookings.schema';
 import LiqPay from 'liqpayjs-sdk'; // <-- Змінено тут
 import Stripe from 'stripe';

@@ -11,9 +11,15 @@ import {
   ValidateNested,
   IsUrl,
   MaxLength,
+  Length,
+  IsIn,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  CountryISO2CodeEnum,
+  getCountryCodes,
+} from '@app/db/schema/enums/country-code.enum';
 
 export class TourPhotoDto {
   @IsUrl({}, { message: 'URL must be a valid URL address.' })
@@ -43,18 +49,21 @@ export class CreateTourDto {
   description?: string;
 
   @ApiProperty({
-    example: 3, // Приклад ID країни, наприклад, Туреччина
-    description: 'ID країни призначення туру (посилання на таблицю countries)',
+    example: 'UA',
+    description: 'ISO2 код країни призначення туру ',
+    enum: getCountryCodes(),
   })
-  @Type(() => Number)
-  @IsNumber()
+  @IsIn(getCountryCodes(), {
+    message: 'countryISO2Code must be a valid ISO2 country code.',
+  })
+  @Length(2, 2, { message: 'countryISO2Code must be exactly 2 characters.' })
   @IsNotEmpty()
-  @Min(1)
-  countryId: number;
+  countryISO2Code: CountryISO2CodeEnum;
 
   @ApiPropertyOptional({
-    example: 5, // Приклад ID міста, наприклад, Анталія
-    description: 'ID міста призначення туру (посилання на таблицю cities)',
+    example: 109897,
+    description:
+      'ID міста призначення туру ((отримано з GET /countries/{countryCode}/cities))',
   })
   @Type(() => Number)
   @IsNumber()
@@ -207,8 +216,8 @@ export class CreateTourDto {
   petsAllowed?: boolean = false;
 
   @ApiProperty({
-    example: 1,
-    description: 'ID of the departure city (reference to the cities table)',
+    example: 109897,
+    description: 'ID of the departure city (get from endpoint /cities)',
     default: '',
     required: false,
   })
@@ -218,16 +227,17 @@ export class CreateTourDto {
   @Min(1)
   departureCityId?: number;
 
-  @ApiProperty({
-    example: 1,
-    description:
-      'ID of the departure country (reference to the countries table)',
-    required: false,
-    default: '',
+  @ApiPropertyOptional({
+    example: 'UA',
+    description: 'ISO2 код країни призначення туру ',
+    enum: getCountryCodes(),
   })
-  @Type(() => Number)
-  @IsNumber()
+  @IsIn(getCountryCodes(), {
+    message: 'departureCountryISO2Code must be a valid ISO2 country code.',
+  })
+  @Length(2, 2, {
+    message: 'departureCountryISO2Code must be exactly 2 characters.',
+  })
   @IsOptional()
-  @Min(1)
-  departureCountryId?: number;
+  departureCountryISO2Code?: CountryISO2CodeEnum;
 }

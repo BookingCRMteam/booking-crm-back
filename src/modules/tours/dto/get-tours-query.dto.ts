@@ -7,9 +7,14 @@ import {
   Min,
   IsEnum,
   IsBoolean,
+  MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
+import {
+  CountryISO2CodeEnum,
+  getCountryCodes,
+} from '@app/db/schema/enums/country-code.enum';
 
 export enum SortOrder {
   ASC = 'asc',
@@ -18,15 +23,16 @@ export enum SortOrder {
 
 export class GetToursQueryDto {
   @ApiProperty({
-    example: 1,
-    description: 'ID of the destination country',
-    required: false,
+    example: 'UA',
+    description: 'ISO2 код країни призначення туру ',
+    enum: getCountryCodes(),
   })
-  @IsNumber()
+  @IsEnum(getCountryCodes(), {
+    message: 'countryISO2Code must be a valid ISO2 country code.',
+  })
+  @MaxLength(2, { message: 'countryISO2Code must be exactly 2 characters.' })
   @IsOptional()
-  @Min(1)
-  @Type(() => Number)
-  countryId?: number;
+  countryISO2Code: CountryISO2CodeEnum;
 
   @ApiProperty({
     example: 1,
@@ -146,7 +152,7 @@ export class GetToursQueryDto {
   petsAllowed?: boolean; // Зняв default
 
   @ApiProperty({
-    example: 1,
+    example: 109897,
     description: 'ID of the departure city (reference to the cities table)',
     default: '',
     required: false,
@@ -158,17 +164,16 @@ export class GetToursQueryDto {
   departureCityId?: number;
 
   @ApiProperty({
-    example: 1,
-    description:
-      'ID of the departure country (reference to the countries table)',
-    required: false,
-    default: '',
+    example: 'UA',
+    description: 'ISO2 код країни призначення туру ',
+    enum: getCountryCodes(),
   })
-  @Type(() => Number)
-  @IsNumber()
+  @IsEnum(getCountryCodes(), {
+    message: 'countryISO2Code must be a valid ISO2 country code.',
+  })
+  @MaxLength(2, { message: 'countryISO2Code must be exactly 2 characters.' })
   @IsOptional()
-  @Min(1)
-  departureCountryId?: number;
+  departureCountryISO2Code?: CountryISO2CodeEnum;
 
   @ApiProperty({
     example: 10,

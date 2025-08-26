@@ -10,7 +10,7 @@ import { tourPhotos, tours } from './tours.schema';
 import { GetToursQueryDto, SortOrder } from './dto/get-tours-query.dto';
 import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm';
 import { UpdateTourDto } from './dto/update-tour.dto';
-import * as schema from '@app/db/schema';
+import * as schema from '@app/db/schema/schema';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 @Injectable()
 export class ToursService {
@@ -22,58 +22,6 @@ export class ToursService {
   async createTour(createTourDto: CreateTourDto): Promise<Tour> {
     return await this.db.transaction(async (tx): Promise<Tour> => {
       try {
-        // const tourData = {
-        //   operatorId: 1,
-        //   title: createTourDto.title,
-        //   description: createTourDto.description,
-        //   countryId: createTourDto.countryId,
-        //   cityId: createTourDto.cityId,
-        //   type: createTourDto.type,
-        //   price: createTourDto.price.toFixed(2),
-        //   currency: createTourDto.currency,
-        //   startDate: createTourDto.startDate,
-        //   endDate: createTourDto.endDate,
-        //   availableSpots: createTourDto.availableSpots,
-        //   conditions: createTourDto.conditions,
-        //   isActive: createTourDto.isActive,
-        // };
-
-        const [country] = await tx
-          .select()
-          .from(schema.countries)
-          .where(eq(schema.countries.id, createTourDto.countryId))
-          .limit(1);
-
-        if (!country) {
-          throw new BadRequestException(
-            `Country with ID ${createTourDto.countryId} not found.`,
-          );
-        }
-
-        if (createTourDto.departureCountryId) {
-          const [departureCountry] = await tx
-            .select()
-            .from(schema.countries)
-            .where(eq(schema.countries.id, createTourDto.departureCountryId))
-            .limit(1);
-          if (!departureCountry) {
-            throw new BadRequestException(
-              `Departure country with ID ${createTourDto.departureCountryId} not found.`,
-            );
-          }
-        }
-        if (createTourDto.departureCityId) {
-          const [departureCity] = await tx
-            .select()
-            .from(schema.cities)
-            .where(eq(schema.cities.id, createTourDto.departureCityId))
-            .limit(1);
-          if (!departureCity) {
-            throw new BadRequestException(
-              `Departure city with ID ${createTourDto.departureCityId} not found.`,
-            );
-          }
-        }
         const tourData = {
           operatorId: 1,
           ...createTourDto,
@@ -102,7 +50,7 @@ export class ToursService {
   }
   async findAllTours(query: GetToursQueryDto) {
     const {
-      countryId,
+      countryISO2Code,
       cityId,
       type,
       minStartDate, // Нове поле
@@ -115,7 +63,7 @@ export class ToursService {
       children, // Нове поле
       petsAllowed, // Нове поле
       departureCityId, // Нове поле
-      departureCountryId, // Нове поле
+      departureCountryISO2Code, // Нове поле
       limit = 10,
       offset = 0,
       sortBy = 'startDate',
@@ -124,16 +72,16 @@ export class ToursService {
 
     const whereConditions = [eq(schema.tours.isActive, true)]; // Починаємо з обов'язкових умов
 
-    if (countryId) {
-      whereConditions.push(eq(schema.tours.countryId, countryId));
+    if (countryISO2Code) {
+      whereConditions.push(eq(schema.tours.countryISO2Code, countryISO2Code));
     }
     if (cityId) {
       whereConditions.push(eq(schema.tours.cityId, cityId));
     }
-    if (departureCountryId) {
+    if (departureCountryISO2Code) {
       // Додано фільтр
       whereConditions.push(
-        eq(schema.tours.departureCountryId, departureCountryId),
+        eq(schema.tours.departureCountryISO2Code, departureCountryISO2Code),
       );
     }
     if (departureCityId) {
@@ -207,10 +155,6 @@ export class ToursService {
         offset: offset,
         with: {
           photos: true, // Якщо у вас є relations для photos
-          country: true, // Дозволить отримати об'єкт країни
-          city: true, // Дозволить отримати об'єкт міста
-          departureCountry: true,
-          departureCity: true,
           // operator: true,
         },
       });

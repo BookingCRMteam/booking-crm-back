@@ -1,87 +1,88 @@
 // src/countries/countries.service.ts
 import {
-  ConflictException,
   Inject,
   Injectable,
-  NotFoundException,
+  Logger,
+  ServiceUnavailableException,
 } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
-import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { CreateCountryDto } from './dto/create-country.dto';
-import { UpdateCountryDto } from './dto/update-country.dto';
-import { countries } from './countries.schema';
-import * as schema from '@app/db/schema'; // Імпортуємо основну схему Drizzle
+import { firstValueFrom } from 'rxjs';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
+import { ResponseCountryDto } from './dto/response-country.dto';
+import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
+import { AxiosError } from 'axios';
+
 @Injectable()
 export class CountriesService {
+  private readonly apiUrl: string;
+  private readonly apiKey: string;
+  private readonly logger = new Logger(CountriesService.name);
+
   constructor(
     // Правильний спосіб ін'єкції Drizzle DB в NestJS
-    @Inject('DRIZZLE_CLIENT')
-    private db: NodePgDatabase<typeof schema>, // <-- Типізуйте db згідно з вашою основною схемою
-  ) {}
+    @Inject(CACHE_MANAGER)
+    private cacheManager: Cache,
+    private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
+  ) {
+    this.apiUrl = this.configService.get<string>('API_COUNTRY_STATE_CITY_URL');
+    this.apiKey = this.configService.get<string>('API_COUNTRY_STATE_CITY_KEY');
+  }
 
-  async create(createCountryDto: CreateCountryDto) {
-    // Перевіряємо, чи країна з такою назвою вже існує
-    let processedName = createCountryDto.name.trim();
-    processedName = processedName.replace(/\s\s+/g, ' ');
-    const countryToInsert = { ...createCountryDto, name: processedName };
-    const existingCountry = await this.db
-      .select()
-      .from(countries)
-      .where(eq(countries.name, countryToInsert.name))
-      .limit(1);
+  async findAll(query?: string): Promise<ResponseCountryDto[]> {
+    const cacheKey = `countries`;
+    try {
+      const cachedData = await this.cacheManager.get<string>(cacheKey);
+      if (cachedData) {
+        this.logger.debug('Countries found in cache');
+        const parsedData = JSON.parse(cachedData) as ResponseCountryDto[];
 
-    if (existingCountry.length > 0) {
-      throw new ConflictException(
-        `Country with name '${countryToInsert.name}' already exists.`,
+        if (query) {
+          const lowerCaseQuery = query.toLowerCase();
+          return parsedData.filter((country) =>
+            country.name.toLowerCase().startsWith(lowerCaseQuery),
+          );
+        }
+        return parsedData;
+      }
+    } catch (error) {
+      this.logger.warn(
+        `Error getting data from cache: ${(error as Error).message}`,
       );
     }
 
-    const [newCountry] = await this.db
-      .insert(countries)
-      .values(countryToInsert)
-      .returning(); // Повертаємо створену країну
-    return newCountry;
-  }
+    this.logger.debug('Countries not found in cache, fetching from API...');
+    try {
+      const headers = { 'X-CSCAPI-KEY': this.apiKey };
+      const response = await firstValueFrom(
+        this.httpService.get(`${this.apiUrl}/countries`, { headers }),
+      );
+      const countries = response.data as ResponseCountryDto[];
+      try {
+        const dataToSave = JSON.stringify(countries);
+        await this.cacheManager.set(cacheKey, dataToSave);
+      } catch (cacheError) {
+        this.logger.warn(
+          `Error saving to cache: ${(cacheError as Error).message}`,
+        );
+      }
+      if (query) {
+        const lowerCaseQuery = query.toLowerCase();
+        return countries.filter((country) =>
+          country.name.toLowerCase().startsWith(lowerCaseQuery),
+        );
+      }
 
-  async findAll() {
-    return this.db.select().from(countries);
-  }
-
-  async findOne(id: number) {
-    const [country] = await this.db
-      .select()
-      .from(countries)
-      .where(eq(countries.id, id))
-      .limit(1);
-
-    if (!country) {
-      throw new NotFoundException(`Country with ID ${id} not found.`);
+      return countries;
+    } catch (apiError) {
+      const err = apiError as AxiosError;
+      const status = err.response?.status;
+      this.logger.error(
+        `Countries API error${status ? ` (${status})` : ''}: ${err.message}`,
+      );
+      throw new ServiceUnavailableException(
+        'Countries API is unavailable. Please try again later.',
+      );
     }
-    return country;
-  }
-
-  async update(id: number, updateCountryDto: UpdateCountryDto) {
-    const country = await this.findOne(id);
-    if (!country) {
-      throw new NotFoundException(`Country with ID ${id} not found.`);
-    }
-    return this.db
-      .update(countries)
-      .set(updateCountryDto)
-      .where(eq(countries.id, id))
-      .returning();
-  }
-
-  async remove(id: number) {
-    const country = await this.findOne(id);
-    const result = await this.db
-      .delete(countries)
-      .where(eq(countries.id, id))
-      .returning();
-
-    if (result.length === 0) {
-      throw new NotFoundException(`Country with ID ${id} not found.`);
-    }
-    return country;
   }
 }

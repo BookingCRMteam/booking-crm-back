@@ -52,3 +52,5 @@ jobs:
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           LIQPAY_PUBLIC_KEY: ${{ secrets.LIQPAY_PUBLIC_KEY }}
           LIQPAY_PRIVATE_KEY: ${{ secrets.LIQPAY_PRIVATE_KEY }}
+          API_COUNTRY_STATE_CITY_KEY: ${{ secrets.API_COUNTRY_STATE_CITY_KEY }}
+          API_COUNTRY_STATE_CITY_URL: ${{ secrets.API_COUNTRY_STATE_CITY_URL }}

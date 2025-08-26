@@ -1,5 +1,5 @@
 import { Inject, Injectable, RawBodyRequest } from '@nestjs/common';
-import * as schema from '@app/db/schema';
+import * as schema from '@app/db/schema/schema';
 import { eq } from 'drizzle-orm';
 import Stripe from 'stripe';
 import LiqPay from 'liqpayjs-sdk';
