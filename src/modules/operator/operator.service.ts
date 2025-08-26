@@ -1,9 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as operatorSchema from '@app/modules/operator/operator.schema';
-import { OperatorInfoDto } from './dto/operatorInfo.dto';
+import { CreateOperatorDto } from './dto/create-operator.dto';
 import { JWTPayload } from '@app/types/jwt.payload';
 import { UserService } from '../user/user.service';
+import { UpdateOperatorDto } from './dto/update-operator.dto';
+import { eq } from 'drizzle-orm/sql';
 
 @Injectable()
 export class OperatorService {
@@ -12,14 +14,14 @@ export class OperatorService {
     private userService: UserService,
   ) {}
 
-  async addOperator(dto: OperatorInfoDto, userJWT: JWTPayload) {
+  async addOperator(dto: CreateOperatorDto, userJWT: JWTPayload) {
     const user = await this.userService.createOrGetUser(userJWT);
 
     const newOperator = await this.db
       .insert(operatorSchema.operators)
       .values({
-        companyName: dto.companyName,
-        description: dto.description,
+        companyName: dto.companyName || 'Приватна особа',
+        description: dto.description || 'Приватна особа оператор турів',
         firstName: dto.firstName,
         lastName: dto.lastName,
         phone: dto.phone,
@@ -28,5 +30,28 @@ export class OperatorService {
       })
       .returning();
     return newOperator[0];
+  }
+
+  async updateOperator(dto: UpdateOperatorDto, userJWT: JWTPayload) {
+    const user = await this.userService.createOrGetUser(userJWT);
+
+    const updateData: Partial<typeof operatorSchema.operators.$inferInsert> =
+      {};
+    if (dto.companyName !== undefined) updateData.companyName = dto.companyName;
+    if (dto.description !== undefined) updateData.description = dto.description;
+    if (dto.firstName !== undefined) updateData.firstName = dto.firstName;
+    if (dto.lastName !== undefined) updateData.lastName = dto.lastName;
+    if (dto.phone !== undefined) updateData.phone = dto.phone;
+    if (dto.website !== undefined) updateData.website = dto.website;
+    if (Object.keys(updateData).length > 0) {
+      updateData.updatedAt = new Date();
+    }
+
+    const updatedOperator = await this.db
+      .update(operatorSchema.operators)
+      .set(updateData)
+      .where(eq(operatorSchema.operators.id, user.id))
+      .returning();
+    return updatedOperator[0];
   }
 }

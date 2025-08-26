@@ -1,7 +1,7 @@
-import { Body, Controller, Patch, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { OperatorService } from './operator.service';
-import { OperatorInfoDto } from './dto/operatorInfo.dto';
+import { CreateOperatorDto } from './dto/create-operator.dto';
 import { JwtAuthGuard } from '@app/common/guards/jwt-auth.guard';
 import { AuthenticatedRequest } from '@app/types/authenticated.request';
 
@@ -10,7 +10,7 @@ export class OperatorController {
   constructor(private readonly usersService: OperatorService) {}
 
   @UseGuards(JwtAuthGuard)
-  @Patch()
+  @Post()
   @ApiConsumes('application/json')
   @ApiBody({
     description: 'Додати нового оператора',
@@ -18,8 +18,6 @@ export class OperatorController {
       type: 'object',
       required: [
         'email',
-        'companyName',
-        'description',
         'firstName',
         'lastName',
         'website',
@@ -31,14 +29,6 @@ export class OperatorController {
           type: 'string',
           format: 'email',
           example: 'operator@example.com',
-        },
-        companyName: {
-          type: 'string',
-          example: 'ТОВ Євро-Тур',
-        },
-        description: {
-          type: 'string',
-          example: 'Надійний туроператор з досвідом понад 10 років',
         },
         firstName: {
           type: 'string',
@@ -61,9 +51,18 @@ export class OperatorController {
     },
   })
   addOperator(
-    @Body() operatorInfoDTO: OperatorInfoDto,
+    @Body() operatorInfoDTO: CreateOperatorDto,
     @Req() req: AuthenticatedRequest,
   ) {
     return this.usersService.addOperator(operatorInfoDTO, req.user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch()
+  updateOperator(
+    @Body() operatorInfoDTO: CreateOperatorDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.usersService.updateOperator(operatorInfoDTO, req.user);
   }
 }
