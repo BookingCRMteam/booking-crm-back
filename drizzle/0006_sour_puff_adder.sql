@@ -1,1 +1,0 @@
-CREATE UNIQUE INDEX "name_country_unique_idx" ON "cities" USING btree ("name","country_id");
