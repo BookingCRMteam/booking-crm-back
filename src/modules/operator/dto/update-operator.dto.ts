@@ -11,6 +11,10 @@ export class UpdateOperatorDto {
 
   @IsOptional()
   @IsString()
+  philosophy?: string;
+
+  @IsOptional()
+  @IsString()
   @Matches(/^\+?[0-9]{9,15}$/, {
     message: 'Phone number must be valid and contain 9 to 15 digits',
   })
