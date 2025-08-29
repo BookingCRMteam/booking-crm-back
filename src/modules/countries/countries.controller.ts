@@ -29,14 +29,6 @@ export class CountriesController {
     description: 'List of countries retrieved successfully',
     type: [ResponseCountryDto],
   })
-  @ApiResponse({
-    status: 400,
-    description: 'Bad Request: Country code are required',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Not Found: No countries found for the specified country',
-  })
   async findAll(@Query('q') query?: string) {
     const countries = await this.countriesService.findAll(query);
     if (!countries || countries.length === 0) {

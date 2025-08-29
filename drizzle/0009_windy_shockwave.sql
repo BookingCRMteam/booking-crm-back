@@ -1,1 +1,0 @@
-ALTER TABLE "operators" ADD COLUMN "status" text DEFAULT 'pending' NOT NULL;
