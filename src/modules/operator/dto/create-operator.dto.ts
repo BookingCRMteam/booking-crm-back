@@ -7,6 +7,7 @@ import {
 } from 'class-validator';
 
 export class CreateOperatorDto {
+  [x: string]: string;
   @IsOptional()
   @IsString()
   // @IsNotEmpty({ message: 'Company name is required' })

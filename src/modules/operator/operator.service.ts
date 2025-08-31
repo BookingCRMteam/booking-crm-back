@@ -6,12 +6,14 @@ import { JWTPayload } from '@app/types/jwt.payload';
 import { UserService } from '../user/user.service';
 import { UpdateOperatorDto } from './dto/update-operator.dto';
 import { eq } from 'drizzle-orm/sql';
+import { CloudinaryService } from '@app/cloudinary/cloudinary.service';
 
 @Injectable()
 export class OperatorService {
   constructor(
     @Inject('DRIZZLE_CLIENT') private db: NodePgDatabase<typeof operatorSchema>,
     private userService: UserService,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async addOperator(dto: CreateOperatorDto, userJWT: JWTPayload) {
@@ -32,7 +34,11 @@ export class OperatorService {
     return newOperator[0];
   }
 
-  async updateOperator(dto: UpdateOperatorDto, userJWT: JWTPayload) {
+  async updateOperator(
+    dto: UpdateOperatorDto,
+    userJWT: JWTPayload,
+    file?: Buffer,
+  ) {
     const user = await this.userService.createOrGetUser(userJWT);
 
     const updateData: Partial<typeof operatorSchema.operators.$inferInsert> =
@@ -43,6 +49,11 @@ export class OperatorService {
     if (dto.lastName !== undefined) updateData.lastName = dto.lastName;
     if (dto.phone !== undefined) updateData.phone = dto.phone;
     if (dto.website !== undefined) updateData.website = dto.website;
+    if (dto.philosophy !== undefined) updateData.philosophy = dto.philosophy;
+    if (file) {
+      const photoUrl = (await this.cloudinaryService.uploadImage(file)).url;
+      updateData.photo = photoUrl;
+    }
     if (Object.keys(updateData).length > 0) {
       updateData.updatedAt = new Date();
     }
