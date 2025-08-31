@@ -102,7 +102,7 @@ export class OperatorController {
     return this.usersService.updateOperator(
       operatorInfoDTO,
       req.user,
-      file.buffer,
+      file?.buffer,
     );
   }
 }
