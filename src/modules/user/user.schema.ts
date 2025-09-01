@@ -14,3 +14,5 @@ export const users = pgTable('users', {
   phone: text('phone'),
   role: text('role').default('traveler').notNull(),
 });
+
+export type User = typeof users.$inferSelect;

@@ -6,10 +6,11 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import * as jwksRsa from 'jwks-rsa';
 import { JWTPayload } from '@app/types/jwt.payload';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(private readonly userService: UserService) {
     super({
       secretOrKeyProvider: jwksRsa.passportJwtSecret({
         cache: true,
@@ -24,7 +25,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  validate(payload: JWTPayload) {
-    return payload;
+  async validate(payload: JWTPayload) {
+    const user = await this.userService.createOrGetUser(payload);
+    return user;
   }
 }

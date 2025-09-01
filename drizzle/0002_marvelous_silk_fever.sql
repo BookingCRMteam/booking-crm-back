@@ -1,0 +1,1 @@
+ALTER TABLE "tours" ALTER COLUMN "type" DROP NOT NULL;

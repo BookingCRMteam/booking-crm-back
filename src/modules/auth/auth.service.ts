@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { JWTPayload } from '@app/types/jwt.payload';
 import { UserService } from '../user/user.service';
+import { User } from '@app/modules/user/user.schema';
 
 @Injectable()
 export class AuthService {
   constructor(private userService: UserService) {}
-  async create(userJWT: JWTPayload) {
-    return await this.userService.createOrGetUser(userJWT);
+  create(user: User) {
+    return user;
   }
 }

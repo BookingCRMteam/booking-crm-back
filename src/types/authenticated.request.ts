@@ -1,5 +1,6 @@
-import { JWTPayload } from './jwt.payload';
+import { Request } from 'express';
+import { User } from '@app/modules/user/user.schema';
 
 export interface AuthenticatedRequest extends Request {
-  user: JWTPayload;
+  user: User;
 }

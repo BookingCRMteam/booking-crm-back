@@ -10,7 +10,7 @@ import {
   MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   CountryISO2CodeEnum,
   getCountryCodes,
@@ -22,8 +22,8 @@ export enum SortOrder {
 }
 
 export class GetToursQueryDto {
-  @ApiProperty({
-    example: 'UA',
+  @ApiPropertyOptional({
+    example: '',
     description: 'ISO2 код країни призначення туру ',
     enum: getCountryCodes(),
   })
@@ -32,10 +32,10 @@ export class GetToursQueryDto {
   })
   @MaxLength(2, { message: 'countryISO2Code must be exactly 2 characters.' })
   @IsOptional()
-  countryISO2Code: CountryISO2CodeEnum;
+  countryISO2Code?: CountryISO2CodeEnum;
 
   @ApiProperty({
-    example: 1,
+    example: null,
     description: 'ID of the destination city',
     required: false,
   })
@@ -45,8 +45,8 @@ export class GetToursQueryDto {
   @Type(() => Number)
   cityId?: number;
 
-  @ApiProperty({
-    example: 'Adventure',
+  @ApiPropertyOptional({
+    example: '',
     description: 'Type of the tour (e.g., Adventure, Sightseeing)',
     required: false,
   })
@@ -55,8 +55,8 @@ export class GetToursQueryDto {
   type?: string;
 
   // Нові поля для діапазону дат
-  @ApiProperty({
-    example: '2025-03-01',
+  @ApiPropertyOptional({
+    example: '',
     description: 'Minimum start date for the tour search (YYYY-MM-DD)',
     required: false,
   })
@@ -64,8 +64,8 @@ export class GetToursQueryDto {
   @IsOptional()
   minStartDate?: string;
 
-  @ApiProperty({
-    example: '2025-12-31',
+  @ApiPropertyOptional({
+    example: '',
     description: 'Maximum start date for the tour search (YYYY-MM-DD)',
     required: false,
   })
@@ -73,8 +73,8 @@ export class GetToursQueryDto {
   @IsOptional()
   maxStartDate?: string;
 
-  @ApiProperty({
-    example: '2025-03-10',
+  @ApiPropertyOptional({
+    example: '',
     description: 'Minimum end date for the tour search (YYYY-MM-DD)',
     required: false,
   })
@@ -82,8 +82,8 @@ export class GetToursQueryDto {
   @IsOptional()
   minEndDate?: string;
 
-  @ApiProperty({
-    example: '2026-01-15',
+  @ApiPropertyOptional({
+    example: '',
     description: 'Maximum end date for the tour search (YYYY-MM-DD)',
     required: false,
   })
@@ -91,8 +91,8 @@ export class GetToursQueryDto {
   @IsOptional()
   maxEndDate?: string;
 
-  @ApiProperty({
-    example: 500,
+  @ApiPropertyOptional({
+    example: null,
     description: 'Minimum price for the tour',
     required: false,
   })
@@ -102,8 +102,8 @@ export class GetToursQueryDto {
   @Type(() => Number)
   minPrice?: number;
 
-  @ApiProperty({
-    example: 2000,
+  @ApiPropertyOptional({
+    example: null,
     description: 'Maximum price for the tour',
     required: false,
   })
@@ -113,12 +113,11 @@ export class GetToursQueryDto {
   @Type(() => Number)
   maxPrice?: number;
 
-  @ApiProperty({
-    example: 2,
+  @ApiPropertyOptional({
+    example: null,
     description: 'Number of adults in the tour (e.g., 2)',
     minimum: 1,
     required: false,
-    default: 1, // Змінив default
   })
   @IsNumber()
   @IsOptional()
@@ -126,33 +125,31 @@ export class GetToursQueryDto {
   @Type(() => Number)
   adults?: number; // Зняв default тут, щоб @IsOptional працював коректно
 
-  @ApiProperty({
-    example: 1,
+  @ApiPropertyOptional({
+    example: null,
     description: 'Number of children in the tour (e.g., 1)',
     minimum: 0,
     required: false,
-    default: 0, // Змінив default
   })
   @IsNumber()
   @IsOptional()
   @Min(0)
   @Type(() => Number)
-  children?: number; // Зняв default
+  children?: number;
 
-  @ApiProperty({
-    example: false,
+  @ApiPropertyOptional({
+    example: null,
     description: 'Are pets allowed on the tour? (default: false)',
     type: Boolean,
     required: false,
-    default: false, // Змінив default
   })
   @Type(() => Boolean)
   @IsBoolean()
   @IsOptional()
   petsAllowed?: boolean; // Зняв default
 
-  @ApiProperty({
-    example: 109897,
+  @ApiPropertyOptional({
+    example: null,
     description: 'ID of the departure city (reference to the cities table)',
     default: '',
     required: false,
@@ -163,8 +160,8 @@ export class GetToursQueryDto {
   @Min(1)
   departureCityId?: number;
 
-  @ApiProperty({
-    example: 'UA',
+  @ApiPropertyOptional({
+    example: '',
     description: 'ISO2 код країни призначення туру ',
     enum: getCountryCodes(),
   })
@@ -175,12 +172,11 @@ export class GetToursQueryDto {
   @IsOptional()
   departureCountryISO2Code?: CountryISO2CodeEnum;
 
-  @ApiProperty({
-    example: 10,
+  @ApiPropertyOptional({
+    example: null,
     description: 'Limit for pagination',
     required: false,
     minimum: 1,
-    default: 10,
   })
   @IsNumber()
   @IsOptional()
@@ -188,12 +184,11 @@ export class GetToursQueryDto {
   @Type(() => Number)
   limit?: number;
 
-  @ApiProperty({
-    example: 0,
+  @ApiPropertyOptional({
+    example: null,
     description: 'Offset for pagination',
     required: false,
     minimum: 0,
-    default: 0,
   })
   @IsNumber()
   @IsOptional()
@@ -201,23 +196,21 @@ export class GetToursQueryDto {
   @Type(() => Number)
   offset?: number;
 
-  @ApiProperty({
-    example: 'startDate',
+  @ApiPropertyOptional({
+    example: '',
     description: 'Field to sort by (e.g., startDate, price)',
     required: false,
     enum: ['startDate', 'price'],
-    default: 'startDate',
   })
   @IsString()
   @IsOptional()
   sortBy?: 'startDate' | 'price';
 
   @ApiProperty({
-    example: 'asc',
+    example: '',
     description: 'Sort order (asc or desc)',
     required: false,
     enum: SortOrder,
-    default: SortOrder.ASC,
   })
   @IsEnum(SortOrder)
   @IsOptional()
