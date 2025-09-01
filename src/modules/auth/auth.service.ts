@@ -5,7 +5,7 @@ import { User } from '@app/modules/user/user.schema';
 @Injectable()
 export class AuthService {
   constructor(private userService: UserService) {}
-  create(user: User) {
+  create(user: User): User {
     return user;
   }
 }
