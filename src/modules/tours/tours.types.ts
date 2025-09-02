@@ -12,7 +12,7 @@ export interface Tour {
   description?: string | null;
   countryISO2Code: CountryISO2CodeEnum; // Змінено на countryId
   cityId?: number | null; // Змінено на cityId
-  type: string;
+  type?: string | null;
   price: string; // Або number, залежить від вашої логіки
   currency?: string | null;
   startDate: string;

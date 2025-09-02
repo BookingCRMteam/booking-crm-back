@@ -15,7 +15,12 @@ import { operators } from '../operator/operator.schema';
 
 export const tours = pgTable('tours', {
   id: serial('id').primaryKey(),
-  operatorId: integer('operator_id').notNull(),
+  operatorId: integer('operator_id')
+    .references(() => operators.id, {
+      onDelete: 'restrict',
+      onUpdate: 'cascade',
+    })
+    .notNull(),
   title: varchar('title', { length: 255 }).notNull(),
   description: text('description'),
   countryISO2Code: countryCodeEnum('country_iso2_code').notNull().default('UA'),
@@ -39,7 +44,9 @@ export const tours = pgTable('tours', {
 
 export const tourPhotos = pgTable('tour_photos', {
   id: serial('id').primaryKey(),
-  tourId: integer('tour_id').notNull(),
+  tourId: integer('tour_id')
+    .references(() => tours.id, { onDelete: 'cascade' })
+    .notNull(),
   url: varchar('url', { length: 255 }).unique().notNull(),
 });
 

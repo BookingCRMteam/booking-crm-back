@@ -4,7 +4,7 @@ import * as operatorSchema from '@app/modules/operator/operator.schema';
 import { CreateOperatorDto } from './dto/create-operator.dto';
 import { UserService } from '../user/user.service';
 import { UpdateOperatorDto } from './dto/update-operator.dto';
-import { eq } from 'drizzle-orm/sql';
+import { eq } from 'drizzle-orm';
 import { CloudinaryService } from '@app/cloudinary/cloudinary.service';
 import { User } from '@app/modules/user/user.schema';
 

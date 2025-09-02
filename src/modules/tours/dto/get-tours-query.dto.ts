@@ -9,7 +9,7 @@ import {
   IsBoolean,
   MaxLength,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   CountryISO2CodeEnum,
@@ -143,7 +143,13 @@ export class GetToursQueryDto {
     type: Boolean,
     required: false,
   })
-  @Type(() => Boolean)
+  @Transform(({ value }) =>
+    value === true || value === 'true' || value === 1 || value === '1'
+      ? true
+      : value === false || value === 'false' || value === 0 || value === '0'
+        ? false
+        : undefined,
+  )
   @IsBoolean()
   @IsOptional()
   petsAllowed?: boolean; // Зняв default
