@@ -15,6 +15,9 @@ import {
   Patch,
   HttpCode,
   UploadedFiles,
+  Req,
+  BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import { ToursService } from './tours.service';
 import { CreateTourDto } from './dto/create-tour.dto';
@@ -25,6 +28,8 @@ import multer from 'multer';
 import { CloudinaryService } from '@app/cloudinary/cloudinary.service';
 import { UpdateTourDto } from './dto/update-tour.dto';
 import { ApiConsumes } from '@nestjs/swagger';
+import { AuthenticatedRequest } from '@app/types/authenticated.request';
+import { JwtAuthGuard } from '@app/common/guards/jwt-auth.guard';
 
 @Controller('tours')
 export class ToursController {
@@ -32,18 +37,23 @@ export class ToursController {
     private readonly toursService: ToursService,
     private readonly cloudinaryService: CloudinaryService,
   ) {}
-
+  @UseGuards(JwtAuthGuard)
   @Post()
   @UsePipes(new ValidationPipe({ transform: true }))
   @UseInterceptors(
     FilesInterceptor('photos', 10, { storage: multer.memoryStorage() }),
   )
   @ApiConsumes('multipart/form-data')
-  async createTour(
+  async create(
     @Body() createTourDto: CreateTourDto,
     @UploadedFiles() files: Express.Multer.File[],
+    @Req() req: AuthenticatedRequest,
   ): Promise<Tour> {
     try {
+      const operatorId = req.user.operatorId;
+      if (!operatorId) {
+        throw new BadRequestException('Operator ID not found.');
+      }
       if (files && files.length > 0) {
         const uploadedPhotos = await Promise.all(
           files.map((file) =>
@@ -55,7 +65,10 @@ export class ToursController {
         createTourDto.photos = uploadedPhotos;
       }
 
-      const createdTour = await this.toursService.createTour(createTourDto);
+      const createdTour = await this.toursService.create(
+        createTourDto,
+        operatorId,
+      );
       return createdTour;
     } catch (error) {
       console.error('Error in createTour:', error);
@@ -74,9 +87,9 @@ export class ToursController {
       forbidNonWhitelisted: true,
     }),
   )
-  async findAllTours(@Query() query: GetToursQueryDto) {
+  async findAll(@Query() query: GetToursQueryDto) {
     try {
-      const toursData = await this.toursService.findAllTours(query);
+      const toursData = await this.toursService.findAll(query);
       return {
         message: 'Tours retrieved successfully',
         data: toursData.tours,
@@ -97,7 +110,7 @@ export class ToursController {
   }
 
   @Get(':id')
-  async asyncfindOne(@Param('id', ParseIntPipe) id: number) {
+  async findOne(@Param('id', ParseIntPipe) id: number) {
     const tour = await this.toursService.findOne(id);
     return {
       message: 'Tour retrieved successfully',
@@ -121,14 +134,13 @@ export class ToursController {
     @Param('id', ParseIntPipe) id: number,
     @Body() updateTourDto: UpdateTourDto,
     @UploadedFiles() files: Express.Multer.File[],
-    //@TODO:
-    // @Req() req: Request,
+    @Req() req: AuthenticatedRequest,
   ) {
     try {
-      // const operatorId = (req.user as any).operatorId;
-      // if (!operatorId) {
-      //   throw new BadRequestException('Operator ID not found.');
-      // }
+      const operatorId = req.user.operatorId;
+      if (!operatorId) {
+        throw new BadRequestException('Operator ID not found.');
+      }
 
       if (files && files.length > 0) {
         const uploadedPhotos = await Promise.all(
@@ -141,7 +153,11 @@ export class ToursController {
         updateTourDto.photos = uploadedPhotos;
       }
 
-      const updatedTour = await this.toursService.update(id, updateTourDto, 1);
+      const updatedTour = await this.toursService.update(
+        id,
+        updateTourDto,
+        operatorId,
+      );
       return { message: 'Tour updated successfully', data: updatedTour };
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -160,15 +176,14 @@ export class ToursController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(
     @Param('id', ParseIntPipe) id: number,
-    //@TODO:
-    // @Req() req: Request,
+    @Req() req: AuthenticatedRequest,
   ) {
-    // const operatorId = (req.user as any).operatorId;
-    // if (!operatorId) {
-    //   throw new BadRequestException('Operator ID not found.');
-    // }
+    const operatorId = req.user.operatorId;
+    if (!operatorId) {
+      throw new BadRequestException('Operator ID not found.');
+    }
 
-    const res = await this.toursService.remove(id, 1);
+    const res = await this.toursService.remove(id, operatorId);
     return res.message;
   }
 }

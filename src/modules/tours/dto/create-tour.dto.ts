@@ -61,9 +61,10 @@ export class CreateTourDto {
   countryISO2Code: CountryISO2CodeEnum;
 
   @ApiPropertyOptional({
-    example: 109897,
+    example: '',
     description:
       'ID міста призначення туру ((отримано з GET /countries/{countryCode}/cities))',
+    default: '',
   })
   @Type(() => Number)
   @IsNumber()
@@ -71,15 +72,15 @@ export class CreateTourDto {
   @Min(1)
   cityId?: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Type of the tour (e.g., "Sightseeing", "Beach", "Adventure")',
     default: '',
     maxLength: 100,
   })
   @IsString({ message: 'Type must be a string.' })
-  @IsNotEmpty({ message: 'Type cannot be empty.' })
   @MaxLength(100, { message: 'Type cannot exceed 100 characters.' })
-  type: string;
+  @IsOptional()
+  type?: string;
 
   @ApiProperty({
     description: 'Price per person for the tour (e.g., 1250.75)',
@@ -94,7 +95,6 @@ export class CreateTourDto {
   price: number;
 
   @ApiPropertyOptional({
-    example: 'USD',
     description: 'Валюта туру (за замовчуванням UAH)',
     maxLength: 3,
     enum: ['UAH', 'USD', 'EUR'], // Можливо, варто використовувати enum
@@ -138,7 +138,7 @@ export class CreateTourDto {
   @Min(1, { message: 'There must be at least 1 available spot.' })
   availableSpots: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description:
       'Terms and conditions for the tour (e.g. "Includes accommodation, breakfast. Excludes flights.") ',
     default: '',
@@ -153,7 +153,7 @@ export class CreateTourDto {
     type: 'array',
     items: {
       type: 'string',
-      format: 'binary', // Це вказує Swagger, що очікується файл
+      format: 'binary',
     },
     required: true,
     default: true,
@@ -167,18 +167,17 @@ export class CreateTourDto {
   @IsOptional()
   photos: TourPhotoDto[];
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Is the tour currently active and available for booking?',
     required: false,
-    default: true,
+    default: '',
   })
   @Type(() => Boolean)
   @IsBoolean({ message: 'isActive must be a boolean value.' })
   @IsOptional()
   isActive?: boolean;
 
-  @ApiProperty({
-    example: 2,
+  @ApiPropertyOptional({
     description: 'Number of adults in the tour (e.g., 2)',
     minimum: 1,
     required: false,
@@ -191,7 +190,6 @@ export class CreateTourDto {
   adults?: number = 1;
 
   @ApiProperty({
-    example: 1,
     description: 'Number of children in the tour (e.g., 1)',
     minimum: 0,
     required: false,
@@ -203,8 +201,7 @@ export class CreateTourDto {
   @Type(() => Number)
   children?: number = 0;
 
-  @ApiProperty({
-    example: false,
+  @ApiPropertyOptional({
     description: 'Are pets allowed on the tour? (default: false)',
     type: Boolean,
     required: false,
@@ -215,11 +212,11 @@ export class CreateTourDto {
   @IsOptional()
   petsAllowed?: boolean = false;
 
-  @ApiProperty({
-    example: 109897,
+  @ApiPropertyOptional({
     description: 'ID of the departure city (get from endpoint /cities)',
-    default: '',
+    example: '',
     required: false,
+    default: '',
   })
   @Type(() => Number)
   @IsNumber()
@@ -228,9 +225,9 @@ export class CreateTourDto {
   departureCityId?: number;
 
   @ApiPropertyOptional({
-    example: 'UA',
     description: 'ISO2 код країни призначення туру ',
     enum: getCountryCodes(),
+    default: '',
   })
   @IsIn(getCountryCodes(), {
     message: 'departureCountryISO2Code must be a valid ISO2 country code.',

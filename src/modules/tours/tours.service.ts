@@ -19,11 +19,14 @@ export class ToursService {
     @Inject('DRIZZLE_CLIENT')
     private db: NodePgDatabase<typeof schema>, // <-- Типізуйте db згідно з вашою основною схемою
   ) {}
-  async createTour(createTourDto: CreateTourDto): Promise<Tour> {
+  async create(
+    createTourDto: CreateTourDto,
+    operatorId: number,
+  ): Promise<Tour> {
     return await this.db.transaction(async (tx): Promise<Tour> => {
       try {
         const tourData = {
-          operatorId: 1,
+          operatorId,
           ...createTourDto,
           price: createTourDto.price.toFixed(2),
         };
@@ -48,7 +51,7 @@ export class ToursService {
       }
     });
   }
-  async findAllTours(query: GetToursQueryDto) {
+  async findAll(query: GetToursQueryDto) {
     const {
       countryISO2Code,
       cityId,
@@ -155,7 +158,7 @@ export class ToursService {
         offset: offset,
         with: {
           photos: true, // Якщо у вас є relations для photos
-          // operator: true,
+          operator: true,
         },
       });
 
@@ -177,10 +180,6 @@ export class ToursService {
     }
   }
 
-  findAll() {
-    return `This action returns all tours`;
-  }
-
   async findOne(id: number) {
     const tour = await this.db.query.tours.findFirst({
       where: eq(tours.id, id),
@@ -189,13 +188,14 @@ export class ToursService {
         // Завантажуємо зв'язані дані (фотографії, відгуки, оператора)
         photos: true,
         // reviews: true,
-        // operator: {
-        //   columns: {
-        //     companyName: true, // Повертаємо тільки назву компанії оператора
-        //     contactPerson: true,
-        //     website: true,
-        //   },
-        // },
+        operator: {
+          columns: {
+            companyName: true,
+            firstName: true,
+            lastName: true,
+            website: true,
+          },
+        },
       },
     });
 

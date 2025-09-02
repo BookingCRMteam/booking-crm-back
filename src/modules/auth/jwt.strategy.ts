@@ -1,15 +1,17 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import * as jwksRsa from 'jwks-rsa';
 import { JWTPayload } from '@app/types/jwt.payload';
+import { UserService } from '../user/user.service';
+import { User } from '../user/user.schema';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(private readonly userService: UserService) {
     super({
       secretOrKeyProvider: jwksRsa.passportJwtSecret({
         cache: true,
@@ -24,7 +26,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  validate(payload: JWTPayload) {
-    return payload;
+  async validate(payload: JWTPayload): Promise<User> {
+    try {
+      return await this.userService.createOrGetUser(payload);
+    } catch {
+      throw new UnauthorizedException('Authentication failed');
+    }
   }
 }

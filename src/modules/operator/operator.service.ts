@@ -2,11 +2,11 @@ import { Inject, Injectable } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as operatorSchema from '@app/modules/operator/operator.schema';
 import { CreateOperatorDto } from './dto/create-operator.dto';
-import { JWTPayload } from '@app/types/jwt.payload';
 import { UserService } from '../user/user.service';
 import { UpdateOperatorDto } from './dto/update-operator.dto';
-import { eq } from 'drizzle-orm/sql';
+import { eq } from 'drizzle-orm';
 import { CloudinaryService } from '@app/cloudinary/cloudinary.service';
+import { User } from '@app/modules/user/user.schema';
 
 @Injectable()
 export class OperatorService {
@@ -16,9 +16,7 @@ export class OperatorService {
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-  async addOperator(dto: CreateOperatorDto, userJWT: JWTPayload) {
-    const user = await this.userService.createOrGetUser(userJWT);
-
+  async addOperator(dto: CreateOperatorDto, user: User) {
     const newOperator = await this.db
       .insert(operatorSchema.operators)
       .values({
@@ -34,13 +32,7 @@ export class OperatorService {
     return newOperator[0];
   }
 
-  async updateOperator(
-    dto: UpdateOperatorDto,
-    userJWT: JWTPayload,
-    file?: Buffer,
-  ) {
-    const user = await this.userService.createOrGetUser(userJWT);
-
+  async updateOperator(dto: UpdateOperatorDto, user: User, file?: Buffer) {
     const updateData: Partial<typeof operatorSchema.operators.$inferInsert> =
       {};
     if (dto.companyName !== undefined) updateData.companyName = dto.companyName;

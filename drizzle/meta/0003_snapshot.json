@@ -1,6 +1,6 @@
 {
-  "id": "717e1da6-ae43-42a2-af6a-6eabcd3ca9cf",
-  "prevId": "940ad6b5-f757-4dc8-bd6e-5b8c35ea8c70",
+  "id": "56583711-fac4-4a16-9405-311f3dd96cd6",
+  "prevId": "e9dba4e3-7dda-43aa-a391-0991dd784bc0",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -184,7 +184,21 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "tour_photos_tour_id_tours_id_fk": {
+          "name": "tour_photos_tour_id_tours_id_fk",
+          "tableFrom": "tour_photos",
+          "tableTo": "tours",
+          "columnsFrom": [
+            "tour_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "tour_photos_url_unique": {
@@ -245,7 +259,7 @@
           "name": "type",
           "type": "varchar(100)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "price": {
           "name": "price",
@@ -291,20 +305,6 @@
           "notNull": false,
           "default": true
         },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
-        },
         "adults": {
           "name": "adults",
           "type": "integer",
@@ -338,10 +338,38 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "tours_operator_id_operators_id_fk": {
+          "name": "tours_operator_id_operators_id_fk",
+          "tableFrom": "tours",
+          "tableTo": "operators",
+          "columnsFrom": [
+            "operator_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -426,6 +454,18 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'pending'"
+        },
+        "philosophy": {
+          "name": "philosophy",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "photo": {
+          "name": "photo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},

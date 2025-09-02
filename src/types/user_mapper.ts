@@ -7,6 +7,6 @@ interface RawUserPayload {
 export function mapToUserEntity(payload: RawUserPayload) {
   return {
     firstPersonName: payload.given_name || payload.nickname || '',
-    firtsPersonSurname: payload.family_name || '',
+    firstPersonSurname: payload.family_name || '',
   };
 }
