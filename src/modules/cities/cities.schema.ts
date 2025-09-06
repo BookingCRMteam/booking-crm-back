@@ -4,35 +4,29 @@ import {
   serial,
   varchar,
   integer,
-  uniqueIndex,
+  char,
+  unique,
 } from 'drizzle-orm/pg-core'; // <-- ДОДАЙТЕ uniqueIndex
-import { relations } from 'drizzle-orm';
 import { countries } from '../countries/countries.schema';
-import { tours } from '../tours/tours.schema';
 
-export const cities = pgTable(
-  'cities',
+export const cities = pgTable('cities', {
+  id: serial('id').primaryKey(),
+  countryIso2: char('country_iso2', { length: 2 })
+    .notNull()
+    .references(() => countries.iso2, { onDelete: 'cascade' }),
+});
+
+export const cityTranslations = pgTable(
+  'city_translations',
   {
     id: serial('id').primaryKey(),
-    name: varchar('name', { length: 100 }).notNull(),
-    countryId: integer('country_id')
+    cityId: integer('city_id')
       .notNull()
-      .references(() => countries.id), // Зовнішній ключ до таблиці країн
+      .references(() => cities.id, { onDelete: 'cascade' }),
+    languageCode: varchar('language_code', { length: 5 }).notNull(),
+    name: varchar('name', { length: 255 }).notNull(),
   },
-  // ВИКОРИСТОВУЙТЕ uniqueIndex ДЛЯ СКЛАДЕНОГО УНІКАЛЬНОГО ІНДЕКСУ
-  (table) => ({
-    nameCountryUnique: uniqueIndex('name_country_unique_idx').on(
-      table.name,
-      table.countryId,
-    ), // <-- Ось тут зміна!
+  (t) => ({
+    uniq: unique().on(t.cityId, t.languageCode),
   }),
 );
-
-export const cityRelations = relations(cities, ({ one, many }) => ({
-  country: one(countries, {
-    fields: [cities.countryId],
-    references: [countries.id],
-  }),
-  toursAsDestination: many(tours, { relationName: 'destinationCity' }), // Поверніть на більш унікальні назви
-  toursAsDeparture: many(tours, { relationName: 'departureCity' }), // Щоб уникнути конфліктів, як ми обговорювали раніше
-}));
