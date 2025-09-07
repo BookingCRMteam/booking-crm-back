@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1756279202751,
-      "tag": "0000_nebulous_newton_destine",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1756721402416,
-      "tag": "0001_steep_human_fly",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1756744199233,
-      "tag": "0002_marvelous_silk_fever",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1756797314921,
-      "tag": "0003_magical_captain_britain",
+      "when": 1757230122885,
+      "tag": "0000_grey_silvermane",
       "breakpoints": true
     }
   ]

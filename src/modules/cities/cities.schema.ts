@@ -6,8 +6,9 @@ import {
   integer,
   char,
   unique,
-} from 'drizzle-orm/pg-core'; // <-- ДОДАЙТЕ uniqueIndex
+} from 'drizzle-orm/pg-core';
 import { countries } from '../countries/countries.schema';
+import { relations } from 'drizzle-orm';
 
 export const cities = pgTable('cities', {
   id: serial('id').primaryKey(),
@@ -28,5 +29,26 @@ export const cityTranslations = pgTable(
   },
   (t) => ({
     uniq: unique().on(t.cityId, t.languageCode),
+  }),
+);
+
+export const citiesRelations = relations(cities, ({ one, many }) => ({
+  country: one(countries, {
+    fields: [cities.countryIso2],
+    references: [countries.iso2],
+  }),
+  translations: many(cityTranslations, {
+    relationName: 'city_translations',
+  }),
+}));
+
+export const cityTranslationsRelations = relations(
+  cityTranslations,
+  ({ one }) => ({
+    city: one(cities, {
+      fields: [cityTranslations.cityId],
+      references: [cities.id],
+      relationName: 'city_translations',
+    }),
   }),
 );

@@ -1,3 +1,4 @@
+import { relations } from 'drizzle-orm';
 import { char, pgTable, serial, unique, varchar } from 'drizzle-orm/pg-core';
 
 export const countries = pgTable('countries', {
@@ -18,5 +19,22 @@ export const countryTranslations = pgTable(
   },
   (t) => ({
     uniq: unique().on(t.countryIso2, t.languageCode),
+  }),
+);
+
+export const countriesRelations = relations(countries, ({ many }) => ({
+  translations: many(countryTranslations, {
+    relationName: 'country_translations',
+  }),
+}));
+
+export const countryTranslationsRelations = relations(
+  countryTranslations,
+  ({ one }) => ({
+    country: one(countries, {
+      fields: [countryTranslations.countryIso2],
+      references: [countries.iso2],
+      relationName: 'country_translations',
+    }),
   }),
 );

@@ -1,4 +1,3 @@
-import { countryCodeEnum } from '@app/db/schema/enums/country-code.enum';
 import { relations } from 'drizzle-orm';
 import {
   boolean,
@@ -10,8 +9,11 @@ import {
   timestamp,
   varchar,
   serial,
+  char,
 } from 'drizzle-orm/pg-core';
 import { operators } from '../operator/operator.schema';
+import { countries } from '../countries/countries.schema';
+import { cities } from '../cities/cities.schema';
 
 export const tours = pgTable('tours', {
   id: serial('id').primaryKey(),
@@ -23,8 +25,13 @@ export const tours = pgTable('tours', {
     .notNull(),
   title: varchar('title', { length: 255 }).notNull(),
   description: text('description'),
-  countryISO2Code: countryCodeEnum('country_iso2_code').notNull().default('UA'),
-  cityId: integer('city_id'),
+  countryISO2Code: char('country_iso2_code', { length: 2 })
+    .notNull()
+    .default('UA')
+    .references(() => countries.iso2, { onUpdate: 'cascade' }),
+  cityId: integer('city_id').references(() => cities.id, {
+    onUpdate: 'cascade',
+  }),
   type: varchar('type', { length: 100 }),
   price: decimal('price', { precision: 10, scale: 2 }).notNull(),
   currency: varchar('currency', { length: 3 }).default('UAH'),
@@ -36,8 +43,10 @@ export const tours = pgTable('tours', {
   adults: integer('adults').default(1).notNull(),
   children: integer('children').default(0).notNull(),
   petsAllowed: boolean('pets_allowed').default(false).notNull(),
-  departureCityId: integer('departure_city_id'),
-  departureCountryISO2Code: countryCodeEnum('departure_country_iso2_code'),
+  departureCityId: integer('departure_city_id').references(() => cities.id, {
+    onUpdate: 'cascade',
+  }),
+  departureCountryISO2Code: char('departure_country_iso2_code', { length: 2 }),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
@@ -56,8 +65,18 @@ export const toursRelations = relations(tours, ({ one, many }) => ({
     references: [operators.id],
   }),
   photos: many(tourPhotos),
-  // reviews: many(reviews),
-  // bookings: many(bookings),
+  country: one(countries, {
+    fields: [tours.countryISO2Code],
+    references: [countries.iso2],
+  }),
+  city: one(cities, {
+    fields: [tours.cityId],
+    references: [cities.id],
+  }),
+  departureCity: one(cities, {
+    fields: [tours.departureCityId],
+    references: [cities.id],
+  }),
 }));
 
 export const tourPhotosRelations = relations(tourPhotos, ({ one }) => ({

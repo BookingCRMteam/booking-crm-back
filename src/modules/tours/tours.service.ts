@@ -53,6 +53,7 @@ export class ToursService {
   }
   async findAll(query: GetToursQueryDto) {
     const {
+      lang = 'en',
       countryISO2Code,
       cityId,
       type,
@@ -157,8 +158,29 @@ export class ToursService {
         limit: limit,
         offset: offset,
         with: {
-          photos: true, // Якщо у вас є relations для photos
+          photos: true,
           operator: true,
+          country: {
+            with: {
+              translations: {
+                where: eq(schema.countryTranslations.languageCode, lang),
+              },
+            },
+          },
+          city: {
+            with: {
+              translations: {
+                where: eq(schema.cityTranslations.languageCode, lang),
+              },
+            },
+          },
+          departureCity: {
+            with: {
+              translations: {
+                where: eq(schema.cityTranslations.languageCode, lang),
+              },
+            },
+          },
         },
       });
 
@@ -180,20 +202,38 @@ export class ToursService {
     }
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, lang = 'en') {
     const tour = await this.db.query.tours.findFirst({
       where: eq(tours.id, id),
       with: {
-        //@TODO:
-        // Завантажуємо зв'язані дані (фотографії, відгуки, оператора)
         photos: true,
-        // reviews: true,
         operator: {
           columns: {
             companyName: true,
             firstName: true,
             lastName: true,
             website: true,
+          },
+        },
+        country: {
+          with: {
+            translations: {
+              where: eq(schema.countryTranslations.languageCode, lang),
+            },
+          },
+        },
+        city: {
+          with: {
+            translations: {
+              where: eq(schema.cityTranslations.languageCode, lang),
+            },
+          },
+        },
+        departureCity: {
+          with: {
+            translations: {
+              where: eq(schema.cityTranslations.languageCode, lang),
+            },
           },
         },
       },

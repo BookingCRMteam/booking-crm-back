@@ -1,14 +1,15 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import * as schema from '../src/db/schema/schema';
+import * as dotenv from 'dotenv';
+import * as schema from '../../src/db/schema/schema';
 import * as countriesLib from 'i18n-iso-countries';
-
-// підключаємо локалі
 import enLocale from 'i18n-iso-countries/langs/en.json';
 import ukLocale from 'i18n-iso-countries/langs/uk.json';
 
-countriesLib.registerLocale(enLocale);
-countriesLib.registerLocale(ukLocale);
+dotenv.config({ path: '.env.development' });
+
+countriesLib.registerLocale(enLocale as countriesLib.LocaleData);
+countriesLib.registerLocale(ukLocale as countriesLib.LocaleData);
 
 export async function seedCountries() {
   const pool = new Pool({
