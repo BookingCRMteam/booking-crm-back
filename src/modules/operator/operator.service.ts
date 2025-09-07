@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as operatorSchema from '@app/modules/operator/operator.schema';
 import { CreateOperatorDto } from './dto/create-operator.dto';
@@ -17,6 +17,14 @@ export class OperatorService {
   ) {}
 
   async addOperator(dto: CreateOperatorDto, user: User) {
+    const existingOperator = await this.db
+      .select()
+      .from(operatorSchema.operators)
+      .where(eq(operatorSchema.operators.userId, user.id));
+
+    if (existingOperator.length > 0) {
+      throw new BadRequestException('User is already registered as operator');
+    }
     const newOperator = await this.db
       .insert(operatorSchema.operators)
       .values({
@@ -29,6 +37,7 @@ export class OperatorService {
         userId: user.id,
       })
       .returning();
+    await this.userService.userToOperator(user.id);
     return newOperator[0];
   }
 
