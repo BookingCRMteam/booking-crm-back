@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { JWTPayload } from '@app/types/jwt.payload';
 import * as userSchema from '@app/modules/user/user.schema';
@@ -35,7 +35,7 @@ export class UserService {
       where: (users, { eq }) => eq(users.id, userId),
     });
     if (!user) {
-      throw new Error('User not found');
+      throw new NotFoundException('User not found');
     }
     return await this.db
       .update(userSchema.users)
