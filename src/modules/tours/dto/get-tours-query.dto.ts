@@ -8,6 +8,7 @@ import {
   IsEnum,
   IsBoolean,
   Length,
+  Matches,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -34,6 +35,10 @@ export class GetToursQueryDto {
   })
   @IsString()
   @Length(2, 2, { message: 'countryISO2Code must be exactly 2 characters.' })
+  @Transform(({ value }): string | undefined =>
+    typeof value === 'string' ? value.toUpperCase() : value,
+  )
+  @Matches(/^[A-Z]{2}$/)
   @IsOptional()
   countryISO2Code?: string;
 
@@ -177,6 +182,10 @@ export class GetToursQueryDto {
   @Length(2, 2, {
     message: 'departureCountryISO2Code must be exactly 2 characters.',
   })
+  @Transform(({ value }): string | undefined =>
+    typeof value === 'string' ? value.toUpperCase() : value,
+  )
+  @Matches(/^[A-Z]{2}$/)
   @IsOptional()
   departureCountryISO2Code?: string;
 

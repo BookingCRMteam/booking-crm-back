@@ -39,7 +39,7 @@ export async function seedCities() {
       const existing = await db
         .select({ id: cities.id })
         .from(cities)
-        .leftJoin(cityTranslations, eq(cities.id, cityTranslations.cityId))
+        .innerJoin(cityTranslations, eq(cities.id, cityTranslations.cityId))
         .where(
           and(
             eq(cities.countryIso2, countryIso),

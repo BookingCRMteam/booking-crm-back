@@ -23,7 +23,18 @@ export class ToursService {
     countryISO2Code: string,
     db: NodePgDatabase<typeof schema>,
   ) {
-    if (!cityId || !countryISO2Code) {
+    if (!cityId && !countryISO2Code) {
+      return;
+    }
+
+    if (cityId && !countryISO2Code) {
+      throw new BadRequestException(
+        'Country ISO2 code is required when city is specified',
+      );
+    }
+
+    if (!cityId && countryISO2Code) {
+      // Country-only validation could be performed here if needed
       return;
     }
 
@@ -306,7 +317,9 @@ export class ToursService {
         const cityId = updateTourDto.cityId ?? existingTour.cityId;
         const countryISO2Code =
           updateTourDto.countryISO2Code ?? existingTour.countryISO2Code;
-        await this.validateCityAndCountry(cityId, countryISO2Code, tx);
+        if (cityId && countryISO2Code) {
+          await this.validateCityAndCountry(cityId, countryISO2Code, tx);
+        }
       }
 
       if (
@@ -356,6 +369,12 @@ export class ToursService {
         where: eq(schema.tours.id, updatedTour.id),
         with: { photos: true },
       });
+
+      if (!tourWithPhotos) {
+        throw new NotFoundException(
+          `Tour with ID ${id} not found after update.`,
+        );
+      }
 
       return {
         ...tourWithPhotos,

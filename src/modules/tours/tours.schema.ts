@@ -46,7 +46,9 @@ export const tours = pgTable('tours', {
   departureCityId: integer('departure_city_id').references(() => cities.id, {
     onUpdate: 'cascade',
   }),
-  departureCountryISO2Code: char('departure_country_iso2_code', { length: 2 }),
+  departureCountryISO2Code: char('departure_country_iso2_code', {
+    length: 2,
+  }).references(() => countries.iso2, { onUpdate: 'cascade' }),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
