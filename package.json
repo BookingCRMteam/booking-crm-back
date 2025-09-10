@@ -24,7 +24,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:push": "drizzle-kit push",
-    "seed:location": "ts-node -r tsconfig-paths/register scripts/location/index.ts",
+    "seed:countries": "ts-node -r tsconfig-paths/register scripts/seed-countries.ts",
     "seed:cities": "ts-node -r tsconfig-paths/register scripts/seed-cities.ts",
     "seed:tours:api": "ts-node -r tsconfig-paths/register scripts/seed-tours-api.ts"
   },

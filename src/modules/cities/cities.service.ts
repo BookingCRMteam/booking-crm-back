@@ -10,9 +10,9 @@ export class CitiesService {
     @Inject('DRIZZLE_CLIENT')
     private db: NodePgDatabase<typeof schema>, // <-- Типізуйте db згідно з вашою основною схемою
   ) {}
-  async getCities(countryIso2: string, lang: string) {
+  async getCities(countryIso2: string, lang: string, q: string) {
     const { cities, cityTranslations } = schema;
-    return await this.db
+    const allCities = this.db
       .select({
         id: cities.id,
         name: cityTranslations.name,
@@ -25,5 +25,16 @@ export class CitiesService {
           eq(cityTranslations.languageCode, lang),
         ),
       );
+
+    if (q) {
+      try {
+        return (await allCities).filter((city) =>
+          city.name.toLowerCase().startsWith(q.toLowerCase()),
+        );
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    return allCities;
   }
 }

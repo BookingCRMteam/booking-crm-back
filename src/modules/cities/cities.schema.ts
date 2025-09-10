@@ -52,3 +52,8 @@ export const cityTranslationsRelations = relations(
     }),
   }),
 );
+
+export type SelectCity = typeof cities.$inferSelect;
+export type InsertCity = typeof cities.$inferInsert;
+export type SelectCityTranslation = typeof cityTranslations.$inferSelect;
+export type InsertCityTranslation = typeof cityTranslations.$inferInsert;

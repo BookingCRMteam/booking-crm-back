@@ -49,7 +49,6 @@ export class ToursController {
     @UploadedFiles() files: Express.Multer.File[],
     @Req() req: AuthenticatedRequest,
   ): Promise<Tour> {
-    console.log('req.user:', req.user); // Додано для налагодження
     try {
       const operatorId = req.user.operatorId;
       if (!operatorId) {
