@@ -1,12 +1,43 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, Length } from 'class-validator';
+import { IsEnum, IsOptional, IsString, Length } from 'class-validator';
+import { Transform } from 'class-transformer';
+import * as countriesLib from 'i18n-iso-countries';
+import * as enLocale from 'i18n-iso-countries/langs/en.json';
+
+countriesLib.registerLocale(enLocale);
+
+const countryAlpha2Codes = Object.keys(countriesLib.getAlpha2Codes());
+
+export type CountryCode = (typeof countryAlpha2Codes)[number];
+
+const CountryCodeEnum = Object.fromEntries(
+  countryAlpha2Codes.map((code) => [code, code]),
+);
+
+export class CountryParamsDto {
+  @ApiProperty({
+    description: 'ISO 3166-1 alpha-2 country code',
+    enum: countryAlpha2Codes,
+    example: 'UA',
+  })
+  @Transform(({ value }): string | undefined =>
+    typeof value === 'string' ? value.toUpperCase() : value,
+  )
+  @IsEnum(CountryCodeEnum, {
+    message: `iso2 must be one of the following values: ${countryAlpha2Codes.join(
+      ', ',
+    )}`,
+  })
+  iso2: CountryCode;
+}
 
 export class GetCitiesDto {
   @ApiProperty({
-    example: null,
+    example: 'en',
     description: 'Language for city names',
     maxLength: 2,
-    enum: ['uk', 'en'], // Можливо, варто використовувати enum
+    enum: ['uk', 'en'],
+    default: 'en',
   })
   @IsString()
   @IsOptional()
