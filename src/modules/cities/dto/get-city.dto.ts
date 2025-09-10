@@ -5,11 +5,12 @@ export class GetCitiesDto {
   @ApiProperty({
     example: null,
     description: 'Language for city names',
-    required: false,
+    maxLength: 2,
+    enum: ['uk', 'en'], // Можливо, варто використовувати enum
   })
   @IsString()
   @IsOptional()
-  @Length(2, 5)
+  @Length(2, 2, { message: 'lang must be exactly 2 characters.' })
   lang?: string = 'en';
 
   @ApiPropertyOptional({
