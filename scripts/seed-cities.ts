@@ -4,6 +4,7 @@ import * as dotenv from 'dotenv';
 import * as schema from '../src/db/schema/schema';
 import citiesData from '../data/cities.json';
 import { and, eq, ilike } from 'drizzle-orm';
+import { pathToFileURL } from 'node:url';
 
 dotenv.config({ path: '.env.development' });
 interface CityTranslation {
@@ -59,30 +60,33 @@ export async function seedCities() {
       console.log(
         `➕ City "${cityNameEn}" in ${countryIso} not found, adding.`,
       );
-      const [insertedCity] = await db
-        .insert(cities)
-        .values({ countryIso2: countryIso })
-        .returning({ id: cities.id });
+      await db.transaction(async (tx) => {
+        const [insertedCity] = await tx
+          .insert(cities)
+          .values({ countryIso2: countryIso })
+          .returning({ id: cities.id });
 
-      const cityId = insertedCity.id;
-      const translationsToInsert: CityTranslation[] = [];
-      translationsToInsert.push({
-        cityId,
-        languageCode: 'en',
-        name: cityNameEn,
+        const cityId = insertedCity.id;
+        const translationsToInsert: CityTranslation[] = [
+          { cityId, languageCode: 'en', name: cityNameEn },
+        ];
+        const cityNameUk = city.name_uk?.trim();
+        if (cityNameUk) {
+          translationsToInsert.push({
+            cityId,
+            languageCode: 'uk',
+            name: cityNameUk,
+          });
+        }
+        if (translationsToInsert.length > 0) {
+          await tx
+            .insert(cityTranslations)
+            .values(translationsToInsert)
+            .onConflictDoNothing({
+              target: [cityTranslations.cityId, cityTranslations.languageCode],
+            });
+        }
       });
-
-      const cityNameUk = city.name_uk?.trim();
-      if (cityNameUk) {
-        translationsToInsert.push({
-          cityId,
-          languageCode: 'uk',
-          name: cityNameUk,
-        });
-      }
-      if (translationsToInsert.length > 0) {
-        await db.insert(cityTranslations).values(translationsToInsert);
-      }
 
       console.log(`🌱 Seeded city "${cityNameEn}" in ${countryIso}.`);
     } catch (error) {
@@ -93,8 +97,10 @@ export async function seedCities() {
   console.log('✅ Cities seeding finished.');
   await pool.end();
 }
-
-seedCities().catch((err) => {
-  console.error('Seeding failed:', err);
-  process.exit(1);
-});
+// Run only when executed directly (not when imported)
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  seedCities().catch((err) => {
+    console.error('Seeding failed:', err);
+    process.exit(1);
+  });
+}
