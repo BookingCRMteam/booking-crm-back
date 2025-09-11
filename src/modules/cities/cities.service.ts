@@ -32,7 +32,7 @@ export class CitiesService {
           city.name.toLowerCase().startsWith(q.toLowerCase()),
         );
       } catch (error) {
-        console.error(error);
+        console.error('Error filtering cities:', error);
       }
     }
     return allCities;

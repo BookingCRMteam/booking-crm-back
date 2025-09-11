@@ -8,6 +8,9 @@ export class CountriesController {
 
   @Get()
   async getCountries(@Query() query: GetCountriesDto) {
-    return this.countriesService.getCountries(query.lang || 'en');
+    return this.countriesService.getCountries(
+      query.lang || 'en',
+      query.q || '',
+    );
   }
 }
