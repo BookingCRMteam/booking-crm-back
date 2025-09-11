@@ -11,15 +11,10 @@ import {
   ValidateNested,
   IsUrl,
   MaxLength,
-  Length,
-  IsIn,
+  IsISO31661Alpha2,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  CountryISO2CodeEnum,
-  getCountryCodes,
-} from '@app/db/schema/enums/country-code.enum';
 
 export class TourPhotoDto {
   @IsUrl({}, { message: 'URL must be a valid URL address.' })
@@ -51,19 +46,21 @@ export class CreateTourDto {
   @ApiProperty({
     example: 'UA',
     description: 'ISO2 код країни призначення туру ',
-    enum: getCountryCodes(),
   })
-  @IsIn(getCountryCodes(), {
-    message: 'countryISO2Code must be a valid ISO2 country code.',
+  @Transform(({ value }): string | undefined =>
+    typeof value === 'string' ? value.toUpperCase() : value,
+  )
+  @IsISO31661Alpha2({
+    message:
+      'departureCountryISO2Code must be a valid ISO 3166-1 alpha-2 code.',
   })
-  @Length(2, 2, { message: 'countryISO2Code must be exactly 2 characters.' })
   @IsNotEmpty()
-  countryISO2Code: CountryISO2CodeEnum;
+  countryISO2Code: string;
 
   @ApiPropertyOptional({
     example: '',
     description:
-      'ID міста призначення туру ((отримано з GET /countries/{countryCode}/cities))',
+      'ID міста призначення туру ((отримано з GET /countries/{countryCode}/cities)) ',
     default: '',
   })
   @Type(() => Number)
@@ -225,16 +222,16 @@ export class CreateTourDto {
   departureCityId?: number;
 
   @ApiPropertyOptional({
-    description: 'ISO2 код країни призначення туру ',
-    enum: getCountryCodes(),
+    description: 'ISO2 код країни відправлення туру ',
     default: '',
   })
-  @IsIn(getCountryCodes(), {
-    message: 'departureCountryISO2Code must be a valid ISO2 country code.',
-  })
-  @Length(2, 2, {
-    message: 'departureCountryISO2Code must be exactly 2 characters.',
+  @Transform(({ value }): string | undefined =>
+    typeof value === 'string' ? value.toUpperCase() : value,
+  )
+  @IsISO31661Alpha2({
+    message:
+      'departureCountryISO2Code must be a valid ISO 3166-1 alpha-2 code.',
   })
   @IsOptional()
-  departureCountryISO2Code?: CountryISO2CodeEnum;
+  departureCountryISO2Code?: string;
 }

@@ -1,0 +1,2 @@
+ALTER TABLE "bookings" ADD CONSTRAINT "bookings_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "tours" ADD CONSTRAINT "tours_departure_country_iso2_code_countries_iso2_fk" FOREIGN KEY ("departure_country_iso2_code") REFERENCES "public"."countries"("iso2") ON DELETE no action ON UPDATE cascade;

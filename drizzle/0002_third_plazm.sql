@@ -1,0 +1,1 @@
+ALTER TABLE "tours" ALTER COLUMN "country_iso2_code" DROP DEFAULT;

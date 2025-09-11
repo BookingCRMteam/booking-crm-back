@@ -7,14 +7,11 @@ import {
   Min,
   IsEnum,
   IsBoolean,
-  MaxLength,
+  Length,
+  IsISO31661Alpha2,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  CountryISO2CodeEnum,
-  getCountryCodes,
-} from '@app/db/schema/enums/country-code.enum';
 
 export enum SortOrder {
   ASC = 'asc',
@@ -23,16 +20,27 @@ export enum SortOrder {
 
 export class GetToursQueryDto {
   @ApiPropertyOptional({
-    example: '',
-    description: 'ISO2 код країни призначення туру ',
-    enum: getCountryCodes(),
+    description: 'Language for tour details',
+    example: 'en',
+    default: 'en',
   })
-  @IsEnum(getCountryCodes(), {
-    message: 'countryISO2Code must be a valid ISO2 country code.',
-  })
-  @MaxLength(2, { message: 'countryISO2Code must be exactly 2 characters.' })
+  @IsString()
   @IsOptional()
-  countryISO2Code?: CountryISO2CodeEnum;
+  @Length(2, 5)
+  lang?: string = 'en';
+
+  @ApiPropertyOptional({
+    example: 'UA',
+    description: 'ISO2 код країни призначення туру ',
+  })
+  @Transform(({ value }): string | undefined =>
+    typeof value === 'string' ? value.toUpperCase() : value,
+  )
+  @IsISO31661Alpha2({
+    message: 'countryISO2Code must be a valid ISO 3166-1 alpha-2 code.',
+  })
+  @IsOptional()
+  countryISO2Code?: string;
 
   @ApiProperty({
     example: null,
@@ -168,15 +176,17 @@ export class GetToursQueryDto {
 
   @ApiPropertyOptional({
     example: '',
-    description: 'ISO2 код країни призначення туру ',
-    enum: getCountryCodes(),
+    description: 'ISO2 код країни відправлення туру ',
   })
-  @IsEnum(getCountryCodes(), {
-    message: 'countryISO2Code must be a valid ISO2 country code.',
+  @Transform(({ value }): string | undefined =>
+    typeof value === 'string' ? value.toUpperCase() : value,
+  )
+  @IsISO31661Alpha2({
+    message:
+      'departureCountryISO2Code must be a valid ISO 3166-1 alpha-2 code.',
   })
-  @MaxLength(2, { message: 'countryISO2Code must be exactly 2 characters.' })
   @IsOptional()
-  departureCountryISO2Code?: CountryISO2CodeEnum;
+  departureCountryISO2Code?: string;
 
   @ApiPropertyOptional({
     example: null,

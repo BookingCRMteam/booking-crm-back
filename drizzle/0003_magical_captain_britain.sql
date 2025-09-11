@@ -1,2 +1,0 @@
-ALTER TABLE "tour_photos" ADD CONSTRAINT "tour_photos_tour_id_tours_id_fk" FOREIGN KEY ("tour_id") REFERENCES "public"."tours"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "tours" ADD CONSTRAINT "tours_operator_id_operators_id_fk" FOREIGN KEY ("operator_id") REFERENCES "public"."operators"("id") ON DELETE restrict ON UPDATE cascade;

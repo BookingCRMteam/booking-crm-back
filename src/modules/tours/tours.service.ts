@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { CreateTourDto } from './dto/create-tour.dto';
 import { Tour } from './tours.types';
-import { tourPhotos, tours } from './tours.schema';
 import { GetToursQueryDto, SortOrder } from './dto/get-tours-query.dto';
 import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm';
 import { UpdateTourDto } from './dto/update-tour.dto';
@@ -19,18 +18,67 @@ export class ToursService {
     @Inject('DRIZZLE_CLIENT')
     private db: NodePgDatabase<typeof schema>, // <-- Типізуйте db згідно з вашою основною схемою
   ) {}
+  private async validateCityAndCountry(
+    cityId: number,
+    countryISO2Code: string,
+    db: NodePgDatabase<typeof schema>,
+  ) {
+    if (!cityId && !countryISO2Code) {
+      return;
+    }
+
+    if (cityId && !countryISO2Code) {
+      throw new BadRequestException(
+        'Country ISO2 code is required when city is specified',
+      );
+    }
+
+    if (!cityId && countryISO2Code) {
+      // Country-only validation could be performed here if needed
+      return;
+    }
+
+    const city = await db.query.cities.findFirst({
+      where: eq(schema.cities.id, cityId),
+    });
+    const cityTranslations = await db.query.cityTranslations.findFirst({
+      where: eq(schema.cityTranslations.cityId, cityId),
+    });
+    if (!city) {
+      throw new BadRequestException(`City with ID ${cityId} not found.`);
+    }
+
+    if (city.countryIso2 !== countryISO2Code) {
+      throw new BadRequestException(
+        `City ${cityTranslations?.name} with ID ${cityId} does not belong to country ${countryISO2Code}.`,
+      );
+    }
+  }
   async create(
     createTourDto: CreateTourDto,
     operatorId: number,
   ): Promise<Tour> {
     return await this.db.transaction(async (tx): Promise<Tour> => {
       try {
+        await this.validateCityAndCountry(
+          createTourDto.cityId,
+          createTourDto.countryISO2Code,
+          tx,
+        );
+        await this.validateCityAndCountry(
+          createTourDto.departureCityId,
+          createTourDto.departureCountryISO2Code,
+          tx,
+        );
         const tourData = {
           operatorId,
           ...createTourDto,
           price: createTourDto.price.toFixed(2),
         };
-        const result = await tx.insert(tours).values(tourData).returning();
+        const result = await tx
+          .insert(schema.tours)
+          .values(tourData)
+          .returning();
         const newTour = result[0];
 
         if (createTourDto.photos && createTourDto.photos.length > 0) {
@@ -39,11 +87,14 @@ export class ToursService {
             url: photo.url,
           }));
 
-          await tx.insert(tourPhotos).values(tourPhotosToInsert);
+          await tx.insert(schema.tourPhotos).values(tourPhotosToInsert);
         }
 
         return newTour;
       } catch (error) {
+        if (error instanceof BadRequestException) {
+          throw error;
+        }
         console.error('Error creating tour:', error);
         throw new BadRequestException(
           'Could not create tour. Please check the provided data.',
@@ -53,6 +104,7 @@ export class ToursService {
   }
   async findAll(query: GetToursQueryDto) {
     const {
+      lang = 'en',
       countryISO2Code,
       cityId,
       type,
@@ -157,8 +209,29 @@ export class ToursService {
         limit: limit,
         offset: offset,
         with: {
-          photos: true, // Якщо у вас є relations для photos
+          photos: true,
           operator: true,
+          country: {
+            with: {
+              translations: {
+                where: eq(schema.countryTranslations.languageCode, lang),
+              },
+            },
+          },
+          city: {
+            with: {
+              translations: {
+                where: eq(schema.cityTranslations.languageCode, lang),
+              },
+            },
+          },
+          departureCity: {
+            with: {
+              translations: {
+                where: eq(schema.cityTranslations.languageCode, lang),
+              },
+            },
+          },
         },
       });
 
@@ -180,20 +253,38 @@ export class ToursService {
     }
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, lang = 'en') {
     const tour = await this.db.query.tours.findFirst({
-      where: eq(tours.id, id),
+      where: eq(schema.tours.id, id),
       with: {
-        //@TODO:
-        // Завантажуємо зв'язані дані (фотографії, відгуки, оператора)
         photos: true,
-        // reviews: true,
         operator: {
           columns: {
             companyName: true,
             firstName: true,
             lastName: true,
             website: true,
+          },
+        },
+        country: {
+          with: {
+            translations: {
+              where: eq(schema.countryTranslations.languageCode, lang),
+            },
+          },
+        },
+        city: {
+          with: {
+            translations: {
+              where: eq(schema.cityTranslations.languageCode, lang),
+            },
+          },
+        },
+        departureCity: {
+          with: {
+            translations: {
+              where: eq(schema.cityTranslations.languageCode, lang),
+            },
           },
         },
       },
@@ -211,7 +302,10 @@ export class ToursService {
   async update(id: number, updateTourDto: UpdateTourDto, operatorId: number) {
     return await this.db.transaction(async (tx) => {
       const existingTour = await tx.query.tours.findFirst({
-        where: and(eq(tours.id, id), eq(tours.operatorId, operatorId)),
+        where: and(
+          eq(schema.tours.id, id),
+          eq(schema.tours.operatorId, operatorId),
+        ),
       });
 
       if (!existingTour) {
@@ -219,14 +313,41 @@ export class ToursService {
           `Tour with ID ${id} not found or you don't have permission to update it.`,
         );
       }
+      if (updateTourDto.cityId || updateTourDto.countryISO2Code) {
+        const cityId = updateTourDto.cityId ?? existingTour.cityId;
+        const countryISO2Code =
+          updateTourDto.countryISO2Code ?? existingTour.countryISO2Code;
+        if (cityId && countryISO2Code) {
+          await this.validateCityAndCountry(cityId, countryISO2Code, tx);
+        }
+      }
+
+      if (
+        updateTourDto.departureCityId ||
+        updateTourDto.departureCountryISO2Code
+      ) {
+        const departureCityId =
+          updateTourDto.departureCityId ?? existingTour.departureCityId;
+        const departureCountryISO2Code =
+          updateTourDto.departureCountryISO2Code ??
+          existingTour.departureCountryISO2Code;
+        await this.validateCityAndCountry(
+          departureCityId,
+          departureCountryISO2Code,
+          tx,
+        );
+      }
       const [updatedTour] = await tx
-        .update(tours)
+        .update(schema.tours)
         .set({
           ...updateTourDto,
-          price: updateTourDto.price && updateTourDto.price.toFixed(2),
+          price:
+            updateTourDto.price !== undefined
+              ? updateTourDto.price.toFixed(2)
+              : undefined,
           updatedAt: new Date(),
         })
-        .where(eq(tours.id, id))
+        .where(eq(schema.tours.id, id))
         .returning();
 
       if (!updatedTour) {
@@ -234,21 +355,29 @@ export class ToursService {
       }
 
       if (updateTourDto.photos !== undefined) {
-        await tx.delete(tourPhotos).where(eq(tourPhotos.tourId, id));
+        await tx
+          .delete(schema.tourPhotos)
+          .where(eq(schema.tourPhotos.tourId, id));
 
         if (updateTourDto.photos.length > 0) {
           const newPhotosToInsert = updateTourDto.photos.map((photo) => ({
             tourId: id,
             url: photo.url,
           }));
-          await tx.insert(tourPhotos).values(newPhotosToInsert);
+          await tx.insert(schema.tourPhotos).values(newPhotosToInsert);
         }
       }
 
       const tourWithPhotos = await tx.query.tours.findFirst({
-        where: eq(tours.id, updatedTour.id),
+        where: eq(schema.tours.id, updatedTour.id),
         with: { photos: true },
       });
+
+      if (!tourWithPhotos) {
+        throw new NotFoundException(
+          `Tour with ID ${id} not found after update.`,
+        );
+      }
 
       return {
         ...tourWithPhotos,
@@ -262,7 +391,10 @@ export class ToursService {
   async remove(id: number, operatorId: number) {
     // 1. Перевіряємо, чи тур існує і чи належить він цьому оператору
     const existingTour = await this.db.query.tours.findFirst({
-      where: and(eq(tours.id, id), eq(tours.operatorId, operatorId)),
+      where: and(
+        eq(schema.tours.id, id),
+        eq(schema.tours.operatorId, operatorId),
+      ),
     });
 
     if (!existingTour) {
@@ -272,9 +404,9 @@ export class ToursService {
     }
 
     const [deletedTour] = await this.db
-      .update(tours)
+      .update(schema.tours)
       .set({ isActive: false, updatedAt: new Date() })
-      .where(eq(tours.id, id))
+      .where(eq(schema.tours.id, id))
       .returning();
 
     if (!deletedTour) {

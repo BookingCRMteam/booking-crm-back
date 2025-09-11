@@ -1,14 +1,40 @@
 import { relations } from 'drizzle-orm';
-import { pgTable, serial, varchar } from 'drizzle-orm/pg-core';
-import { cities } from '../cities/cities.schema';
-import { tours } from '../tours/tours.schema';
+import { char, pgTable, serial, unique, varchar } from 'drizzle-orm/pg-core';
 
 export const countries = pgTable('countries', {
   id: serial('id').primaryKey(),
-  name: varchar('name', { length: 100 }).notNull().unique(), // Назва країни, має бути унікальною
+  iso2: char('iso2', { length: 2 }).notNull().unique(),
+  iso3: char('iso3', { length: 3 }).notNull().unique(),
 });
-export const countryRelations = relations(countries, ({ many }) => ({
-  cities: many(cities), // Країна може мати багато міст
-  toursAsDestination: many(tours, { relationName: 'destinationCountry' }), // Тури, де країна є призначенням
-  toursAsDeparture: many(tours, { relationName: 'departureCountry' }), // Тури, де країна є відправленням
+
+export const countryTranslations = pgTable(
+  'country_translations',
+  {
+    id: serial('id').primaryKey(),
+    countryIso2: char('country_iso2', { length: 2 })
+      .notNull()
+      .references(() => countries.iso2, { onDelete: 'cascade' }),
+    languageCode: varchar('language_code', { length: 5 }).notNull(),
+    name: varchar('name', { length: 255 }).notNull(),
+  },
+  (t) => ({
+    uniq: unique().on(t.countryIso2, t.languageCode),
+  }),
+);
+
+export const countriesRelations = relations(countries, ({ many }) => ({
+  translations: many(countryTranslations, {
+    relationName: 'country_translations',
+  }),
 }));
+
+export const countryTranslationsRelations = relations(
+  countryTranslations,
+  ({ one }) => ({
+    country: one(countries, {
+      fields: [countryTranslations.countryIso2],
+      references: [countries.iso2],
+      relationName: 'country_translations',
+    }),
+  }),
+);

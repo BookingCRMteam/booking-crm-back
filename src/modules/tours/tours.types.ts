@@ -1,8 +1,26 @@
-import { CountryISO2CodeEnum } from '@app/db/schema/enums/country-code.enum';
 export interface TourPhoto {
   id: number;
   tourId: number;
   url: string;
+}
+
+interface Translation {
+  id: number;
+  languageCode: string;
+  name: string;
+}
+
+interface Country {
+  id: number;
+  iso2: string;
+  iso3: string;
+  translations: Translation[];
+}
+
+interface City {
+  id: number;
+  countryIso2: string;
+  translations: Translation[];
 }
 
 export interface Tour {
@@ -10,10 +28,10 @@ export interface Tour {
   operatorId: number;
   title: string;
   description?: string | null;
-  countryISO2Code: CountryISO2CodeEnum; // Змінено на countryId
-  cityId?: number | null; // Змінено на cityId
+  countryISO2Code: string;
+  cityId?: number | null;
   type?: string | null;
-  price: string; // Або number, залежить від вашої логіки
+  price: string;
   currency?: string | null;
   startDate: string;
   endDate: string;
@@ -26,6 +44,9 @@ export interface Tour {
   children?: number;
   petsAllowed?: boolean;
   departureCityId?: number | null;
-  departureCountryISO2Code?: CountryISO2CodeEnum | null;
-  photos?: TourPhoto[]; // Якщо ви використовуєте 'with: { photos: true }'
+  departureCountryISO2Code?: string | null;
+  photos?: TourPhoto[];
+  country?: Country;
+  city?: City;
+  departureCity?: City;
 }
