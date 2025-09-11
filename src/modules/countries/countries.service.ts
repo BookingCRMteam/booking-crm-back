@@ -10,9 +10,9 @@ export class CountriesService {
     @Inject('DRIZZLE_CLIENT')
     private db: NodePgDatabase<typeof schema>, // <-- Типізуйте db згідно з вашою основною схемою
   ) {}
-  async getCountries(lang: string) {
+  async getCountries(lang: string, q: string = '') {
     const { countries, countryTranslations } = schema;
-    return await this.db
+    const allCountries = this.db
       .select({
         iso2: countries.iso2,
         name: countryTranslations.name,
@@ -23,5 +23,17 @@ export class CountriesService {
         eq(countryTranslations.countryIso2, countries.iso2),
       )
       .where(eq(countryTranslations.languageCode, lang));
+
+    if (q) {
+      try {
+        return (await allCountries).filter((country) =>
+          country.name.toLowerCase().startsWith(q.toLowerCase()),
+        );
+      } catch (error) {
+        console.error('Error filtering countries:', error);
+      }
+    }
+
+    return await allCountries;
   }
 }
