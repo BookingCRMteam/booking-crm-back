@@ -8,10 +8,13 @@ import {
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { tours } from '../tours/tours.schema';
+import { users } from '../user/user.schema';
 
 export const bookings = pgTable('bookings', {
   id: serial('id').primaryKey(),
-  userId: integer('user_id').notNull(), // Припустимо, що у вас є таблиця користувачів
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade', onUpdate: 'no action' }),
   tourId: integer('tour_id')
     .notNull()
     .references(() => tours.id),
@@ -30,5 +33,9 @@ export const bookingRelations = relations(bookings, ({ one }) => ({
   tour: one(tours, {
     fields: [bookings.tourId],
     references: [tours.id],
+  }),
+  user: one(users, {
+    fields: [bookings.userId],
+    references: [users.id],
   }),
 }));

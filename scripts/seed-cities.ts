@@ -48,6 +48,7 @@ export async function seedCities() {
           ),
         )
         .limit(1);
+
       if (existing.length > 0) {
         console.log(
           `➡️ City "${cityNameEn}" in ${countryIso} already exists. Skipping.`,

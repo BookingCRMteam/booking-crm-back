@@ -341,7 +341,10 @@ export class ToursService {
         .update(schema.tours)
         .set({
           ...updateTourDto,
-          price: updateTourDto.price && updateTourDto.price.toFixed(2),
+          price:
+            updateTourDto.price !== undefined
+              ? updateTourDto.price.toFixed(2)
+              : undefined,
           updatedAt: new Date(),
         })
         .where(eq(schema.tours.id, id))
