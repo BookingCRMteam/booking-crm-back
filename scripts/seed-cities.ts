@@ -4,7 +4,6 @@ import * as dotenv from 'dotenv';
 import * as schema from '../src/db/schema/schema';
 import citiesData from '../data/cities.json';
 import { and, eq, ilike } from 'drizzle-orm';
-import { pathToFileURL } from 'node:url';
 
 dotenv.config({ path: '.env.development' });
 interface CityTranslation {
@@ -97,10 +96,8 @@ export async function seedCities() {
   console.log('✅ Cities seeding finished.');
   await pool.end();
 }
-// Run only when executed directly (not when imported)
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
-  seedCities().catch((err) => {
-    console.error('Seeding failed:', err);
-    process.exit(1);
-  });
-}
+
+seedCities().catch((err) => {
+  console.error('Seeding failed:', err);
+  process.exit(1);
+});
