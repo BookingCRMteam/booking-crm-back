@@ -15,6 +15,13 @@
       "when": 1757569154891,
       "tag": "0001_added_fk_user_to_bookings",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1757572383355,
+      "tag": "0002_third_plazm",
+      "breakpoints": true
     }
   ]
 }

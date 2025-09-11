@@ -1,6 +1,6 @@
 {
-  "id": "d2672b36-5f63-459e-a7cb-27ba76900a61",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "be99c2d3-3dfb-4188-bc6b-13ec5d4eb4ab",
+  "prevId": "699fecf2-7e3a-42ee-915d-eeb4837f85ab",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -74,6 +74,19 @@
       },
       "indexes": {},
       "foreignKeys": {
+        "bookings_user_id_users_id_fk": {
+          "name": "bookings_user_id_users_id_fk",
+          "tableFrom": "bookings",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
         "bookings_tour_id_tours_id_fk": {
           "name": "bookings_tour_id_tours_id_fk",
           "tableFrom": "bookings",
@@ -722,6 +735,19 @@
           ],
           "columnsTo": [
             "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "cascade"
+        },
+        "tours_departure_country_iso2_code_countries_iso2_fk": {
+          "name": "tours_departure_country_iso2_code_countries_iso2_fk",
+          "tableFrom": "tours",
+          "tableTo": "countries",
+          "columnsFrom": [
+            "departure_country_iso2_code"
+          ],
+          "columnsTo": [
+            "iso2"
           ],
           "onDelete": "no action",
           "onUpdate": "cascade"
