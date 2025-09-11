@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import * as schema from '@app/db/schema/schema';
-import { eq } from 'drizzle-orm';
+import { and, eq, ilike } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 
 @Injectable()
@@ -12,6 +12,14 @@ export class CountriesService {
   ) {}
   async getCountries(lang: string, q: string = '') {
     const { countries, countryTranslations } = schema;
+    const baseWhere = and(
+      eq(countryTranslations.countryIso2, countries.iso2),
+      eq(countryTranslations.languageCode, lang),
+    );
+    const whereClause = q?.trim()
+      ? and(baseWhere, ilike(countryTranslations.name, `${q.trim()}%`))
+      : baseWhere;
+
     const allCountries = this.db
       .select({
         iso2: countries.iso2,
@@ -22,17 +30,7 @@ export class CountriesService {
         countryTranslations,
         eq(countryTranslations.countryIso2, countries.iso2),
       )
-      .where(eq(countryTranslations.languageCode, lang));
-
-    if (q) {
-      try {
-        return (await allCountries).filter((country) =>
-          country.name.toLowerCase().startsWith(q.toLowerCase()),
-        );
-      } catch (error) {
-        console.error('Error filtering countries:', error);
-      }
-    }
+      .where(whereClause);
 
     return await allCountries;
   }
