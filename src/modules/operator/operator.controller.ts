@@ -1,6 +1,9 @@
 import {
   Body,
   Controller,
+  Get,
+  Param,
+  ParseIntPipe,
   Patch,
   Post,
   Req,
@@ -104,5 +107,21 @@ export class OperatorController {
       req.user,
       file?.buffer,
     );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  getMe(@Req() req: AuthenticatedRequest) {
+    return this.usersService.getOperatorByUserId(req.user);
+  }
+
+  @Get('all')
+  getAll() {
+    return this.usersService.getAllOperators();
+  }
+
+  @Get(':id')
+  getById(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.getOperatorById(id);
   }
 }

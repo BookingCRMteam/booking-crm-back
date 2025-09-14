@@ -66,4 +66,25 @@ export class OperatorService {
       .returning();
     return updatedOperator[0];
   }
+
+  async getOperatorById(id: number) {
+    const operator = await this.db
+      .select()
+      .from(operatorSchema.operators)
+      .where(eq(operatorSchema.operators.id, id));
+    return operator[0];
+  }
+
+  async getOperatorByUserId(user: User) {
+    console.log(user);
+
+    const operator = await this.db
+      .select()
+      .from(operatorSchema.operators)
+      .where(eq(operatorSchema.operators.userId, user.id));
+    return operator[0];
+  }
+  async getAllOperators() {
+    return this.db.select().from(operatorSchema.operators);
+  }
 }
