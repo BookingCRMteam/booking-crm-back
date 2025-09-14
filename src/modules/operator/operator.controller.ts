@@ -1,11 +1,13 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Get,
   Param,
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   Req,
   UploadedFile,
   UseGuards,
@@ -112,12 +114,15 @@ export class OperatorController {
   @UseGuards(JwtAuthGuard)
   @Get('me')
   getMe(@Req() req: AuthenticatedRequest) {
-    return this.usersService.getOperatorByUserId(req.user);
+    return this.usersService.getMyOperator(req.user);
   }
 
   @Get('all')
-  getAll() {
-    return this.usersService.getAllOperators();
+  getAll(
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
+  ) {
+    return this.usersService.getAllOperators(limit, offset);
   }
 
   @Get(':id')
