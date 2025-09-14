@@ -27,7 +27,7 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import multer from 'multer';
 import { CloudinaryService } from '@app/cloudinary/cloudinary.service';
 import { UpdateTourDto } from './dto/update-tour.dto';
-import { ApiConsumes } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { AuthenticatedRequest } from '@app/types/authenticated.request';
 import { JwtAuthGuard } from '@app/common/guards/jwt-auth.guard';
 import { PhotoValidationPipe } from './pipes';
@@ -38,6 +38,7 @@ export class ToursController {
     private readonly cloudinaryService: CloudinaryService,
   ) {}
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('bearer')
   @Post()
   @UsePipes(new ValidationPipe({ transform: true }))
   @UseInterceptors(
@@ -50,22 +51,6 @@ export class ToursController {
     @UploadedFiles(PhotoValidationPipe) files: Express.Multer.File[],
     @Req() req: AuthenticatedRequest,
   ): Promise<Tour> {
-    console.log('Raw body:', JSON.stringify(createTourDto, null, 2));
-    console.log('Body type:', typeof createTourDto);
-    console.log('Photos:', createTourDto.photos);
-    console.log('Photos type:', typeof createTourDto.photos);
-
-    if (createTourDto.photos) {
-      console.log(
-        'Each photo:',
-        createTourDto.photos.map((p, i) => ({
-          index: i,
-          photo: p,
-          isMainType: typeof p?.isMain,
-          isMainValue: p?.isMain,
-        })),
-      );
-    }
     try {
       const operatorId = req.user.operatorId;
       if (!operatorId) {
@@ -163,6 +148,7 @@ export class ToursController {
     FilesInterceptor('photo_files', 10, { storage: multer.memoryStorage() }),
   )
   @ApiConsumes('multipart/form-data')
+  @ApiBearerAuth('bearer')
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateTourDto: UpdateTourDto,
@@ -223,6 +209,7 @@ export class ToursController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth('bearer')
   async remove(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: AuthenticatedRequest,

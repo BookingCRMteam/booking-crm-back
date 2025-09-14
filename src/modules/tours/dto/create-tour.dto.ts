@@ -15,10 +15,8 @@ import {
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsBooleanString } from '@app/common/validators';
 export class TourPhotoDto {
-  @ApiPropertyOptional({
-    description: 'URL of the photo (if already uploaded)',
-  })
   @IsUrl({}, { message: 'URL must be a valid URL address.' })
   @IsOptional()
   url?: string;
@@ -26,17 +24,15 @@ export class TourPhotoDto {
   @ApiPropertyOptional({
     description: 'Is this the main photo for the tour?',
     default: false,
-    type: Boolean,
   })
   @Transform(({ value }) => {
-    if (value === 'true') return true;
-    if (value === 'false') return false;
-    if (value === true) return true;
-    if (value === false) return false;
-    return undefined; // Для @IsOptional()
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return value as boolean | undefined; // залишаємо як є для валідації
   })
-  @IsBoolean({ message: 'isMain must be a boolean value' })
+  @IsBooleanString()
   @IsOptional()
+  @Allow()
   isMain?: boolean;
 
   @ApiPropertyOptional({
@@ -44,6 +40,7 @@ export class TourPhotoDto {
   })
   @IsString()
   @IsOptional()
+  @Allow()
   description?: string;
 }
 export class CreateTourDto {
@@ -195,6 +192,7 @@ export class CreateTourDto {
           const index = parseInt(match[1]);
           const photo = objValue[key];
           if (photo && typeof photo === 'object') {
+            console.log(`Photo at index ${index}:`, photo);
             result[index] = photo as TourPhotoDto;
           }
         }
@@ -237,9 +235,8 @@ export class CreateTourDto {
   })
   @IsNumber()
   @IsOptional()
-  @Min(1)
   @Type(() => Number)
-  adults?: number = 1;
+  adults?: number;
 
   @ApiProperty({
     description: 'Number of children in the tour (e.g., 1)',
@@ -273,7 +270,6 @@ export class CreateTourDto {
   @Type(() => Number)
   @IsNumber()
   @IsOptional()
-  @Min(1)
   departureCityId?: number;
 
   @ApiPropertyOptional({
