@@ -13,14 +13,10 @@ import {
   IsISO31661Alpha2,
   Allow,
 } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
+import { plainToInstance, Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsBooleanString } from '@app/common/validators';
-export class TourPhotoDto {
-  @IsUrl({}, { message: 'URL must be a valid URL address.' })
-  @IsOptional()
-  url?: string;
-
+export class CreateTourPhotoDto {
   @ApiPropertyOptional({
     description: 'Is this the main photo for the tour?',
     default: false,
@@ -28,11 +24,10 @@ export class TourPhotoDto {
   @Transform(({ value }) => {
     if (value === 'true' || value === true) return true;
     if (value === 'false' || value === false) return false;
-    return value as boolean | undefined; // залишаємо як є для валідації
+    return value as boolean | undefined;
   })
   @IsBooleanString()
   @IsOptional()
-  @Allow()
   isMain?: boolean;
 
   @ApiPropertyOptional({
@@ -40,8 +35,16 @@ export class TourPhotoDto {
   })
   @IsString()
   @IsOptional()
-  @Allow()
   description?: string;
+}
+
+export class TourPhotoDto extends CreateTourPhotoDto {
+  @ApiPropertyOptional({
+    description: 'URL of the photo (if already uploaded)',
+  })
+  @IsUrl({}, { message: 'URL must be a valid URL address.' })
+  @IsOptional()
+  url?: string;
 }
 export class CreateTourDto {
   @ApiProperty({
@@ -166,46 +169,40 @@ export class CreateTourDto {
   @IsOptional()
   conditions?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description:
       'Metadata for tour photos. The order should correspond to the uploaded files. Example: photos[0][isMain]=true&photos[0][description]=Main photo',
-    type: [TourPhotoDto],
+    type: [CreateTourPhotoDto],
   })
-  @IsArray({ message: 'Photos must be an array.' })
-  @ValidateNested({ each: true })
   @Transform(({ value }) => {
-    if (!value) return [];
+    if (!value) {
+      return []; // Return empty array if no value
+    }
+    // If the client sends a JSON string in the 'photos' field
     if (typeof value === 'string') {
       try {
-        return JSON.parse(value) as TourPhotoDto[];
+        const parsed = JSON.parse(value) as unknown;
+        return plainToInstance(
+          CreateTourPhotoDto,
+          parsed as Record<string, unknown>[],
+        );
       } catch {
-        return [];
+        return value; // Let validator handle invalid string
       }
     }
-
+    // For multipart/form-data, value might be an object like { '0': {..}, '1': {..} }
     if (typeof value === 'object' && !Array.isArray(value)) {
-      const objValue = value as Record<string, unknown>;
-      const result: { [index: number]: TourPhotoDto } = {};
-      Object.keys(objValue).forEach((key) => {
-        const match = key.match(/^(\d+)$/);
-        if (match) {
-          const index = parseInt(match[1]);
-          const photo = objValue[key];
-          if (photo && typeof photo === 'object') {
-            console.log(`Photo at index ${index}:`, photo);
-            result[index] = photo as TourPhotoDto;
-          }
-        }
-      });
-
-      console.log('Transformed photos:', result);
-      return result;
+      const plainObjects = Object.values(value as { [key: string]: unknown });
+      return plainToInstance(CreateTourPhotoDto, plainObjects);
     }
-
-    return value as TourPhotoDto[];
+    // If it's already an array, just return it
+    return value as CreateTourPhotoDto[];
   })
-  @Type(() => TourPhotoDto)
-  photos: TourPhotoDto[];
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateTourPhotoDto)
+  @IsOptional()
+  photos: CreateTourPhotoDto[];
 
   @ApiProperty({
     description: 'Array of photos (1–10 files, JPG/PNG, max 5MB each)',
@@ -267,18 +264,22 @@ export class CreateTourDto {
     required: false,
     default: '',
   })
-  @Type(() => Number)
+  @Transform(({ value }) => (!value ? undefined : Number(value)))
   @IsNumber()
   @IsOptional()
+  @Min(1)
   departureCityId?: number;
 
   @ApiPropertyOptional({
     description: 'ISO2 код країни відправлення туру ',
     default: '',
   })
-  @Transform(({ value }): string | undefined =>
-    typeof value === 'string' ? value.toUpperCase() : value,
-  )
+  @Transform(({ value }) => {
+    if (typeof value === 'string' && value.trim() !== '') {
+      return value.toUpperCase();
+    }
+    return undefined;
+  })
   @IsISO31661Alpha2({
     message:
       'departureCountryISO2Code must be a valid ISO 3166-1 alpha-2 code.',
