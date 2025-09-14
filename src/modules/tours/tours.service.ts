@@ -82,9 +82,15 @@ export class ToursService {
         const newTour = result[0];
 
         if (createTourDto.photos && createTourDto.photos.length > 0) {
+          const mainPhotos = createTourDto.photos.filter((p) => p.isMain);
+          if (mainPhotos.length > 1) {
+            throw new BadRequestException('Only one photo can be set as main.');
+          }
           const tourPhotosToInsert = createTourDto.photos.map((photo) => ({
             tourId: newTour.id,
             url: photo.url,
+            isMain: photo.isMain,
+            description: photo.description,
           }));
 
           await tx.insert(schema.tourPhotos).values(tourPhotosToInsert);
@@ -355,6 +361,10 @@ export class ToursService {
       }
 
       if (updateTourDto.photos !== undefined) {
+        const mainPhotos = updateTourDto.photos.filter((p) => p.isMain);
+        if (mainPhotos.length > 1) {
+          throw new BadRequestException('Only one photo can be set as main.');
+        }
         await tx
           .delete(schema.tourPhotos)
           .where(eq(schema.tourPhotos.tourId, id));
@@ -363,6 +373,8 @@ export class ToursService {
           const newPhotosToInsert = updateTourDto.photos.map((photo) => ({
             tourId: id,
             url: photo.url,
+            isMain: photo.isMain,
+            description: photo.description,
           }));
           await tx.insert(schema.tourPhotos).values(newPhotosToInsert);
         }

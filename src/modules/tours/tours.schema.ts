@@ -58,6 +58,8 @@ export const tourPhotos = pgTable('tour_photos', {
     .references(() => tours.id, { onDelete: 'cascade' })
     .notNull(),
   url: varchar('url', { length: 255 }).unique().notNull(),
+  isMain: boolean('is_main').default(false).notNull(),
+  description: text('description'),
 });
 
 export const toursRelations = relations(tours, ({ one, many }) => ({

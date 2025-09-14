@@ -7,21 +7,45 @@ import {
   IsBoolean,
   IsOptional,
   IsArray,
-  ArrayMinSize,
   ValidateNested,
   IsUrl,
   MaxLength,
   IsISO31661Alpha2,
+  Allow,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-
 export class TourPhotoDto {
+  @ApiPropertyOptional({
+    description: 'URL of the photo (if already uploaded)',
+  })
   @IsUrl({}, { message: 'URL must be a valid URL address.' })
-  @IsNotEmpty({ message: 'URL cannot be empty.' })
-  url: string;
-}
+  @IsOptional()
+  url?: string;
 
+  @ApiPropertyOptional({
+    description: 'Is this the main photo for the tour?',
+    default: false,
+    type: Boolean,
+  })
+  @Transform(({ value }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    if (value === true) return true;
+    if (value === false) return false;
+    return undefined; // Для @IsOptional()
+  })
+  @IsBoolean({ message: 'isMain must be a boolean value' })
+  @IsOptional()
+  isMain?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Description of the photo',
+  })
+  @IsString()
+  @IsOptional()
+  description?: string;
+}
 export class CreateTourDto {
   @ApiProperty({
     description: 'Title of the tour (e.g. "Weekend Getaway to Paris")',
@@ -146,23 +170,54 @@ export class CreateTourDto {
   conditions?: string;
 
   @ApiProperty({
-    description: 'Array of image files to upload for the tour.',
-    type: 'array',
-    items: {
-      type: 'string',
-      format: 'binary',
-    },
-    required: true,
-    default: true,
+    description:
+      'Metadata for tour photos. The order should correspond to the uploaded files. Example: photos[0][isMain]=true&photos[0][description]=Main photo',
+    type: [TourPhotoDto],
   })
   @IsArray({ message: 'Photos must be an array.' })
-  @ArrayMinSize(1, {
-    message: 'At least one photo URL is required for a tour.',
-  })
   @ValidateNested({ each: true })
+  @Transform(({ value }) => {
+    if (!value) return [];
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value) as TourPhotoDto[];
+      } catch {
+        return [];
+      }
+    }
+
+    if (typeof value === 'object' && !Array.isArray(value)) {
+      const objValue = value as Record<string, unknown>;
+      const result: { [index: number]: TourPhotoDto } = {};
+      Object.keys(objValue).forEach((key) => {
+        const match = key.match(/^(\d+)$/);
+        if (match) {
+          const index = parseInt(match[1]);
+          const photo = objValue[key];
+          if (photo && typeof photo === 'object') {
+            result[index] = photo as TourPhotoDto;
+          }
+        }
+      });
+
+      console.log('Transformed photos:', result);
+      return result;
+    }
+
+    return value as TourPhotoDto[];
+  })
   @Type(() => TourPhotoDto)
-  @IsOptional()
   photos: TourPhotoDto[];
+
+  @ApiProperty({
+    description: 'Array of photos (1–10 files, JPG/PNG, max 5MB each)',
+    type: 'array',
+    items: { type: 'string', format: 'binary' },
+    minItems: 1,
+    maxItems: 10,
+  })
+  @Allow()
+  photo_files: Express.Multer.File[];
 
   @ApiPropertyOptional({
     description: 'Is the tour currently active and available for booking?',
