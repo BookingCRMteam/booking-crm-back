@@ -1,4 +1,5 @@
 import {
+  IsEmpty,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -10,7 +11,6 @@ export class CreateOperatorDto {
   [x: string]: string;
   @IsOptional()
   @IsString()
-  // @IsNotEmpty({ message: 'Company name is required' })
   @Length(2, 100, {
     message: 'Company name must be between 2 and 100 characters',
   })
@@ -18,7 +18,6 @@ export class CreateOperatorDto {
 
   @IsOptional()
   @IsString()
-  // @IsNotEmpty({ message: 'Description is required' })
   @Length(10, 500, {
     message: 'Description must be between 10 and 500 characters',
   })
@@ -48,7 +47,13 @@ export class CreateOperatorDto {
   @IsString()
   @IsNotEmpty({ message: 'Website is required' })
   @Matches(/^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w- ./?%&=]*)?$/, {
-    message: 'Website must  be a valid URL',
+    message: 'Website must be a valid URL',
   })
   website: string;
+
+  @IsEmpty({ message: 'id cannot be provided in body' })
+  id?: string;
+
+  @IsEmpty({ message: 'email cannot be provided in body' })
+  email?: string;
 }

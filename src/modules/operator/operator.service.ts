@@ -1,4 +1,9 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as operatorSchema from '@app/modules/operator/operator.schema';
 import { CreateOperatorDto } from './dto/create-operator.dto';
@@ -65,5 +70,33 @@ export class OperatorService {
       .where(eq(operatorSchema.operators.id, user.id))
       .returning();
     return updatedOperator[0];
+  }
+
+  async getOperatorById(id: number) {
+    const operator = await this.db
+      .select()
+      .from(operatorSchema.operators)
+      .where(eq(operatorSchema.operators.id, id));
+    if (!operator[0])
+      throw new NotFoundException(`Operator with ${id} not found`);
+    return operator[0];
+  }
+
+  async getMyOperator(user: User) {
+    const operator = await this.db
+      .select()
+      .from(operatorSchema.operators)
+      .where(eq(operatorSchema.operators.userId, user.id));
+    if (!operator[0])
+      throw new NotFoundException('You are not an operator yet.');
+    return operator[0];
+  }
+
+  async getAllOperators(limit?: number, offset?: number) {
+    return this.db
+      .select()
+      .from(operatorSchema.operators)
+      .limit(limit)
+      .offset(offset);
   }
 }
