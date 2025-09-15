@@ -15,7 +15,7 @@ import {
 } from 'class-validator';
 import { plainToInstance, Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBooleanString } from '@app/common/validators';
+import { IsBooleanLike } from '@app/common/validators';
 export class CreateTourPhotoDto {
   @ApiPropertyOptional({
     description: 'Is this the main photo for the tour?',
@@ -26,7 +26,7 @@ export class CreateTourPhotoDto {
     if (value === 'false' || value === false) return false;
     return value as boolean | undefined;
   })
-  @IsBooleanString()
+  @IsBooleanLike()
   @IsOptional()
   isMain?: boolean;
 
@@ -174,33 +174,44 @@ export class CreateTourDto {
       'Metadata for tour photos. The order should correspond to the uploaded files. Example: photos[0][isMain]=true&photos[0][description]=Main photo',
     type: [CreateTourPhotoDto],
   })
+  // Трансформація для поля photos, щоб коректно обробляти різні формати вхідних даних (JSON-рядок, об'єкт, масив)
+  // та забезпечити, що на вхід валідатора завжди надходитиме масив об'єктів CreateTourPhotoDto.
   @Transform(({ value }) => {
     if (!value) {
-      return []; // Return empty array if no value
+      return []; // Повертаємо пустий масив, якщо дані відсутні
     }
-    // If the client sends a JSON string in the 'photos' field
-    if (typeof value === 'string') {
+
+    let photoData: unknown = value;
+    // Якщо дані прийшли як JSON-рядок, розпарсюємо його
+    if (typeof photoData === 'string') {
       try {
-        const parsed = JSON.parse(value) as unknown;
-        return plainToInstance(
-          CreateTourPhotoDto,
-          parsed as Record<string, unknown>[],
-        );
-      } catch {
-        return value; // Let validator handle invalid string
+        photoData = JSON.parse(photoData);
+      } catch (e) {
+        console.error(e);
+        return value as unknown; // У разі помилки парсингу повертаємо оригінальне значення, щоб валідатор видав помилку
       }
     }
-    // For multipart/form-data, value might be an object like { '0': {..}, '1': {..} }
-    if (typeof value === 'object' && !Array.isArray(value)) {
-      const plainObjects = Object.values(value as { [key: string]: unknown });
-      return plainToInstance(CreateTourPhotoDto, plainObjects);
+
+    // Якщо дані є об'єктом (але не масивом), це може бути як один об'єкт фото,
+    // так і об'єкт з індексами {'0': {...}, '1': {...}} з multipart/form-data.
+    if (typeof photoData === 'object' && !Array.isArray(photoData)) {
+      const keys = Object.keys(photoData);
+      // Перевіряємо, чи є ключі числовими індексами
+      const isArrayLike = keys.length > 0 && keys.every((k) => /^\d+$/.test(k));
+      if (isArrayLike) {
+        photoData = Object.values(photoData); // Перетворюємо в масив значень
+      }
     }
-    // If it's already an array, just return it
-    return value as CreateTourPhotoDto[];
+
+    // Переконуємося, що дані є масивом. Якщо ні - загортаємо в масив.
+    const photosArray = Array.isArray(photoData) ? photoData : [photoData];
+
+    // Перетворюємо масив простих об'єктів на масив екземплярів CreateTourPhotoDto
+    return plainToInstance(CreateTourPhotoDto, photosArray);
   })
-  @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateTourPhotoDto)
+  @IsArray({ message: 'Photos must be an array.' })
   @IsOptional()
   photos: CreateTourPhotoDto[];
 
@@ -274,11 +285,10 @@ export class CreateTourDto {
     description: 'ISO2 код країни відправлення туру ',
     default: '',
   })
-  @Transform(({ value }) => {
-    if (typeof value === 'string' && value.trim() !== '') {
-      return value.toUpperCase();
-    }
-    return undefined;
+  @Transform(({ value }): string | undefined => {
+    if (typeof value !== 'string') return undefined;
+    const v = value.trim();
+    return v ? v.toUpperCase() : undefined;
   })
   @IsISO31661Alpha2({
     message:

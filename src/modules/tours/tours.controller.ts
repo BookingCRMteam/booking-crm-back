@@ -136,7 +136,8 @@ export class ToursController {
     };
   }
 
-  @Patch(':id') // Оновлення туру
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard) // Оновлення туру
   @UsePipes(
     new ValidationPipe({
       transform: true,
@@ -152,7 +153,7 @@ export class ToursController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateTourDto: UpdateTourDto,
-    @UploadedFiles() files: Express.Multer.File[],
+    @UploadedFiles(PhotoValidationPipe) files: Express.Multer.File[],
     @Req() req: AuthenticatedRequest,
   ) {
     try {
@@ -208,6 +209,7 @@ export class ToursController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBearerAuth('bearer')
   async remove(

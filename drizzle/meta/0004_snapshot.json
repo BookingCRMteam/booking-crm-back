@@ -1,6 +1,6 @@
 {
-  "id": "15dc6c11-cb7a-48fc-9170-622be4fd0ad3",
-  "prevId": "529946bd-3e71-4548-a0e8-da40eda5d54f",
+  "id": "d140ea33-1f54-4bcd-a94a-1ba6ce80ecc3",
+  "prevId": "15dc6c11-cb7a-48fc-9170-622be4fd0ad3",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -515,9 +515,39 @@
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true
+        },
+        "is_main": {
+          "name": "is_main",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "main_photo_idx": {
+          "name": "main_photo_idx",
+          "columns": [
+            {
+              "expression": "tour_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"is_main\" = true",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "tour_photos_tour_id_tours_id_fk": {
           "name": "tour_photos_tour_id_tours_id_fk",
@@ -534,15 +564,7 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "tour_photos_url_unique": {
-          "name": "tour_photos_url_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "url"
-          ]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

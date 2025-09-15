@@ -1,4 +1,4 @@
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import {
   boolean,
   date,
@@ -10,6 +10,7 @@ import {
   varchar,
   serial,
   char,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { operators } from '../operator/operator.schema';
 import { countries } from '../countries/countries.schema';
@@ -52,15 +53,25 @@ export const tours = pgTable('tours', {
   updatedAt: timestamp('updated_at').defaultNow(),
 });
 
-export const tourPhotos = pgTable('tour_photos', {
-  id: serial('id').primaryKey(),
-  tourId: integer('tour_id')
-    .references(() => tours.id, { onDelete: 'cascade' })
-    .notNull(),
-  url: varchar('url', { length: 255 }).unique().notNull(),
-  isMain: boolean('is_main').default(false).notNull(),
-  description: text('description'),
-});
+export const tourPhotos = pgTable(
+  'tour_photos',
+  {
+    id: serial('id').primaryKey(),
+    tourId: integer('tour_id')
+      .references(() => tours.id, { onDelete: 'cascade' })
+      .notNull(),
+    url: varchar('url', { length: 255 }).notNull(),
+    isMain: boolean('is_main').default(false).notNull(),
+    description: text('description'),
+  },
+  (table) => {
+    return {
+      mainPhotoIdx: uniqueIndex('main_photo_idx')
+        .on(table.tourId)
+        .where(sql`"is_main" = true`),
+    };
+  },
+);
 
 export const toursRelations = relations(tours, ({ one, many }) => ({
   operator: one(operators, {
