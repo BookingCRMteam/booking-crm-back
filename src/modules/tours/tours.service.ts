@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateTourDto } from './dto/create-tour.dto';
+import { CreateTourDto, TourPhotoDto } from './dto/create-tour.dto';
 import { Tour } from './tours.types';
 import { GetToursQueryDto, SortOrder } from './dto/get-tours-query.dto';
 import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm';
@@ -82,9 +82,17 @@ export class ToursService {
         const newTour = result[0];
 
         if (createTourDto.photos && createTourDto.photos.length > 0) {
-          const tourPhotosToInsert = createTourDto.photos.map((photo) => ({
+          const mainPhotos = createTourDto.photos.filter((p) => p.isMain);
+          if (mainPhotos.length > 1) {
+            throw new BadRequestException('Only one photo can be set as main.');
+          }
+          const tourPhotosToInsert = (
+            createTourDto.photos as TourPhotoDto[]
+          ).map((photo) => ({
             tourId: newTour.id,
             url: photo.url,
+            isMain: photo.isMain,
+            description: photo.description,
           }));
 
           await tx.insert(schema.tourPhotos).values(tourPhotosToInsert);
@@ -355,14 +363,22 @@ export class ToursService {
       }
 
       if (updateTourDto.photos !== undefined) {
+        const mainPhotos = updateTourDto.photos.filter((p) => p.isMain);
+        if (mainPhotos.length > 1) {
+          throw new BadRequestException('Only one photo can be set as main.');
+        }
         await tx
           .delete(schema.tourPhotos)
           .where(eq(schema.tourPhotos.tourId, id));
 
         if (updateTourDto.photos.length > 0) {
-          const newPhotosToInsert = updateTourDto.photos.map((photo) => ({
+          const newPhotosToInsert = (
+            updateTourDto.photos as TourPhotoDto[]
+          ).map((photo) => ({
             tourId: id,
             url: photo.url,
+            isMain: photo.isMain,
+            description: photo.description,
           }));
           await tx.insert(schema.tourPhotos).values(newPhotosToInsert);
         }

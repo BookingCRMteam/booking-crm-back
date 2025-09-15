@@ -7,21 +7,45 @@ import {
   IsBoolean,
   IsOptional,
   IsArray,
-  ArrayMinSize,
   ValidateNested,
   IsUrl,
   MaxLength,
   IsISO31661Alpha2,
+  Allow,
 } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
+import { plainToInstance, Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsBooleanLike } from '@app/common/validators';
+export class CreateTourPhotoDto {
+  @ApiPropertyOptional({
+    description: 'Is this the main photo for the tour?',
+    default: false,
+  })
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return value as boolean | undefined;
+  })
+  @IsBooleanLike()
+  @IsOptional()
+  isMain?: boolean;
 
-export class TourPhotoDto {
-  @IsUrl({}, { message: 'URL must be a valid URL address.' })
-  @IsNotEmpty({ message: 'URL cannot be empty.' })
-  url: string;
+  @ApiPropertyOptional({
+    description: 'Description of the photo',
+  })
+  @IsString()
+  @IsOptional()
+  description?: string;
 }
 
+export class TourPhotoDto extends CreateTourPhotoDto {
+  @ApiPropertyOptional({
+    description: 'URL of the photo (if already uploaded)',
+  })
+  @IsUrl({}, { message: 'URL must be a valid URL address.' })
+  @IsOptional()
+  url?: string;
+}
 export class CreateTourDto {
   @ApiProperty({
     description: 'Title of the tour (e.g. "Weekend Getaway to Paris")',
@@ -145,24 +169,61 @@ export class CreateTourDto {
   @IsOptional()
   conditions?: string;
 
-  @ApiProperty({
-    description: 'Array of image files to upload for the tour.',
-    type: 'array',
-    items: {
-      type: 'string',
-      format: 'binary',
-    },
-    required: true,
-    default: true,
+  @ApiPropertyOptional({
+    description:
+      'Metadata for tour photos. The order should correspond to the uploaded files. Example: photos[0][isMain]=true&photos[0][description]=Main photo',
+    type: [CreateTourPhotoDto],
   })
-  @IsArray({ message: 'Photos must be an array.' })
-  @ArrayMinSize(1, {
-    message: 'At least one photo URL is required for a tour.',
+  // Трансформація для поля photos, щоб коректно обробляти різні формати вхідних даних (JSON-рядок, об'єкт, масив)
+  // та забезпечити, що на вхід валідатора завжди надходитиме масив об'єктів CreateTourPhotoDto.
+  @Transform(({ value }) => {
+    if (!value) {
+      return []; // Повертаємо пустий масив, якщо дані відсутні
+    }
+
+    let photoData: unknown = value;
+    // Якщо дані прийшли як JSON-рядок, розпарсюємо його
+    if (typeof photoData === 'string') {
+      try {
+        photoData = JSON.parse(photoData);
+      } catch (e) {
+        console.error(e);
+        return value as unknown; // У разі помилки парсингу повертаємо оригінальне значення, щоб валідатор видав помилку
+      }
+    }
+
+    // Якщо дані є об'єктом (але не масивом), це може бути як один об'єкт фото,
+    // так і об'єкт з індексами {'0': {...}, '1': {...}} з multipart/form-data.
+    if (typeof photoData === 'object' && !Array.isArray(photoData)) {
+      const keys = Object.keys(photoData);
+      // Перевіряємо, чи є ключі числовими індексами
+      const isArrayLike = keys.length > 0 && keys.every((k) => /^\d+$/.test(k));
+      if (isArrayLike) {
+        photoData = Object.values(photoData); // Перетворюємо в масив значень
+      }
+    }
+
+    // Переконуємося, що дані є масивом. Якщо ні - загортаємо в масив.
+    const photosArray = Array.isArray(photoData) ? photoData : [photoData];
+
+    // Перетворюємо масив простих об'єктів на масив екземплярів CreateTourPhotoDto
+    return plainToInstance(CreateTourPhotoDto, photosArray);
   })
   @ValidateNested({ each: true })
-  @Type(() => TourPhotoDto)
+  @Type(() => CreateTourPhotoDto)
+  @IsArray({ message: 'Photos must be an array.' })
   @IsOptional()
-  photos: TourPhotoDto[];
+  photos: CreateTourPhotoDto[];
+
+  @ApiProperty({
+    description: 'Array of photos (1–10 files, JPG/PNG, max 5MB each)',
+    type: 'array',
+    items: { type: 'string', format: 'binary' },
+    minItems: 1,
+    maxItems: 10,
+  })
+  @Allow()
+  photo_files: Express.Multer.File[];
 
   @ApiPropertyOptional({
     description: 'Is the tour currently active and available for booking?',
@@ -182,9 +243,8 @@ export class CreateTourDto {
   })
   @IsNumber()
   @IsOptional()
-  @Min(1)
   @Type(() => Number)
-  adults?: number = 1;
+  adults?: number;
 
   @ApiProperty({
     description: 'Number of children in the tour (e.g., 1)',
@@ -215,7 +275,7 @@ export class CreateTourDto {
     required: false,
     default: '',
   })
-  @Type(() => Number)
+  @Transform(({ value }) => (!value ? undefined : Number(value)))
   @IsNumber()
   @IsOptional()
   @Min(1)
@@ -225,9 +285,11 @@ export class CreateTourDto {
     description: 'ISO2 код країни відправлення туру ',
     default: '',
   })
-  @Transform(({ value }): string | undefined =>
-    typeof value === 'string' ? value.toUpperCase() : value,
-  )
+  @Transform(({ value }): string | undefined => {
+    if (typeof value !== 'string') return undefined;
+    const v = value.trim();
+    return v ? v.toUpperCase() : undefined;
+  })
   @IsISO31661Alpha2({
     message:
       'departureCountryISO2Code must be a valid ISO 3166-1 alpha-2 code.',
