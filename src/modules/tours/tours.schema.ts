@@ -24,7 +24,7 @@ export const tours = pgTable('tours', {
       onUpdate: 'cascade',
     })
     .notNull(),
-  title: varchar('title', { length: 255 }).notNull(),
+  title: varchar('title', { length: 150 }).notNull().unique(),
   description: text('description'),
   countryISO2Code: char('country_iso2_code', { length: 2 })
     .notNull()
