@@ -260,56 +260,56 @@ export class CreateTourDto {
   @IsOptional()
   isActive?: boolean;
 
-  @ApiPropertyOptional({
-    description: 'Number of adults in the tour (e.g., 2)',
-    minimum: 1,
-    required: false,
-    default: '',
-  })
+  // @ApiPropertyOptional({
+  //   description: 'Number of adults in the tour (e.g., 2)',
+  //   minimum: 1,
+  //   required: false,
+  //   default: '',
+  // })
   @IsNumber()
   @IsOptional()
   @Type(() => Number)
   adults?: number;
 
-  @ApiProperty({
-    description: 'Number of children in the tour (e.g., 1)',
-    minimum: 0,
-    required: false,
-    default: '',
-  })
+  // @ApiProperty({
+  //   description: 'Number of children in the tour (e.g., 1)',
+  //   minimum: 0,
+  //   required: false,
+  //   default: '',
+  // })
   @IsNumber()
   @IsOptional()
   @Min(0)
   @Type(() => Number)
   children?: number = 0;
 
-  @ApiPropertyOptional({
-    description: 'Are pets allowed on the tour? (default: false)',
-    type: Boolean,
-    required: false,
-    default: '',
-  })
+  // @ApiPropertyOptional({
+  //   description: 'Are pets allowed on the tour? (default: false)',
+  //   type: Boolean,
+  //   required: false,
+  //   default: '',
+  // })
   @Type(() => Boolean)
   @IsBoolean()
   @IsOptional()
   petsAllowed?: boolean = false;
 
-  @ApiPropertyOptional({
-    description: 'ID of the departure city (get from endpoint /cities)',
-    example: '',
-    required: false,
-    default: '',
-  })
+  // @ApiPropertyOptional({
+  //   description: 'ID of the departure city (get from endpoint /cities)',
+  //   example: '',
+  //   required: false,
+  //   default: '',
+  // })
   @Transform(({ value }) => (!value ? undefined : Number(value)))
   @IsNumber()
   @IsOptional()
   @Min(1)
   departureCityId?: number;
 
-  @ApiPropertyOptional({
-    description: 'ISO2 код країни відправлення туру ',
-    default: '',
-  })
+  // @ApiPropertyOptional({
+  //   description: 'ISO2 код країни відправлення туру ',
+  //   default: '',
+  // })
   @Transform(({ value }): string | undefined => {
     if (typeof value !== 'string') return undefined;
     const v = value.trim();
