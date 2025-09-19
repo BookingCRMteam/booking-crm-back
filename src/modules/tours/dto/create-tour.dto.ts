@@ -78,6 +78,18 @@ export class CreateTourDto {
   })
   @IsString({ message: 'Description must be a string.' })
   @IsOptional()
+  @MinLength(50, {
+    message: 'Description must be at least 50 characters long.',
+  })
+  @MaxLength(5000, { message: 'Description cannot exceed 5000 characters.' })
+  @NotContains('<', { message: 'Description cannot contain HTML tags.' })
+  @NotContains('>', { message: 'Description cannot contain HTML tags.' })
+  @Matches(
+    /^(?!.*<[^>]*>)(?!.*style\s*=)(?!.*<\/?script[^>]*>)[\p{L}\p{N}\p{P}\p{S}\s]+$/u,
+    {
+      message: 'Description contains invalid characters.',
+    },
+  )
   description?: string;
 
   @ApiProperty({
