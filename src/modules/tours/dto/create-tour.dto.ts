@@ -78,6 +78,18 @@ export class CreateTourDto {
   })
   @IsString({ message: 'Description must be a string.' })
   @IsOptional()
+  @MinLength(50, {
+    message: 'Description must be at least 50 characters long.',
+  })
+  @MaxLength(5000, { message: 'Description cannot exceed 5000 characters.' })
+  @NotContains('<', { message: 'Description cannot contain HTML tags.' })
+  @NotContains('>', { message: 'Description cannot contain HTML tags.' })
+  @Matches(
+    /^(?!.*<[^>]*>)(?!.*style\s*=)(?!.*<\/?script[^>]*>)[\p{L}\p{N}\p{P}\p{S}\s]+$/u,
+    {
+      message: 'Description contains invalid characters.',
+    },
+  )
   description?: string;
 
   @ApiProperty({
@@ -248,56 +260,56 @@ export class CreateTourDto {
   @IsOptional()
   isActive?: boolean;
 
-  @ApiPropertyOptional({
-    description: 'Number of adults in the tour (e.g., 2)',
-    minimum: 1,
-    required: false,
-    default: '',
-  })
+  // @ApiPropertyOptional({
+  //   description: 'Number of adults in the tour (e.g., 2)',
+  //   minimum: 1,
+  //   required: false,
+  //   default: '',
+  // })
   @IsNumber()
   @IsOptional()
   @Type(() => Number)
   adults?: number;
 
-  @ApiProperty({
-    description: 'Number of children in the tour (e.g., 1)',
-    minimum: 0,
-    required: false,
-    default: '',
-  })
+  // @ApiProperty({
+  //   description: 'Number of children in the tour (e.g., 1)',
+  //   minimum: 0,
+  //   required: false,
+  //   default: '',
+  // })
   @IsNumber()
   @IsOptional()
   @Min(0)
   @Type(() => Number)
   children?: number = 0;
 
-  @ApiPropertyOptional({
-    description: 'Are pets allowed on the tour? (default: false)',
-    type: Boolean,
-    required: false,
-    default: '',
-  })
+  // @ApiPropertyOptional({
+  //   description: 'Are pets allowed on the tour? (default: false)',
+  //   type: Boolean,
+  //   required: false,
+  //   default: '',
+  // })
   @Type(() => Boolean)
   @IsBoolean()
   @IsOptional()
   petsAllowed?: boolean = false;
 
-  @ApiPropertyOptional({
-    description: 'ID of the departure city (get from endpoint /cities)',
-    example: '',
-    required: false,
-    default: '',
-  })
+  // @ApiPropertyOptional({
+  //   description: 'ID of the departure city (get from endpoint /cities)',
+  //   example: '',
+  //   required: false,
+  //   default: '',
+  // })
   @Transform(({ value }) => (!value ? undefined : Number(value)))
   @IsNumber()
   @IsOptional()
   @Min(1)
   departureCityId?: number;
 
-  @ApiPropertyOptional({
-    description: 'ISO2 код країни відправлення туру ',
-    default: '',
-  })
+  // @ApiPropertyOptional({
+  //   description: 'ISO2 код країни відправлення туру ',
+  //   default: '',
+  // })
   @Transform(({ value }): string | undefined => {
     if (typeof value !== 'string') return undefined;
     const v = value.trim();
