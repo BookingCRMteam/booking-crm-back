@@ -11,47 +11,61 @@ import {
   serial,
   char,
   uniqueIndex,
+  check,
 } from 'drizzle-orm/pg-core';
 import { operators } from '../operator/operator.schema';
 import { countries } from '../countries/countries.schema';
 import { cities } from '../cities/cities.schema';
 
-export const tours = pgTable('tours', {
-  id: serial('id').primaryKey(),
-  operatorId: integer('operator_id')
-    .references(() => operators.id, {
-      onDelete: 'restrict',
+export const tours = pgTable(
+  'tours',
+  {
+    id: serial('id').primaryKey(),
+    operatorId: integer('operator_id')
+      .references(() => operators.id, {
+        onDelete: 'restrict',
+        onUpdate: 'cascade',
+      })
+      .notNull(),
+    title: varchar('title', { length: 150 }).notNull(),
+    description: text('description'),
+    countryISO2Code: char('country_iso2_code', { length: 2 })
+      .notNull()
+      .references(() => countries.iso2, { onUpdate: 'cascade' }),
+    cityId: integer('city_id')
+      .notNull()
+      .references(() => cities.id, {
+        onUpdate: 'cascade',
+      }),
+    type: varchar('type', { length: 100 }),
+    price: decimal('price', { precision: 10, scale: 2 }).notNull(),
+    currency: varchar('currency', { length: 3 }).default('UAH'),
+    startDate: date('start_date').notNull(),
+    endDate: date('end_date').notNull(),
+    availableSpots: integer('available_spots').notNull(),
+    conditions: text('conditions'),
+    isActive: boolean('is_active').default(true),
+    adults: integer('adults').default(1).notNull(),
+    children: integer('children').default(0).notNull(),
+    petsAllowed: boolean('pets_allowed').default(false).notNull(),
+    departureCityId: integer('departure_city_id').references(() => cities.id, {
       onUpdate: 'cascade',
-    })
-    .notNull(),
-  title: varchar('title', { length: 150 }).notNull(),
-  description: text('description'),
-  countryISO2Code: char('country_iso2_code', { length: 2 })
-    .notNull()
-    .references(() => countries.iso2, { onUpdate: 'cascade' }),
-  cityId: integer('city_id').references(() => cities.id, {
-    onUpdate: 'cascade',
-  }),
-  type: varchar('type', { length: 100 }),
-  price: decimal('price', { precision: 10, scale: 2 }).notNull(),
-  currency: varchar('currency', { length: 3 }).default('UAH'),
-  startDate: date('start_date').notNull(),
-  endDate: date('end_date').notNull(),
-  availableSpots: integer('available_spots').notNull(),
-  conditions: text('conditions'),
-  isActive: boolean('is_active').default(true),
-  adults: integer('adults').default(1).notNull(),
-  children: integer('children').default(0).notNull(),
-  petsAllowed: boolean('pets_allowed').default(false).notNull(),
-  departureCityId: integer('departure_city_id').references(() => cities.id, {
-    onUpdate: 'cascade',
-  }),
-  departureCountryISO2Code: char('departure_country_iso2_code', {
-    length: 2,
-  }).references(() => countries.iso2, { onUpdate: 'cascade' }),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
-});
+    }),
+    departureCountryISO2Code: char('departure_country_iso2_code', {
+      length: 2,
+    }).references(() => countries.iso2, { onUpdate: 'cascade' }),
+    createdAt: timestamp('created_at').defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow(),
+  },
+  () => {
+    return {
+      availableSpotsCheck: check(
+        'available_spots_check',
+        sql`"available_spots" >= 2 AND "available_spots" <= 100 AND "available_spots" % 2 = 0`,
+      ),
+    };
+  },
+);
 
 export const tourPhotos = pgTable(
   'tour_photos',
