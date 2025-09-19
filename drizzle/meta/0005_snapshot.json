@@ -1,6 +1,6 @@
 {
-  "id": "6e6dc2f7-aab1-4ae0-9da7-46eedd02ca81",
-  "prevId": "15dc6c11-cb7a-48fc-9170-622be4fd0ad3",
+  "id": "500eb30f-7df8-4663-a4d9-c14035518e70",
+  "prevId": "d1ca1ed0-b935-4aaf-a636-a6571f564f11",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -530,7 +530,24 @@
           "notNull": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "main_photo_idx": {
+          "name": "main_photo_idx",
+          "columns": [
+            {
+              "expression": "tour_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"is_main\" = true",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "tour_photos_tour_id_tours_id_fk": {
           "name": "tour_photos_tour_id_tours_id_fk",
@@ -547,15 +564,7 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "tour_photos_url_unique": {
-          "name": "tour_photos_url_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "url"
-          ]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -578,7 +587,7 @@
         },
         "title": {
           "name": "title",
-          "type": "varchar(255)",
+          "type": "varchar(150)",
           "primaryKey": false,
           "notNull": true
         },
@@ -767,7 +776,15 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "tours_title_unique": {
+          "name": "tours_title_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "title"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

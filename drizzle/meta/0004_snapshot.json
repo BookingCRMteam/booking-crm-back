@@ -1,6 +1,6 @@
 {
-  "id": "d140ea33-1f54-4bcd-a94a-1ba6ce80ecc3",
-  "prevId": "15dc6c11-cb7a-48fc-9170-622be4fd0ad3",
+  "id": "d1ca1ed0-b935-4aaf-a636-a6571f564f11",
+  "prevId": "be99c2d3-3dfb-4188-bc6b-13ec5d4eb4ab",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -776,7 +776,15 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "tours_title_unique": {
+          "name": "tours_title_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "title"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

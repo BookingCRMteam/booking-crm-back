@@ -1,0 +1,1 @@
+ALTER TABLE "tours" ALTER COLUMN "title" SET DATA TYPE varchar(150);
