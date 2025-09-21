@@ -15,6 +15,8 @@ import {
   Matches,
   NotContains,
   MinLength,
+  Max,
+  IsDivisibleBy,
 } from 'class-validator';
 import { plainToInstance, Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -106,7 +108,7 @@ export class CreateTourDto {
   @IsNotEmpty()
   countryISO2Code: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     example: '',
     description:
       'ID міста призначення туру ((отримано з GET /countries/{countryCode}/cities)) ',
@@ -114,9 +116,9 @@ export class CreateTourDto {
   })
   @Type(() => Number)
   @IsNumber()
-  @IsOptional()
   @Min(1)
-  cityId?: number;
+  @IsNotEmpty()
+  cityId: number;
 
   @ApiPropertyOptional({
     description: 'Type of the tour (e.g., "Sightseeing", "Beach", "Adventure")',
@@ -176,12 +178,17 @@ export class CreateTourDto {
   @ApiProperty({
     description: 'Number of available spots for the tour (e.g., 20)',
     default: '',
-    minimum: 1,
+    minimum: 2,
+    maximum: 100,
   })
   @Type(() => Number)
   @IsNumber({}, { message: 'availableSpots must be a number.' })
   @IsNotEmpty({ message: 'availableSpots cannot be empty.' })
-  @Min(1, { message: 'There must be at least 1 available spot.' })
+  @Min(2, { message: 'There must be at least 2 available spots.' })
+  @Max(100, { message: 'The number of available spots cannot exceed 100.' })
+  @IsDivisibleBy(2, {
+    message: 'The number of available spots must be an even number.',
+  })
   availableSpots: number;
 
   @ApiPropertyOptional({

@@ -50,6 +50,55 @@
       "when": 1758273925029,
       "tag": "0006_whole_madrox",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1758280897608,
+      "tag": "0007_grey_tony_stark",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1758280998098,
+      "tag": "0008_damp_terrax",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1758281371531,
+      "tag": "0009_milky_shape",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1758281856572,
+      "tag": "0010_keen_doctor_doom",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1758282028419,
+      "tag": "0011_old_mercury",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1758436367018,
+      "tag": "0012_lonely_sabra",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1758436601686,
+      "tag": "0013_salty_shadowcat",
+      "breakpoints": true
     }
   ]
 }
