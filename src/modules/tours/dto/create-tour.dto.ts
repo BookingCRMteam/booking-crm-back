@@ -118,7 +118,7 @@ export class CreateTourDto {
   @IsNumber()
   @Min(1)
   @IsNotEmpty()
-  cityId?: number;
+  cityId: number;
 
   @ApiPropertyOptional({
     description: 'Type of the tour (e.g., "Sightseeing", "Beach", "Adventure")',

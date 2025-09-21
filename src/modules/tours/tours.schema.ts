@@ -33,10 +33,10 @@ export const tours = pgTable(
       .notNull()
       .references(() => countries.iso2, { onUpdate: 'cascade' }),
     cityId: integer('city_id')
-      .notNull()
       .references(() => cities.id, {
         onUpdate: 'cascade',
-      }),
+      })
+      .notNull(),
     type: varchar('type', { length: 100 }),
     price: decimal('price', { precision: 10, scale: 2 }).notNull(),
     currency: varchar('currency', { length: 3 }).default('UAH'),

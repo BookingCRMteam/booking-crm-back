@@ -85,6 +85,20 @@
       "when": 1758282028419,
       "tag": "0011_old_mercury",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1758436367018,
+      "tag": "0012_lonely_sabra",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1758436601686,
+      "tag": "0013_salty_shadowcat",
+      "breakpoints": true
     }
   ]
 }
