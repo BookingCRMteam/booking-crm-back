@@ -69,7 +69,7 @@ export class OperatorService {
     });
 
     if (!operator) {
-      throw new Error('Operator not found');
+      throw new NotFoundException('Operator not found');
     }
 
     if (!operator.email && req.jwtPayload.email) {
