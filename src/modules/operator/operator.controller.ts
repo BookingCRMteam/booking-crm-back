@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   DefaultValuePipe,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -24,7 +25,7 @@ import multer from 'multer';
 
 @Controller('operator')
 export class OperatorController {
-  constructor(private readonly usersService: OperatorService) {}
+  constructor(private readonly operatorService: OperatorService) {}
 
   @UseGuards(JwtAuthGuard)
   @Post()
@@ -71,7 +72,7 @@ export class OperatorController {
     @Body() operatorInfoDTO: CreateOperatorDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.usersService.addOperator(operatorInfoDTO, req.user);
+    return this.operatorService.addOperator(operatorInfoDTO, req);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -104,9 +105,9 @@ export class OperatorController {
     @Req() req: AuthenticatedRequest,
     @UploadedFile() file?: Express.Multer.File,
   ) {
-    return this.usersService.updateOperator(
+    return this.operatorService.updateOperator(
       operatorInfoDTO,
-      req.user,
+      req,
       file?.buffer,
     );
   }
@@ -114,7 +115,7 @@ export class OperatorController {
   @UseGuards(JwtAuthGuard)
   @Get('me')
   getMe(@Req() req: AuthenticatedRequest) {
-    return this.usersService.getMyOperator(req.user);
+    return this.operatorService.getMyOperator(req);
   }
 
   @Get('all')
@@ -122,11 +123,17 @@ export class OperatorController {
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
     @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
   ) {
-    return this.usersService.getAllOperators(limit, offset);
+    return this.operatorService.getAllOperators(limit, offset);
   }
 
   @Get(':id')
   getById(@Param('id', ParseIntPipe) id: number) {
-    return this.usersService.getOperatorById(id);
+    return this.operatorService.getOperatorById(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('me/photo')
+  deletePhoto(@Req() req: AuthenticatedRequest) {
+    return this.operatorService.deletePhoto(req);
   }
 }

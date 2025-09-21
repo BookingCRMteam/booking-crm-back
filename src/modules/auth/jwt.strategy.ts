@@ -7,7 +7,6 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import * as jwksRsa from 'jwks-rsa';
 import { JWTPayload } from '@app/types/jwt.payload';
 import { UserService } from '../user/user.service';
-import { User } from '../user/user.schema';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -26,9 +25,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: JWTPayload): Promise<User> {
+  async validate(payload: JWTPayload) {
     try {
-      return await this.userService.createOrGetUser(payload);
+      const user = await this.userService.createOrGetUser(payload);
+      return { ...user, jwtPayload: payload };
     } catch {
       throw new UnauthorizedException('Authentication failed');
     }

@@ -11,7 +11,7 @@ import { UserService } from '../user/user.service';
 import { UpdateOperatorDto } from './dto/update-operator.dto';
 import { eq } from 'drizzle-orm';
 import { CloudinaryService } from '@app/cloudinary/cloudinary.service';
-import { User } from '@app/modules/user/user.schema';
+import { AuthenticatedRequest } from '@app/types/authenticated.request';
 
 @Injectable()
 export class OperatorService {
@@ -21,12 +21,11 @@ export class OperatorService {
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-  async addOperator(dto: CreateOperatorDto, user: User) {
+  async addOperator(dto: CreateOperatorDto, req: AuthenticatedRequest) {
     const existingOperator = await this.db
       .select()
       .from(operatorSchema.operators)
-      .where(eq(operatorSchema.operators.userId, user.id));
-
+      .where(eq(operatorSchema.operators.userId, req.user.id));
     if (existingOperator.length > 0) {
       throw new BadRequestException('User is already registered as operator');
     }
@@ -39,14 +38,19 @@ export class OperatorService {
         lastName: dto.lastName,
         phone: dto.phone,
         website: dto.website,
-        userId: user.id,
+        userId: req.user.id,
+        email: req.jwtPayload.email,
       })
       .returning();
-    await this.userService.userToOperator(user.id);
+    await this.userService.userToOperator(req.user.id, newOperator[0].id);
     return newOperator[0];
   }
 
-  async updateOperator(dto: UpdateOperatorDto, user: User, file?: Buffer) {
+  async updateOperator(
+    dto: UpdateOperatorDto,
+    req: AuthenticatedRequest,
+    file?: Buffer,
+  ) {
     const updateData: Partial<typeof operatorSchema.operators.$inferInsert> =
       {};
     if (dto.companyName !== undefined) updateData.companyName = dto.companyName;
@@ -60,6 +64,18 @@ export class OperatorService {
       const photoUrl = (await this.cloudinaryService.uploadImage(file)).url;
       updateData.photo = photoUrl;
     }
+    const operator = await this.db.query.operators.findFirst({
+      where: eq(operatorSchema.operators.id, req.user.id),
+    });
+
+    if (!operator) {
+      throw new Error('Operator not found');
+    }
+
+    if (!operator.email && req.jwtPayload.email) {
+      updateData.email = req.user.email;
+    }
+
     if (Object.keys(updateData).length > 0) {
       updateData.updatedAt = new Date();
     }
@@ -67,7 +83,7 @@ export class OperatorService {
     const updatedOperator = await this.db
       .update(operatorSchema.operators)
       .set(updateData)
-      .where(eq(operatorSchema.operators.id, user.id))
+      .where(eq(operatorSchema.operators.id, req.user.id))
       .returning();
     return updatedOperator[0];
   }
@@ -82,11 +98,11 @@ export class OperatorService {
     return operator[0];
   }
 
-  async getMyOperator(user: User) {
+  async getMyOperator(req: AuthenticatedRequest) {
     const operator = await this.db
       .select()
       .from(operatorSchema.operators)
-      .where(eq(operatorSchema.operators.userId, user.id));
+      .where(eq(operatorSchema.operators.userId, req.user.id));
     if (!operator[0])
       throw new NotFoundException('You are not an operator yet.');
     return operator[0];
@@ -98,5 +114,22 @@ export class OperatorService {
       .from(operatorSchema.operators)
       .limit(limit)
       .offset(offset);
+  }
+  async deletePhoto(req: AuthenticatedRequest) {
+    const operator = await this.db.query.operators.findFirst({
+      where: eq(operatorSchema.operators.userId, req.user.id),
+    });
+    if (!operator) {
+      throw new NotFoundException('Operator not found');
+    }
+    if (!operator.photo) {
+      throw new BadRequestException('No photo to delete');
+    }
+    const updatedOperator = await this.db
+      .update(operatorSchema.operators)
+      .set({ photo: null, updatedAt: new Date() })
+      .where(eq(operatorSchema.operators.userId, req.user.id))
+      .returning();
+    return updatedOperator[0];
   }
 }
