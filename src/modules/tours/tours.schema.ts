@@ -67,6 +67,10 @@ export const tours = pgTable(
         'price_check',
         sql`"price" >= 100 AND "price" <= 100000`,
       ),
+      currencyCheck: check(
+        'currency_check',
+        sql`"currency" IN ('UAH', 'USD', 'EUR')`,
+      ),
     };
   },
 );

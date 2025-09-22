@@ -17,6 +17,7 @@ import {
   MinLength,
   Max,
   IsDivisibleBy,
+  IsIn,
 } from 'class-validator';
 import { plainToInstance, Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -151,6 +152,7 @@ export class CreateTourDto {
   @IsString()
   @IsOptional()
   @MaxLength(3)
+  @IsIn(['UAH', 'USD', 'EUR'])
   currency?: string = 'UAH';
 
   @ApiProperty({
