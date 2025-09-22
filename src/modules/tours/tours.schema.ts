@@ -63,6 +63,10 @@ export const tours = pgTable(
         'available_spots_check',
         sql`"available_spots" >= 2 AND "available_spots" <= 100 AND "available_spots" % 2 = 0`,
       ),
+      priceCheck: check(
+        'price_check',
+        sql`"price" >= 100 AND "price" <= 100000`,
+      ),
     };
   },
 );

@@ -139,13 +139,14 @@ export class CreateTourDto {
   @IsNotEmpty({ message: 'Price cannot be empty.' })
   @Type(() => Number)
   @IsNumber({}, { message: 'Price must be a number.' })
-  @Min(0, { message: 'Price cannot be negative.' })
+  @Min(100, { message: 'Price must be greater than or equal to 100.' })
+  @Max(100000, { message: 'Price must be less than or equal to 100000.' })
   price: number;
 
   @ApiPropertyOptional({
     description: 'Валюта туру (за замовчуванням UAH)',
     maxLength: 3,
-    enum: ['UAH', 'USD', 'EUR'], // Можливо, варто використовувати enum
+    enum: ['UAH', 'USD', 'EUR'],
   })
   @IsString()
   @IsOptional()
