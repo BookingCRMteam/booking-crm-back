@@ -17,7 +17,10 @@ async function bootstrap() {
     .setDescription('Booking CRM API description')
     .setVersion('1.0')
     .addTag('Booking CRM')
-    .addBearerAuth()
+    .addSecurity('bearer', {
+      type: 'http',
+      scheme: 'bearer',
+    })
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, documentFactory);
@@ -28,6 +31,9 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      transformOptions: {
+        // enableImplicitConversion: true, // Ця опція викликає проблеми з multipart/form-data
+      },
     }),
   );
   app.use(

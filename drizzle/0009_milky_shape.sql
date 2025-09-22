@@ -1,0 +1,2 @@
+ALTER TABLE "tours" DROP CONSTRAINT "available_spots_check";--> statement-breakpoint
+ALTER TABLE "tours" ADD CONSTRAINT "available_spots_check" CHECK ("available_spots" >= 2 AND "available_spots" <= 100 AND "available_spots" % 2 = 0);

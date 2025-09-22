@@ -1,0 +1,1 @@
+ALTER TABLE "tours" ADD CONSTRAINT "tours_title_unique" UNIQUE("title");

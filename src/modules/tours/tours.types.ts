@@ -2,6 +2,8 @@ export interface TourPhoto {
   id: number;
   tourId: number;
   url: string;
+  isMain: boolean;
+  description: string | null;
 }
 
 interface Translation {

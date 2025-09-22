@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "main_photo_idx" ON "tour_photos" ("tour_id") WHERE "is_main" = true;

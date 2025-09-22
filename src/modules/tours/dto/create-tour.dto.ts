@@ -7,21 +7,51 @@ import {
   IsBoolean,
   IsOptional,
   IsArray,
-  ArrayMinSize,
   ValidateNested,
   IsUrl,
   MaxLength,
   IsISO31661Alpha2,
+  Allow,
+  Matches,
+  NotContains,
+  MinLength,
+  Max,
+  IsDivisibleBy,
+  IsIn,
 } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
+import { plainToInstance, Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsBooleanLike } from '@app/common/validators';
+export class CreateTourPhotoDto {
+  @ApiPropertyOptional({
+    description: 'Is this the main photo for the tour?',
+    default: false,
+  })
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return value as boolean | undefined;
+  })
+  @IsBooleanLike()
+  @IsOptional()
+  isMain?: boolean;
 
-export class TourPhotoDto {
-  @IsUrl({}, { message: 'URL must be a valid URL address.' })
-  @IsNotEmpty({ message: 'URL cannot be empty.' })
-  url: string;
+  @ApiPropertyOptional({
+    description: 'Description of the photo',
+  })
+  @IsString()
+  @IsOptional()
+  description?: string;
 }
 
+export class TourPhotoDto extends CreateTourPhotoDto {
+  @ApiPropertyOptional({
+    description: 'URL of the photo (if already uploaded)',
+  })
+  @IsUrl({}, { message: 'URL must be a valid URL address.' })
+  @IsOptional()
+  url?: string;
+}
 export class CreateTourDto {
   @ApiProperty({
     description: 'Title of the tour (e.g. "Weekend Getaway to Paris")',
@@ -30,7 +60,17 @@ export class CreateTourDto {
   })
   @IsString({ message: 'Title must be a string.' })
   @IsNotEmpty({ message: 'Title cannot be empty.' })
-  @MaxLength(255, { message: 'Title cannot exceed 255 characters.' })
+  @MinLength(3, { message: 'Title must be at least 3 characters long.' })
+  @MaxLength(150, { message: 'Title cannot exceed 150 characters.' })
+  @NotContains('<', { message: 'Title cannot contain HTML tags.' })
+  @NotContains('>', { message: 'Title cannot contain HTML tags.' })
+  @Matches(
+    /^(?!.*<[^>]*>)(?!.*([.,\-'""])\1)(?![.,\-'""])(?:[\p{L}\p{N} .,\-'""]+)(?<![.,\-'""])$/u,
+    {
+      message:
+        'Title must not start or end with special characters, and special characters cannot be repeated.',
+    },
+  )
   title: string;
 
   @ApiProperty({
@@ -41,6 +81,18 @@ export class CreateTourDto {
   })
   @IsString({ message: 'Description must be a string.' })
   @IsOptional()
+  @MinLength(50, {
+    message: 'Description must be at least 50 characters long.',
+  })
+  @MaxLength(5000, { message: 'Description cannot exceed 5000 characters.' })
+  @NotContains('<', { message: 'Description cannot contain HTML tags.' })
+  @NotContains('>', { message: 'Description cannot contain HTML tags.' })
+  @Matches(
+    /^(?!.*<[^>]*>)(?!.*style\s*=)(?!.*<\/?script[^>]*>)[\p{L}\p{N}\p{P}\p{S}\s]+$/u,
+    {
+      message: 'Description contains invalid characters.',
+    },
+  )
   description?: string;
 
   @ApiProperty({
@@ -57,7 +109,7 @@ export class CreateTourDto {
   @IsNotEmpty()
   countryISO2Code: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     example: '',
     description:
       'ID міста призначення туру ((отримано з GET /countries/{countryCode}/cities)) ',
@@ -65,9 +117,9 @@ export class CreateTourDto {
   })
   @Type(() => Number)
   @IsNumber()
-  @IsOptional()
   @Min(1)
-  cityId?: number;
+  @IsNotEmpty()
+  cityId: number;
 
   @ApiPropertyOptional({
     description: 'Type of the tour (e.g., "Sightseeing", "Beach", "Adventure")',
@@ -88,17 +140,19 @@ export class CreateTourDto {
   @IsNotEmpty({ message: 'Price cannot be empty.' })
   @Type(() => Number)
   @IsNumber({}, { message: 'Price must be a number.' })
-  @Min(0, { message: 'Price cannot be negative.' })
+  @Min(100, { message: 'Price must be greater than or equal to 100.' })
+  @Max(100000, { message: 'Price must be less than or equal to 100000.' })
   price: number;
 
   @ApiPropertyOptional({
     description: 'Валюта туру (за замовчуванням UAH)',
     maxLength: 3,
-    enum: ['UAH', 'USD', 'EUR'], // Можливо, варто використовувати enum
+    enum: ['UAH', 'USD', 'EUR'],
   })
   @IsString()
   @IsOptional()
   @MaxLength(3)
+  @IsIn(['UAH', 'USD', 'EUR'])
   currency?: string = 'UAH';
 
   @ApiProperty({
@@ -127,12 +181,17 @@ export class CreateTourDto {
   @ApiProperty({
     description: 'Number of available spots for the tour (e.g., 20)',
     default: '',
-    minimum: 1,
+    minimum: 2,
+    maximum: 100,
   })
   @Type(() => Number)
   @IsNumber({}, { message: 'availableSpots must be a number.' })
   @IsNotEmpty({ message: 'availableSpots cannot be empty.' })
-  @Min(1, { message: 'There must be at least 1 available spot.' })
+  @Min(2, { message: 'There must be at least 2 available spots.' })
+  @Max(100, { message: 'The number of available spots cannot exceed 100.' })
+  @IsDivisibleBy(2, {
+    message: 'The number of available spots must be an even number.',
+  })
   availableSpots: number;
 
   @ApiPropertyOptional({
@@ -145,24 +204,61 @@ export class CreateTourDto {
   @IsOptional()
   conditions?: string;
 
-  @ApiProperty({
-    description: 'Array of image files to upload for the tour.',
-    type: 'array',
-    items: {
-      type: 'string',
-      format: 'binary',
-    },
-    required: true,
-    default: true,
+  @ApiPropertyOptional({
+    description:
+      'Metadata for tour photos. The order should correspond to the uploaded files. Example: photos[0][isMain]=true&photos[0][description]=Main photo',
+    type: [CreateTourPhotoDto],
   })
-  @IsArray({ message: 'Photos must be an array.' })
-  @ArrayMinSize(1, {
-    message: 'At least one photo URL is required for a tour.',
+  // Трансформація для поля photos, щоб коректно обробляти різні формати вхідних даних (JSON-рядок, об'єкт, масив)
+  // та забезпечити, що на вхід валідатора завжди надходитиме масив об'єктів CreateTourPhotoDto.
+  @Transform(({ value }) => {
+    if (!value) {
+      return []; // Повертаємо пустий масив, якщо дані відсутні
+    }
+
+    let photoData: unknown = value;
+    // Якщо дані прийшли як JSON-рядок, розпарсюємо його
+    if (typeof photoData === 'string') {
+      try {
+        photoData = JSON.parse(photoData);
+      } catch (e) {
+        console.error(e);
+        return value as unknown; // У разі помилки парсингу повертаємо оригінальне значення, щоб валідатор видав помилку
+      }
+    }
+
+    // Якщо дані є об'єктом (але не масивом), це може бути як один об'єкт фото,
+    // так і об'єкт з індексами {'0': {...}, '1': {...}} з multipart/form-data.
+    if (typeof photoData === 'object' && !Array.isArray(photoData)) {
+      const keys = Object.keys(photoData);
+      // Перевіряємо, чи є ключі числовими індексами
+      const isArrayLike = keys.length > 0 && keys.every((k) => /^\d+$/.test(k));
+      if (isArrayLike) {
+        photoData = Object.values(photoData); // Перетворюємо в масив значень
+      }
+    }
+
+    // Переконуємося, що дані є масивом. Якщо ні - загортаємо в масив.
+    const photosArray = Array.isArray(photoData) ? photoData : [photoData];
+
+    // Перетворюємо масив простих об'єктів на масив екземплярів CreateTourPhotoDto
+    return plainToInstance(CreateTourPhotoDto, photosArray);
   })
   @ValidateNested({ each: true })
-  @Type(() => TourPhotoDto)
+  @Type(() => CreateTourPhotoDto)
+  @IsArray({ message: 'Photos must be an array.' })
   @IsOptional()
-  photos: TourPhotoDto[];
+  photos: CreateTourPhotoDto[];
+
+  @ApiProperty({
+    description: 'Array of photos (1–10 files, JPG/PNG, max 5MB each)',
+    type: 'array',
+    items: { type: 'string', format: 'binary' },
+    minItems: 1,
+    maxItems: 10,
+  })
+  @Allow()
+  photo_files: Express.Multer.File[];
 
   @ApiPropertyOptional({
     description: 'Is the tour currently active and available for booking?',
@@ -174,60 +270,61 @@ export class CreateTourDto {
   @IsOptional()
   isActive?: boolean;
 
-  @ApiPropertyOptional({
-    description: 'Number of adults in the tour (e.g., 2)',
-    minimum: 1,
-    required: false,
-    default: '',
-  })
+  // @ApiPropertyOptional({
+  //   description: 'Number of adults in the tour (e.g., 2)',
+  //   minimum: 1,
+  //   required: false,
+  //   default: '',
+  // })
   @IsNumber()
   @IsOptional()
-  @Min(1)
   @Type(() => Number)
-  adults?: number = 1;
+  adults?: number;
 
-  @ApiProperty({
-    description: 'Number of children in the tour (e.g., 1)',
-    minimum: 0,
-    required: false,
-    default: '',
-  })
+  // @ApiProperty({
+  //   description: 'Number of children in the tour (e.g., 1)',
+  //   minimum: 0,
+  //   required: false,
+  //   default: '',
+  // })
   @IsNumber()
   @IsOptional()
   @Min(0)
   @Type(() => Number)
   children?: number = 0;
 
-  @ApiPropertyOptional({
-    description: 'Are pets allowed on the tour? (default: false)',
-    type: Boolean,
-    required: false,
-    default: '',
-  })
+  // @ApiPropertyOptional({
+  //   description: 'Are pets allowed on the tour? (default: false)',
+  //   type: Boolean,
+  //   required: false,
+  //   default: '',
+  // })
   @Type(() => Boolean)
   @IsBoolean()
   @IsOptional()
   petsAllowed?: boolean = false;
 
-  @ApiPropertyOptional({
-    description: 'ID of the departure city (get from endpoint /cities)',
-    example: '',
-    required: false,
-    default: '',
-  })
-  @Type(() => Number)
+  // @ApiPropertyOptional({
+  //   description: 'ID of the departure city (get from endpoint /cities)',
+  //   example: '',
+  //   required: false,
+  //   default: '',
+  // })
+  @Transform(({ value }) => (!value ? undefined : Number(value)))
   @IsNumber()
   @IsOptional()
   @Min(1)
   departureCityId?: number;
 
-  @ApiPropertyOptional({
-    description: 'ISO2 код країни відправлення туру ',
-    default: '',
+  // @ApiPropertyOptional({
+  //   description: 'ISO2 код країни відправлення туру ',
+  //   default: '',
+  // })
+  @Transform(({ value }): string | undefined => {
+    if (typeof value !== 'string') return undefined;
+    const v = value.trim();
+    return v ? v.toUpperCase() : undefined;
   })
-  @Transform(({ value }): string | undefined =>
-    typeof value === 'string' ? value.toUpperCase() : value,
-  )
   @IsISO31661Alpha2({
     message:
       'departureCountryISO2Code must be a valid ISO 3166-1 alpha-2 code.',
