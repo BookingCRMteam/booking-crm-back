@@ -1,0 +1,1 @@
+ALTER TABLE "tours" ADD CONSTRAINT "currency_check" CHECK ("currency" IN ('UAH', 'USD', 'EUR'));

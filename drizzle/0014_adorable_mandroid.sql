@@ -1,0 +1,1 @@
+ALTER TABLE "tours" ADD CONSTRAINT "price_check" CHECK ("price" >= 100 AND "price" <= 100000);
