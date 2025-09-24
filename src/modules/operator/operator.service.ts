@@ -70,7 +70,7 @@ export class OperatorService {
       updateData.photo = photoUrl;
     }
     const operator = await this.db.query.operators.findFirst({
-      where: eq(operatorSchema.operators.id, req.user.id),
+      where: eq(operatorSchema.operators.id, req.user.operatorId),
     });
 
     if (!operator) {
@@ -88,7 +88,7 @@ export class OperatorService {
     const updatedOperator = await this.db
       .update(operatorSchema.operators)
       .set(updateData)
-      .where(eq(operatorSchema.operators.id, req.user.id))
+      .where(eq(operatorSchema.operators.id, req.user.operatorId))
       .returning();
     return updatedOperator[0];
   }
