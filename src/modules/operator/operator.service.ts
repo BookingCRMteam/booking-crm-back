@@ -22,6 +22,11 @@ export class OperatorService {
   ) {}
 
   async addOperator(dto: CreateOperatorDto, req: AuthenticatedRequest) {
+    if (!req.user.email) {
+      throw new BadRequestException(
+        'Email is required to register as operator',
+      );
+    }
     const existingOperator = await this.db
       .select()
       .from(operatorSchema.operators)
@@ -39,7 +44,7 @@ export class OperatorService {
         phone: dto.phone,
         website: dto.website,
         userId: req.user.id,
-        email: req.jwtPayload.email,
+        email: req.user.email,
       })
       .returning();
     await this.userService.userToOperator(req.user.id, newOperator[0].id);
@@ -72,7 +77,7 @@ export class OperatorService {
       throw new NotFoundException('Operator not found');
     }
 
-    if (!operator.email && req.jwtPayload.email) {
+    if (!operator.email && req.user.email) {
       updateData.email = req.user.email;
     }
 
