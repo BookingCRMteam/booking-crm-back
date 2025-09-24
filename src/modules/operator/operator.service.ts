@@ -70,7 +70,7 @@ export class OperatorService {
       updateData.photo = photoUrl;
     }
     const operator = await this.db.query.operators.findFirst({
-      where: eq(operatorSchema.operators.id, req.user.id),
+      where: eq(operatorSchema.operators.id, req.user.operatorId),
     });
 
     if (!operator) {
@@ -88,7 +88,7 @@ export class OperatorService {
     const updatedOperator = await this.db
       .update(operatorSchema.operators)
       .set(updateData)
-      .where(eq(operatorSchema.operators.id, req.user.id))
+      .where(eq(operatorSchema.operators.id, req.user.operatorId))
       .returning();
     return updatedOperator[0];
   }
@@ -107,7 +107,7 @@ export class OperatorService {
     const operator = await this.db
       .select()
       .from(operatorSchema.operators)
-      .where(eq(operatorSchema.operators.userId, req.user.id));
+      .where(eq(operatorSchema.operators.userId, req.user.operatorId));
     if (!operator[0])
       throw new NotFoundException('You are not an operator yet.');
     return operator[0];
@@ -122,7 +122,7 @@ export class OperatorService {
   }
   async deletePhoto(req: AuthenticatedRequest) {
     const operator = await this.db.query.operators.findFirst({
-      where: eq(operatorSchema.operators.userId, req.user.id),
+      where: eq(operatorSchema.operators.userId, req.user.operatorId),
     });
     if (!operator) {
       throw new NotFoundException('Operator not found');
@@ -133,7 +133,7 @@ export class OperatorService {
     const updatedOperator = await this.db
       .update(operatorSchema.operators)
       .set({ photo: null, updatedAt: new Date() })
-      .where(eq(operatorSchema.operators.userId, req.user.id))
+      .where(eq(operatorSchema.operators.userId, req.user.operatorId))
       .returning();
     return updatedOperator[0];
   }
