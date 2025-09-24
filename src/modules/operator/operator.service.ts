@@ -107,7 +107,7 @@ export class OperatorService {
     const operator = await this.db
       .select()
       .from(operatorSchema.operators)
-      .where(eq(operatorSchema.operators.userId, req.user.operatorId));
+      .where(eq(operatorSchema.operators.userId, req.user.id));
     if (!operator[0])
       throw new NotFoundException('You are not an operator yet.');
     return operator[0];
