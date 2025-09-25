@@ -89,6 +89,9 @@ export class ToursController {
       );
       return createdTour;
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
       console.error('Error in createTour:', error);
       throw new HttpException(
         'Failed to create tour',
@@ -118,6 +121,9 @@ export class ToursController {
         },
       };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
       // Handle the error here
       console.error(error);
       throw new HttpException(
@@ -196,6 +202,9 @@ export class ToursController {
       );
       return { message: 'Tour updated successfully', data: updatedTour };
     } catch (error: unknown) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
       if (error instanceof Error) {
         console.error('Error in updateTour:', error.message);
       } else {
