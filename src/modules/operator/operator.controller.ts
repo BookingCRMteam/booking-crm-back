@@ -14,7 +14,13 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { ApiConsumes, ApiBody } from '@nestjs/swagger';
+import {
+  ApiConsumes,
+  ApiBody,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { OperatorService } from './operator.service';
 import { CreateOperatorDto } from './dto/create-operator.dto';
 import { JwtAuthGuard } from '@app/common/guards/jwt-auth.guard';
@@ -22,6 +28,12 @@ import { AuthenticatedRequest } from '@app/types/authenticated.request';
 import { UpdateOperatorDto } from './dto/update-operator.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import multer from 'multer';
+
+enum OperatorStatus {
+  PENDING = 'pending',
+  ACCEPTED = 'accepted',
+  REJECTED = 'rejected',
+}
 
 @Controller('operator')
 export class OperatorController {
@@ -119,11 +131,46 @@ export class OperatorController {
   }
 
   @Get('all')
+  @ApiOperation({
+    summary: 'Отримати список операторів з опціональним фільтром по статусу',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Кількість записів на сторінку',
+    example: 20,
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    type: Number,
+    description: 'Зсув для пагінації',
+    example: 0,
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: OperatorStatus,
+    description: 'Фільтр по статусу',
+    example: OperatorStatus.PENDING,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Список операторів успішно отримано',
+  })
   getAll(
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
     @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
+    @Query('status') status: string,
   ) {
-    return this.operatorService.getAllOperators(limit, offset);
+    const validStatus: OperatorStatus | undefined = Object.values(
+      OperatorStatus,
+    ).includes(status as OperatorStatus)
+      ? (status as OperatorStatus)
+      : undefined;
+
+    return this.operatorService.getAllOperators(limit, offset, validStatus);
   }
 
   @Get(':id')

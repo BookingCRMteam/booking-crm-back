@@ -113,13 +113,19 @@ export class OperatorService {
     return operator[0];
   }
 
-  async getAllOperators(limit?: number, offset?: number) {
-    return this.db
+  async getAllOperators(
+    limit?: number,
+    offset?: number,
+    status?: 'pending' | 'accepted' | 'rejected',
+  ) {
+    return await this.db
       .select()
       .from(operatorSchema.operators)
+      .where(status ? eq(operatorSchema.operators.status, status) : undefined)
       .limit(limit)
       .offset(offset);
   }
+
   async deletePhoto(req: AuthenticatedRequest) {
     const operator = await this.db.query.operators.findFirst({
       where: eq(operatorSchema.operators.userId, req.user.id),
