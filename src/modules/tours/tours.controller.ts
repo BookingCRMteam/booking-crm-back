@@ -31,6 +31,7 @@ import { ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { AuthenticatedRequest } from '@app/types/authenticated.request';
 import { JwtAuthGuard } from '@app/common/guards/jwt-auth.guard';
 import { PhotoValidationPipe } from './pipes';
+import { EmptyStringToUndefinedInterceptor } from '@app/common/interceptors/empty-string-to-undefined.interceptor';
 @Controller('tours')
 export class ToursController {
   constructor(
@@ -149,8 +150,10 @@ export class ToursController {
       transform: true,
       whitelist: true,
       forbidNonWhitelisted: true,
+      skipMissingProperties: true,
     }),
   )
+  @UseInterceptors(EmptyStringToUndefinedInterceptor)
   @UseInterceptors(
     FilesInterceptor('photo_files', 10, { storage: multer.memoryStorage() }),
   )
