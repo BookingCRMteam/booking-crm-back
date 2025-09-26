@@ -12,6 +12,7 @@ import { UpdateOperatorDto } from './dto/update-operator.dto';
 import { eq } from 'drizzle-orm';
 import { CloudinaryService } from '@app/cloudinary/cloudinary.service';
 import { AuthenticatedRequest } from '@app/types/authenticated.request';
+import { OperatorStatus } from '@app/types/operator-status';
 
 @Injectable()
 export class OperatorService {
@@ -116,7 +117,7 @@ export class OperatorService {
   async getAllOperators(
     limit?: number,
     offset?: number,
-    status?: 'pending' | 'accepted' | 'rejected',
+    status?: OperatorStatus,
   ) {
     return await this.db
       .select()
