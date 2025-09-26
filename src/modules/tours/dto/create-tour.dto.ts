@@ -76,7 +76,7 @@ export class CreateTourDto {
   @ApiProperty({
     description:
       'Detailed description of the tour program (e.g. "Explore the Eiffel Tower, Louvre Museum, and enjoy a Seine river cruise.")',
-    required: false,
+    required: true,
     default: '',
   })
   @IsString({ message: 'Description must be a string.' })
