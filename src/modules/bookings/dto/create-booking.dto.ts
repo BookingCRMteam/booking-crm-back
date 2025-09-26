@@ -1,11 +1,20 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsIn, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import {
+  IsIn,
+  IsInt,
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+  Max,
+} from 'class-validator';
 
 // Створіть DTO для вхідних даних
 export class CreateBookingDto {
   @ApiProperty({ example: 1, description: 'ID of the tour to book' })
   @IsNumber()
   @IsNotEmpty()
+  @IsInt()
+  @Max(2147483647)
   tourId: number;
 
   @ApiProperty({
@@ -14,6 +23,8 @@ export class CreateBookingDto {
   })
   @IsNumber()
   @IsNotEmpty()
+  @IsInt()
+  @Max(2147483647)
   userId: number;
 
   @ApiProperty({
