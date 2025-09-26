@@ -53,33 +53,33 @@ export class BookingsService {
 
     const totalPrice = tour.price; // Спрощений розрахунок
 
-    // 2. Check for an existing pending booking
-    const existingBooking = await this.db.query.bookings.findFirst({
-      where: (bookings, { and, eq }) =>
-        and(
-          eq(bookings.userId, data.userId),
-          eq(bookings.tourId, data.tourId),
-          eq(bookings.status, 'pending_payment'),
-        ),
-    });
-
-    if (existingBooking) {
-      throw new ConflictException(
-        'A pending booking for this tour and user already exists.',
-      );
+    let newBooking: typeof bookings.$inferSelect;
+    try {
+      [newBooking] = await this.db
+        .insert(bookings)
+        .values({
+          userId: data.userId,
+          tourId: data.tourId,
+          totalPrice: totalPrice,
+          currency: tour.currency,
+          paymentProvider: data.paymentProvider,
+          status: 'pending_payment',
+        })
+        .returning();
+    } catch (error) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        typeof (error as { code?: unknown }).code === 'string' &&
+        (error as { code: string }).code === '23505'
+      ) {
+        throw new ConflictException(
+          'A pending booking for this tour and user already exists.',
+        );
+      }
+      throw error;
     }
-
-    const [newBooking] = await this.db
-      .insert(bookings)
-      .values({
-        userId: data.userId,
-        tourId: data.tourId,
-        totalPrice: totalPrice,
-        currency: tour.currency,
-        paymentProvider: data.paymentProvider,
-        status: 'pending_payment',
-      })
-      .returning();
 
     // 3. Згенерувати посилання для оплати залежно від провайдера
     let paymentLink: string | undefined;
