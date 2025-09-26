@@ -1,4 +1,9 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import * as schema from '@app/db/schema/schema';
 import { bookings } from './bookings.schema';
 import LiqPay from 'liqpayjs-sdk'; // <-- Змінено тут
@@ -48,7 +53,22 @@ export class BookingsService {
 
     const totalPrice = tour.price; // Спрощений розрахунок
 
-    // 2. Створити попереднє бронювання в базі даних
+    // 2. Check for an existing pending booking
+    const existingBooking = await this.db.query.bookings.findFirst({
+      where: (bookings, { and, eq }) =>
+        and(
+          eq(bookings.userId, data.userId),
+          eq(bookings.tourId, data.tourId),
+          eq(bookings.status, 'pending_payment'),
+        ),
+    });
+
+    if (existingBooking) {
+      throw new ConflictException(
+        'A pending booking for this tour and user already exists.',
+      );
+    }
+
     const [newBooking] = await this.db
       .insert(bookings)
       .values({
