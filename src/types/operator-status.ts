@@ -1,5 +1,5 @@
 export enum OperatorStatus {
   PENDING = 'pending',
-  ACCEPTED = 'approved',
+  APPROVED = 'approved',
   REJECTED = 'rejected',
 }
