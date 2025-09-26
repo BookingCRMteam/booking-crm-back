@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import * as schema from '@app/db/schema/schema';
 import { bookings } from './bookings.schema';
 import LiqPay from 'liqpayjs-sdk'; // <-- Змінено тут
@@ -29,12 +29,21 @@ export class BookingsService {
   }
 
   async createBooking(data: CreateBookingDto) {
-    // 1. Отримати інформацію про тур і розрахувати ціну
+    // 1. Check if user and tour exist
+    const user = await this.db.query.users.findFirst({
+      where: (users, { eq }) => eq(users.id, data.userId),
+    });
+    if (!user) {
+      throw new NotFoundException(`User with id ${data.userId} not found`);
+    }
+
+    console.log('Creating booking with data.tourId:', data.tourId);
+
     const tour = await this.db.query.tours.findFirst({
       where: (tours, { eq }) => eq(tours.id, data.tourId),
     });
     if (!tour) {
-      throw new Error('Tour not found');
+      throw new NotFoundException(`Tour with id ${data.tourId} not found`);
     }
 
     const totalPrice = tour.price; // Спрощений розрахунок
