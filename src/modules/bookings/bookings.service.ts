@@ -67,13 +67,7 @@ export class BookingsService {
         })
         .returning();
     } catch (error) {
-      if (
-        typeof error === 'object' &&
-        error !== null &&
-        'code' in error &&
-        typeof (error as { code?: unknown }).code === 'string' &&
-        (error as { code: string }).code === '23505'
-      ) {
+      if ((error as { cause?: { code?: string } }).cause?.code === '23505') {
         throw new ConflictException(
           'A pending booking for this tour and user already exists.',
         );
