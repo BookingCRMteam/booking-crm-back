@@ -62,7 +62,6 @@ export class CreateTourDto {
   @IsNotEmpty({ message: 'Title cannot be empty.' })
   @MinLength(3, { message: 'Title must be at least 3 characters long.' })
   @MaxLength(150, { message: 'Title cannot exceed 150 characters.' })
-  @NotContains('<', { message: 'Title cannot contain HTML tags.' })
   @NotContains('>', { message: 'Title cannot contain HTML tags.' })
   @Matches(
     /^(?!.*<[^>]*>)(?!.*([.,\-'""])\1)(?![.,\-'""])(?:[\p{L}\p{N} .,\-'""]+)(?<![.,\-'""])$/u,
@@ -70,6 +69,10 @@ export class CreateTourDto {
       message:
         'Title must not start or end with special characters, and special characters cannot be repeated.',
     },
+  )
+  @Transform(
+    ({ value }: { value: string | undefined }) =>
+      value?.trim() as unknown as string,
   )
   title: string;
 
