@@ -70,9 +70,8 @@ export class CreateTourDto {
         'Title must not start or end with special characters, and special characters cannot be repeated.',
     },
   )
-  @Transform(
-    ({ value }: { value: string | undefined }) =>
-      value?.trim() as unknown as string,
+  @Transform(({ value }: { value: string | undefined }) =>
+    value ? value.trim() : undefined,
   )
   title: string;
 
