@@ -28,12 +28,7 @@ import { AuthenticatedRequest } from '@app/types/authenticated.request';
 import { UpdateOperatorDto } from './dto/update-operator.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import multer from 'multer';
-
-enum OperatorStatus {
-  PENDING = 'pending',
-  ACCEPTED = 'accepted',
-  REJECTED = 'rejected',
-}
+import { OperatorStatus } from '@app/types/operator-status';
 
 @Controller('operator')
 export class OperatorController {
