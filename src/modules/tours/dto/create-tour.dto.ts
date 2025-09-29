@@ -141,16 +141,16 @@ export class CreateTourDto {
   })
   @IsNotEmpty({ message: 'Price cannot be empty.' })
   @Type(() => Number)
-  @IsNumber({}, { message: 'Price must be a number.' })
-  @Min(100, { message: 'Price must be greater than or equal to 100.' })
-  @Max(100000, { message: 'Price must be less than or equal to 100000.' })
+  @IsNumber(
+    {},
+    { message: 'Price must be a number and use a dot as a decimal separator.' },
+  )
   @IsNumber(
     { maxDecimalPlaces: 2 },
     { message: 'Price can have a maximum of two decimal places.' },
   )
-  @Matches(/^\d*\.?\d*$/, {
-    message: 'Price must be a number and use a dot as a decimal separator.',
-  })
+  @Min(100, { message: 'Price must be greater than or equal to 100.00' })
+  @Max(100000, { message: 'Price must be less than or equal to 100000.00' })
   price: number;
 
   @ApiPropertyOptional({
