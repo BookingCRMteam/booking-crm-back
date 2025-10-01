@@ -71,6 +71,10 @@ export const tours = pgTable(
         'currency_check',
         sql`"currency" IN ('UAH', 'USD', 'EUR')`,
       ),
+      datesCheck: check(
+        'dates_check',
+        sql`"start_date" > current_date and "end_date" > "start_date"`,
+      ),
     };
   },
 );
