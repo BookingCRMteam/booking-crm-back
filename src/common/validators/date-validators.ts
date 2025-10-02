@@ -10,7 +10,8 @@ import {
 export class IsAfterTodayConstraint implements ValidatorConstraintInterface {
   validate(date: string) {
     if (!date) return false;
-    const today = new Date(new Date().toISOString().split('T')[0]);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const targetDate = new Date(date);
     return targetDate > today;
   }
