@@ -21,7 +21,7 @@ import {
 } from 'class-validator';
 import { plainToInstance, Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBooleanLike } from '@app/common/validators';
+import { IsAfter, IsAfterToday, IsBooleanLike } from '@app/common/validators';
 export class CreateTourPhotoDto {
   @ApiPropertyOptional({
     description: 'Is this the main photo for the tour?',
@@ -174,6 +174,7 @@ export class CreateTourDto {
     { message: 'startDate must be a valid date string (e.g., YYYY-MM-DD).' },
   )
   @IsNotEmpty({ message: 'startDate cannot be empty.' })
+  @IsAfterToday({ message: 'Start date must be after today.' })
   startDate: string;
 
   @ApiProperty({
@@ -185,6 +186,7 @@ export class CreateTourDto {
     { message: 'endDate must be a valid date string (e.g., YYYY-MM-DD).' },
   )
   @IsNotEmpty({ message: 'endDate cannot be empty.' })
+  @IsAfter('startDate', { message: 'End date must be after start date.' })
   endDate: string;
 
   @ApiProperty({
