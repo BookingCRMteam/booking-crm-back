@@ -45,15 +45,6 @@ export const tours = pgTable(
     availableSpots: integer('available_spots').notNull(),
     conditions: text('conditions'),
     isActive: boolean('is_active').default(true),
-    adults: integer('adults').default(1).notNull(),
-    children: integer('children').default(0).notNull(),
-    petsAllowed: boolean('pets_allowed').default(false).notNull(),
-    departureCityId: integer('departure_city_id').references(() => cities.id, {
-      onUpdate: 'cascade',
-    }),
-    departureCountryISO2Code: char('departure_country_iso2_code', {
-      length: 2,
-    }).references(() => countries.iso2, { onUpdate: 'cascade' }),
     createdAt: timestamp('created_at').defaultNow(),
     updatedAt: timestamp('updated_at').defaultNow(),
   },
@@ -111,10 +102,6 @@ export const toursRelations = relations(tours, ({ one, many }) => ({
   }),
   city: one(cities, {
     fields: [tours.cityId],
-    references: [cities.id],
-  }),
-  departureCity: one(cities, {
-    fields: [tours.departureCityId],
     references: [cities.id],
   }),
 }));

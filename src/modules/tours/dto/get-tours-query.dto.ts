@@ -6,7 +6,6 @@ import {
   IsDateString,
   Min,
   IsEnum,
-  IsBoolean,
   Length,
   IsISO31661Alpha2,
 } from 'class-validator';
@@ -120,73 +119,6 @@ export class GetToursQueryDto {
   @Min(0)
   @Type(() => Number)
   maxPrice?: number;
-
-  // @ApiPropertyOptional({
-  //   example: null,
-  //   description: 'Number of adults in the tour (e.g., 2)',
-  //   minimum: 1,
-  //   required: false,
-  // })
-  @IsNumber()
-  @IsOptional()
-  @Min(1)
-  @Type(() => Number)
-  adults?: number; // Зняв default тут, щоб @IsOptional працював коректно
-
-  // @ApiPropertyOptional({
-  //   example: null,
-  //   description: 'Number of children in the tour (e.g., 1)',
-  //   minimum: 0,
-  //   required: false,
-  // })
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  @Type(() => Number)
-  children?: number;
-
-  // @ApiPropertyOptional({
-  //   example: null,
-  //   description: 'Are pets allowed on the tour? (default: false)',
-  //   type: Boolean,
-  //   required: false,
-  // })
-  @Transform(({ value }) =>
-    value === true || value === 'true' || value === 1 || value === '1'
-      ? true
-      : value === false || value === 'false' || value === 0 || value === '0'
-        ? false
-        : undefined,
-  )
-  @IsBoolean()
-  @IsOptional()
-  petsAllowed?: boolean; // Зняв default
-
-  // @ApiPropertyOptional({
-  //   example: null,
-  //   description: 'ID of the departure city (reference to the cities table)',
-  //   default: '',
-  //   required: false,
-  // })
-  @Type(() => Number)
-  @IsNumber()
-  @IsOptional()
-  @Min(1)
-  departureCityId?: number;
-
-  // @ApiPropertyOptional({
-  //   example: '',
-  //   description: 'ISO2 код країни відправлення туру ',
-  // })
-  @Transform(({ value }): string | undefined =>
-    typeof value === 'string' ? value.toUpperCase() : value,
-  )
-  @IsISO31661Alpha2({
-    message:
-      'departureCountryISO2Code must be a valid ISO 3166-1 alpha-2 code.',
-  })
-  @IsOptional()
-  departureCountryISO2Code?: string;
 
   @ApiPropertyOptional({
     example: null,

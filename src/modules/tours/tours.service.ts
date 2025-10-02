@@ -7,7 +7,7 @@ import {
 import { CreateTourDto, TourPhotoDto } from './dto/create-tour.dto';
 import { Tour } from './tours.types';
 import { GetToursQueryDto, SortOrder } from './dto/get-tours-query.dto';
-import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import { UpdateTourDto } from './dto/update-tour.dto';
 import * as schema from '@app/db/schema/schema';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -65,11 +65,6 @@ export class ToursService {
           createTourDto.countryISO2Code,
           tx,
         );
-        await this.validateCityAndCountry(
-          createTourDto.departureCityId,
-          createTourDto.departureCountryISO2Code,
-          tx,
-        );
         const tourData = {
           operatorId,
           ...createTourDto,
@@ -116,17 +111,6 @@ export class ToursService {
       countryISO2Code,
       cityId,
       type,
-      minStartDate, // Нове поле
-      maxStartDate, // Нове поле
-      minEndDate, // Нове поле
-      maxEndDate, // Нове поле
-      minPrice,
-      maxPrice,
-      adults, // Нове поле
-      children, // Нове поле
-      petsAllowed, // Нове поле
-      departureCityId, // Нове поле
-      departureCountryISO2Code, // Нове поле
       limit = 10,
       offset = 0,
       sortBy = 'startDate',
@@ -141,54 +125,8 @@ export class ToursService {
     if (cityId) {
       whereConditions.push(eq(schema.tours.cityId, cityId));
     }
-    if (departureCountryISO2Code) {
-      // Додано фільтр
-      whereConditions.push(
-        eq(schema.tours.departureCountryISO2Code, departureCountryISO2Code),
-      );
-    }
-    if (departureCityId) {
-      // Додано фільтр
-      whereConditions.push(eq(schema.tours.departureCityId, departureCityId));
-    }
     if (type) {
       whereConditions.push(eq(schema.tours.type, type));
-    }
-
-    // Фільтрація за діапазоном startDate
-    if (minStartDate) {
-      whereConditions.push(gte(schema.tours.startDate, minStartDate));
-    }
-    if (maxStartDate) {
-      whereConditions.push(lte(schema.tours.startDate, maxStartDate));
-    }
-
-    // Фільтрація за діапазоном endDate
-    if (minEndDate) {
-      whereConditions.push(gte(schema.tours.endDate, minEndDate));
-    }
-    if (maxEndDate) {
-      whereConditions.push(lte(schema.tours.endDate, maxEndDate));
-    }
-
-    // Для price, оскільки це DECIMAL, використовуємо sql`...` для порівняння
-    // Або просто number, якщо ваш DTO та схема Drizzle правильно обробляють це
-    if (minPrice !== undefined) {
-      whereConditions.push(gte(schema.tours.price, sql`${minPrice}`));
-    }
-    if (maxPrice !== undefined) {
-      whereConditions.push(lte(schema.tours.price, sql`${maxPrice}`));
-    }
-
-    // Додано фільтри для adults, children, petsAllowed
-    if (adults !== undefined) {
-      whereConditions.push(gte(schema.tours.adults, adults)); // Або eq, якщо точна кількість
-    }
-    if (children !== undefined) {
-      whereConditions.push(gte(schema.tours.children, children)); // Або eq
-    }
-    if (petsAllowed !== undefined) {
-      whereConditions.push(eq(schema.tours.petsAllowed, petsAllowed));
     }
 
     // Типізуємо orderByColumn коректно, використовуючи columns з schema.tours
@@ -227,13 +165,6 @@ export class ToursService {
             },
           },
           city: {
-            with: {
-              translations: {
-                where: eq(schema.cityTranslations.languageCode, lang),
-              },
-            },
-          },
-          departureCity: {
             with: {
               translations: {
                 where: eq(schema.cityTranslations.languageCode, lang),
@@ -288,13 +219,6 @@ export class ToursService {
             },
           },
         },
-        departureCity: {
-          with: {
-            translations: {
-              where: eq(schema.cityTranslations.languageCode, lang),
-            },
-          },
-        },
       },
     });
 
@@ -328,22 +252,6 @@ export class ToursService {
         if (cityId && countryISO2Code) {
           await this.validateCityAndCountry(cityId, countryISO2Code, tx);
         }
-      }
-
-      if (
-        updateTourDto.departureCityId ||
-        updateTourDto.departureCountryISO2Code
-      ) {
-        const departureCityId =
-          updateTourDto.departureCityId ?? existingTour.departureCityId;
-        const departureCountryISO2Code =
-          updateTourDto.departureCountryISO2Code ??
-          existingTour.departureCountryISO2Code;
-        await this.validateCityAndCountry(
-          departureCityId,
-          departureCountryISO2Code,
-          tx,
-        );
       }
       const [updatedTour] = await tx
         .update(schema.tours)
