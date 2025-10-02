@@ -10,8 +10,7 @@ import {
 export class IsAfterTodayConstraint implements ValidatorConstraintInterface {
   validate(date: string) {
     if (!date) return false;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = new Date(new Date().toISOString().split('T')[0]);
     const targetDate = new Date(date);
     return targetDate > today;
   }
@@ -21,11 +20,13 @@ export class IsAfterTodayConstraint implements ValidatorConstraintInterface {
   }
 }
 
-export function IsAfterToday(validationOptions?: ValidationOptions) {
-  return function (object: object, propertyName: string) {
+export function IsAfterToday(
+  validationOptions?: ValidationOptions,
+): PropertyDecorator {
+  return function (object: object, propertyName: string | symbol) {
     registerDecorator({
       target: object.constructor,
-      propertyName: propertyName,
+      propertyName: String(propertyName),
       options: validationOptions,
       constraints: [],
       validator: IsAfterTodayConstraint,
@@ -55,11 +56,11 @@ export class IsAfterConstraint implements ValidatorConstraintInterface {
 export function IsAfter(
   property: string,
   validationOptions?: ValidationOptions,
-) {
-  return function (object: object, propertyName: string) {
+): PropertyDecorator {
+  return function (object: object, propertyName: string | symbol) {
     registerDecorator({
       target: object.constructor,
-      propertyName: propertyName,
+      propertyName: String(propertyName),
       options: validationOptions,
       constraints: [property],
       validator: IsAfterConstraint,
