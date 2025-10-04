@@ -218,10 +218,10 @@ export class CreateTourDto {
   @ApiPropertyOptional({
     description:
       'Metadata for tour photos. The order should correspond to the uploaded files. Example: photos[0][isMain]=true&photos[0][description]=Main photo',
-    type: [CreateTourPhotoDto],
+    type: [TourPhotoDto],
   })
   // Трансформація для поля photos, щоб коректно обробляти різні формати вхідних даних (JSON-рядок, об'єкт, масив)
-  // та забезпечити, що на вхід валідатора завжди надходитиме масив об'єктів CreateTourPhotoDto.
+  // та забезпечити, що на вхід валідатора завжди надходитиме масив об'єктів TourPhotoDto.CreateTourPhotoDto.
   @Transform(({ value }) => {
     if (!value) {
       return []; // Повертаємо пустий масив, якщо дані відсутні
@@ -253,13 +253,13 @@ export class CreateTourDto {
     const photosArray = Array.isArray(photoData) ? photoData : [photoData];
 
     // Перетворюємо масив простих об'єктів на масив екземплярів CreateTourPhotoDto
-    return plainToInstance(CreateTourPhotoDto, photosArray);
+    return plainToInstance(TourPhotoDto, photosArray);
   })
   @ValidateNested({ each: true })
-  @Type(() => CreateTourPhotoDto)
+  @Type(() => TourPhotoDto)
   @IsArray({ message: 'Photos must be an array.' })
   @IsOptional()
-  photos: CreateTourPhotoDto[];
+  photos: TourPhotoDto[];
 
   @ApiProperty({
     description: 'Array of photos (1–10 files, JPG/PNG, max 5MB each)',

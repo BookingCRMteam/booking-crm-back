@@ -1,24 +1,30 @@
-// src/modules/photos/pipes/photo-validation.pipe.ts
-import {
-  PipeTransform,
-  Injectable,
-  BadRequestException,
-  Scope,
-  Inject,
-} from '@nestjs/common';
-import { REQUEST } from '@nestjs/core';
-import { Request } from 'express';
+import { PipeTransform, Injectable, BadRequestException } from '@nestjs/common';
+import { Express } from 'express';
 
-@Injectable({ scope: Scope.REQUEST })
-export class PhotoValidationPipe implements PipeTransform {
-  constructor(@Inject(REQUEST) private readonly request: Request) {}
-  transform(files: Express.Multer.File[]) {
-    if (this.request.method === 'PATCH' || this.request.method === 'PUT') {
-      if (!files || files.length === 0) {
-        return files;
-      }
+interface PhotoValidationOptions {
+  required?: boolean;
+}
+
+@Injectable()
+export class PhotoValidationPipe
+  implements PipeTransform<Express.Multer.File | Express.Multer.File[]>
+{
+  constructor(private readonly options: PhotoValidationOptions = {}) {}
+
+  transform(value: Express.Multer.File | Express.Multer.File[]) {
+    const { required = true } = this.options;
+
+    if (!required && !value) {
+      return null;
     }
-    if (!files || files.length === 0) {
+
+    if (required && !value) {
+      throw new BadRequestException('At least 1 photo is required.');
+    }
+
+    const files: Express.Multer.File[] = Array.isArray(value) ? value : [value];
+
+    if (required && files.length === 0) {
       throw new BadRequestException('At least 1 photo is required.');
     }
 
@@ -40,6 +46,6 @@ export class PhotoValidationPipe implements PipeTransform {
       }
     });
 
-    return files;
+    return value;
   }
 }
