@@ -22,11 +22,11 @@ export class PhotoValidationPipe
       throw new BadRequestException('At least 1 photo is required.');
     }
 
-    if (!value) {
-      return null;
-    }
-
     const files: Express.Multer.File[] = Array.isArray(value) ? value : [value];
+
+    if (required && files.length === 0) {
+      throw new BadRequestException('At least 1 photo is required.');
+    }
 
     if (files.length > 10) {
       throw new BadRequestException('No more than 10 photos are allowed.');

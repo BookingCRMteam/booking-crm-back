@@ -258,7 +258,7 @@ export class ToursController {
     @Param('photoId', ParseIntPipe) photoId: number,
     @Body() updateTourPhotoDto: UpdateTourPhotoDto,
     @UploadedFile(new PhotoValidationPipe({ required: false }))
-    file: Express.Multer.File,
+    file?: Express.Multer.File,
     @Req() req: AuthenticatedRequest,
   ) {
     try {
@@ -274,7 +274,6 @@ export class ToursController {
         );
         photoUrl = uploadResult.secure_url;
       }
-      console.log('updateTourPhotoDto', updateTourPhotoDto);
       const updatedPhoto = await this.toursService.updatePhoto(
         tourId,
         photoId,
