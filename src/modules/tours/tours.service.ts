@@ -7,7 +7,7 @@ import {
 import { CreateTourDto } from './dto/create-tour.dto';
 import { Tour, TourPhoto } from './tours.types';
 import { GetToursQueryDto, SortOrder } from './dto/get-tours-query.dto';
-import { and, asc, desc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, ne, sql } from 'drizzle-orm';
 import { UpdateTourDto } from './dto/update-tour.dto';
 import { UpdateTourPhotoDto } from './dto/update-tour-photo.dto';
 
@@ -291,22 +291,55 @@ export class ToursService {
         }
 
         if (photos !== undefined) {
+          console.log('Incoming photos:', JSON.stringify(photos, null, 2));
           const mainPhotos = photos.filter((p) => p.isMain);
           if (mainPhotos.length > 1) {
             throw new BadRequestException('Only one photo can be set as main.');
           }
-          await tx
-            .delete(schema.tourPhotos)
-            .where(eq(schema.tourPhotos.tourId, id));
 
-          if (photos.length > 0) {
-            const newPhotosToInsert = photos.map((photo) => ({
+          const existingDbPhotos = await tx.query.tourPhotos.findMany({
+            where: eq(schema.tourPhotos.tourId, id),
+          });
+          console.log(
+            'Existing DB photos:',
+            JSON.stringify(existingDbPhotos, null, 2),
+          );
+          const existingDbPhotoUrls = new Set(
+            existingDbPhotos.map((p) => p.url),
+          );
+
+          const newPhotos = photos.filter(
+            (p) => p.url && !existingDbPhotoUrls.has(p.url),
+          );
+          console.log(
+            'New photos to insert:',
+            JSON.stringify(newPhotos, null, 2),
+          );
+
+          if (newPhotos.length > 0) {
+            const newPhotosToInsert = newPhotos.map((photo) => ({
               tourId: id,
               url: photo.url,
-              isMain: photo.isMain,
+              isMain: photo.isMain ?? false,
               description: photo.description,
             }));
             await tx.insert(schema.tourPhotos).values(newPhotosToInsert);
+          }
+
+          const newMainPhoto = photos.find((p) => p.isMain);
+          if (
+            newMainPhoto &&
+            newPhotos.some((p) => p.url === newMainPhoto.url)
+          ) {
+            await tx
+              .update(schema.tourPhotos)
+              .set({ isMain: false })
+              .where(
+                and(
+                  eq(schema.tourPhotos.tourId, id),
+                  ne(schema.tourPhotos.url, newMainPhoto.url),
+                ),
+              );
           }
         }
 
@@ -314,6 +347,10 @@ export class ToursService {
           where: eq(schema.tours.id, updatedTour.id),
           with: { photos: true },
         });
+        console.log(
+          'Final tour with photos:',
+          JSON.stringify(tourWithPhotos, null, 2),
+        );
 
         if (!tourWithPhotos) {
           throw new NotFoundException(

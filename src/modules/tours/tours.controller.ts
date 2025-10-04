@@ -257,9 +257,9 @@ export class ToursController {
     @Param('tourId', ParseIntPipe) tourId: number,
     @Param('photoId', ParseIntPipe) photoId: number,
     @Body() updateTourPhotoDto: UpdateTourPhotoDto,
+    @Req() req: AuthenticatedRequest,
     @UploadedFile(new PhotoValidationPipe({ required: false }))
     file?: Express.Multer.File,
-    @Req() req: AuthenticatedRequest,
   ) {
     try {
       const operatorId = req.user.operatorId;
