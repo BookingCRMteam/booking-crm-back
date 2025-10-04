@@ -18,12 +18,13 @@ import {
   Req,
   BadRequestException,
   UseGuards,
+  UploadedFile,
 } from '@nestjs/common';
 import { ToursService } from './tours.service';
 import { CreateTourDto } from './dto/create-tour.dto';
 import { Tour } from './tours.types';
 import { GetToursQueryDto } from './dto/get-tours-query.dto';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import multer from 'multer';
 import { CloudinaryService } from '@app/cloudinary/cloudinary.service';
 import { UpdateTourDto } from './dto/update-tour.dto';
@@ -31,7 +32,10 @@ import { ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { AuthenticatedRequest } from '@app/types/authenticated.request';
 import { JwtAuthGuard } from '@app/common/guards/jwt-auth.guard';
 import { PhotoValidationPipe } from './pipes';
+
 import { EmptyStringToUndefinedInterceptor } from '@app/common/interceptors/empty-string-to-undefined.interceptor';
+import { UpdateTourPhotoDto } from './dto/update-tour-photo.dto';
+
 @Controller('tours')
 export class ToursController {
   constructor(
@@ -41,7 +45,6 @@ export class ToursController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('bearer')
   @Post()
-  @UsePipes(new ValidationPipe({ transform: true }))
   @UseInterceptors(
     FilesInterceptor('photo_files', 10, { storage: multer.memoryStorage() }),
   )
@@ -49,7 +52,8 @@ export class ToursController {
   async create(
     @Body(new ValidationPipe({ transform: true, whitelist: true }))
     createTourDto: CreateTourDto,
-    @UploadedFiles(PhotoValidationPipe) files: Express.Multer.File[],
+    @UploadedFiles(new PhotoValidationPipe())
+    files: Express.Multer.File[],
     @Req() req: AuthenticatedRequest,
   ): Promise<Tour> {
     try {
@@ -144,7 +148,7 @@ export class ToursController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard) // Оновлення туру
+  @UseGuards(JwtAuthGuard)
   @UsePipes(
     new ValidationPipe({
       transform: true,
@@ -153,17 +157,18 @@ export class ToursController {
       skipMissingProperties: true,
     }),
   )
-  @UseInterceptors(EmptyStringToUndefinedInterceptor)
   @UseInterceptors(
     FilesInterceptor('photo_files', 10, { storage: multer.memoryStorage() }),
+    EmptyStringToUndefinedInterceptor,
   )
   @ApiConsumes('multipart/form-data')
   @ApiBearerAuth('bearer')
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateTourDto: UpdateTourDto,
-    @UploadedFiles(PhotoValidationPipe) files: Express.Multer.File[],
     @Req() req: AuthenticatedRequest,
+    @UploadedFiles(new PhotoValidationPipe({ required: false }))
+    files?: Express.Multer.File[],
   ) {
     try {
       const operatorId = req.user.operatorId;
@@ -172,13 +177,10 @@ export class ToursController {
       }
 
       if (files && files.length > 0) {
-        if (
-          updateTourDto.photos &&
-          updateTourDto.photos.length > 0 &&
-          updateTourDto.photos.length !== files.length
-        ) {
+        const newPhotosMeta = updateTourDto.photos?.filter((p) => !p.url) ?? [];
+        if (newPhotosMeta.length !== files.length) {
           throw new BadRequestException(
-            'The number of files does not match the number of photo metadata entries.',
+            'The number of files does not match the number of new photo metadata entries.',
           );
         }
 
@@ -187,7 +189,7 @@ export class ToursController {
             const uploadResult = await this.cloudinaryService.uploadImage(
               file.buffer,
             );
-            const photoMeta = updateTourDto.photos?.[index] ?? {};
+            const photoMeta = newPhotosMeta[index];
             return {
               url: uploadResult.secure_url,
               isMain: photoMeta.isMain ?? false,
@@ -195,7 +197,9 @@ export class ToursController {
             };
           }),
         );
-        updateTourDto.photos = uploadedPhotos;
+
+        const existingPhotos = updateTourDto.photos?.filter((p) => p.url) ?? [];
+        updateTourDto.photos = [...existingPhotos, ...uploadedPhotos];
       }
 
       const updatedTour = await this.toursService.update(
@@ -235,5 +239,63 @@ export class ToursController {
 
     const res = await this.toursService.remove(id, operatorId);
     return res.message;
+  }
+
+  @Patch(':tourId/photos/:photoId')
+  @UseGuards(JwtAuthGuard)
+  @UsePipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
+  )
+  @UseInterceptors(FileInterceptor('photo_file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBearerAuth('bearer')
+  async updatePhoto(
+    @Param('tourId', ParseIntPipe) tourId: number,
+    @Param('photoId', ParseIntPipe) photoId: number,
+    @Body() updateTourPhotoDto: UpdateTourPhotoDto,
+    @UploadedFile(new PhotoValidationPipe({ required: false }))
+    file: Express.Multer.File,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    try {
+      const operatorId = req.user.operatorId;
+      if (!operatorId) {
+        throw new BadRequestException('Operator ID not found.');
+      }
+
+      let photoUrl: string | undefined;
+      if (file) {
+        const uploadResult = await this.cloudinaryService.uploadImage(
+          file.buffer,
+        );
+        photoUrl = uploadResult.secure_url;
+      }
+      console.log('updateTourPhotoDto', updateTourPhotoDto);
+      const updatedPhoto = await this.toursService.updatePhoto(
+        tourId,
+        photoId,
+        operatorId,
+        updateTourPhotoDto,
+        photoUrl,
+      );
+
+      return {
+        message: 'Photo updated successfully',
+        data: updatedPhoto,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      console.error('Error in updatePhoto:', error);
+      throw new HttpException(
+        'Failed to update photo',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }

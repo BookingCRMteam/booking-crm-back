@@ -4,11 +4,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateTourDto, TourPhotoDto } from './dto/create-tour.dto';
-import { Tour } from './tours.types';
+import { CreateTourDto } from './dto/create-tour.dto';
+import { Tour, TourPhoto } from './tours.types';
 import { GetToursQueryDto, SortOrder } from './dto/get-tours-query.dto';
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import { UpdateTourDto } from './dto/update-tour.dto';
+import { UpdateTourPhotoDto } from './dto/update-tour-photo.dto';
+
 import * as schema from '@app/db/schema/schema';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 @Injectable()
@@ -81,9 +83,7 @@ export class ToursService {
           if (mainPhotos.length > 1) {
             throw new BadRequestException('Only one photo can be set as main.');
           }
-          const tourPhotosToInsert = (
-            createTourDto.photos as TourPhotoDto[]
-          ).map((photo) => ({
+          const tourPhotosToInsert = createTourDto.photos.map((photo) => ({
             tourId: newTour.id,
             url: photo.url,
             isMain: photo.isMain,
@@ -233,82 +233,104 @@ export class ToursService {
 
   async update(id: number, updateTourDto: UpdateTourDto, operatorId: number) {
     return await this.db.transaction(async (tx) => {
-      const existingTour = await tx.query.tours.findFirst({
-        where: and(
-          eq(schema.tours.id, id),
-          eq(schema.tours.operatorId, operatorId),
-        ),
-      });
+      try {
+        const { photos, ...tourData } = updateTourDto;
 
-      if (!existingTour) {
-        throw new NotFoundException(
-          `Tour with ID ${id} not found or you don't have permission to update it.`,
-        );
-      }
-      if (updateTourDto.cityId || updateTourDto.countryISO2Code) {
-        const cityId = updateTourDto.cityId ?? existingTour.cityId;
-        const countryISO2Code =
-          updateTourDto.countryISO2Code ?? existingTour.countryISO2Code;
-        if (cityId && countryISO2Code) {
-          await this.validateCityAndCountry(cityId, countryISO2Code, tx);
+        const existingTour = await tx.query.tours.findFirst({
+          where: and(
+            eq(schema.tours.id, id),
+            eq(schema.tours.operatorId, operatorId),
+          ),
+        });
+
+        if (!existingTour) {
+          throw new NotFoundException(
+            `Tour with ID ${id} not found or you don't have permission to update it.`,
+          );
         }
-      }
-      const [updatedTour] = await tx
-        .update(schema.tours)
-        .set({
-          ...updateTourDto,
-          price:
-            updateTourDto.price !== undefined
-              ? updateTourDto.price.toFixed(2)
-              : undefined,
-          updatedAt: new Date(),
-        })
-        .where(eq(schema.tours.id, id))
-        .returning();
 
-      if (!updatedTour) {
-        throw new BadRequestException('Failed to update tour data.');
-      }
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (new Date(existingTour.startDate) < today) {
+          const allowedUpdates = { isActive: false };
+          const updates = Object.keys(tourData);
+          const isOnlyDeactivating = updates.every(
+            (key) => key in allowedUpdates,
+          );
 
-      if (updateTourDto.photos !== undefined) {
-        const mainPhotos = updateTourDto.photos.filter((p) => p.isMain);
-        if (mainPhotos.length > 1) {
-          throw new BadRequestException('Only one photo can be set as main.');
+          if (!isOnlyDeactivating || updates.length === 0) {
+            throw new BadRequestException(
+              'Cannot update a tour that has already started. Only deactivation is allowed.',
+            );
+          }
         }
-        await tx
-          .delete(schema.tourPhotos)
-          .where(eq(schema.tourPhotos.tourId, id));
 
-        if (updateTourDto.photos.length > 0) {
-          const newPhotosToInsert = (
-            updateTourDto.photos as TourPhotoDto[]
-          ).map((photo) => ({
-            tourId: id,
-            url: photo.url,
-            isMain: photo.isMain,
-            description: photo.description,
-          }));
-          await tx.insert(schema.tourPhotos).values(newPhotosToInsert);
+        if (tourData.cityId || tourData.countryISO2Code) {
+          const cityId = tourData.cityId ?? existingTour.cityId;
+          const countryISO2Code =
+            tourData.countryISO2Code ?? existingTour.countryISO2Code;
+          if (cityId && countryISO2Code) {
+            await this.validateCityAndCountry(cityId, countryISO2Code, tx);
+          }
         }
+        const [updatedTour] = await tx
+          .update(schema.tours)
+          .set({
+            ...tourData,
+            price:
+              tourData.price !== undefined
+                ? tourData.price.toFixed(2)
+                : undefined,
+            updatedAt: new Date(),
+          })
+          .where(eq(schema.tours.id, id))
+          .returning();
+
+        if (!updatedTour) {
+          throw new BadRequestException('Failed to update tour data.');
+        }
+
+        if (photos !== undefined) {
+          const mainPhotos = photos.filter((p) => p.isMain);
+          if (mainPhotos.length > 1) {
+            throw new BadRequestException('Only one photo can be set as main.');
+          }
+          await tx
+            .delete(schema.tourPhotos)
+            .where(eq(schema.tourPhotos.tourId, id));
+
+          if (photos.length > 0) {
+            const newPhotosToInsert = photos.map((photo) => ({
+              tourId: id,
+              url: photo.url,
+              isMain: photo.isMain,
+              description: photo.description,
+            }));
+            await tx.insert(schema.tourPhotos).values(newPhotosToInsert);
+          }
+        }
+
+        const tourWithPhotos = await tx.query.tours.findFirst({
+          where: eq(schema.tours.id, updatedTour.id),
+          with: { photos: true },
+        });
+
+        if (!tourWithPhotos) {
+          throw new NotFoundException(
+            `Tour with ID ${id} not found after update.`,
+          );
+        }
+
+        return {
+          ...tourWithPhotos,
+          price: parseFloat(tourWithPhotos.price),
+          createdAt: tourWithPhotos.createdAt.toISOString(),
+          updatedAt: tourWithPhotos.updatedAt.toISOString(),
+        };
+      } catch (error) {
+        console.error('Error in update transaction:', error);
+        throw error;
       }
-
-      const tourWithPhotos = await tx.query.tours.findFirst({
-        where: eq(schema.tours.id, updatedTour.id),
-        with: { photos: true },
-      });
-
-      if (!tourWithPhotos) {
-        throw new NotFoundException(
-          `Tour with ID ${id} not found after update.`,
-        );
-      }
-
-      return {
-        ...tourWithPhotos,
-        price: parseFloat(tourWithPhotos.price),
-        createdAt: tourWithPhotos.createdAt.toISOString(),
-        updatedAt: tourWithPhotos.updatedAt.toISOString(),
-      };
     });
   }
 
@@ -338,5 +360,57 @@ export class ToursService {
     }
 
     return { message: `Tour with ID ${id} has been deactivated.` };
+  }
+
+  async updatePhoto(
+    tourId: number,
+    photoId: number,
+    operatorId: number,
+    updateTourPhotoDto: UpdateTourPhotoDto,
+    photoUrl?: string,
+  ): Promise<TourPhoto> {
+    return await this.db.transaction(async (tx) => {
+      const tour = await tx.query.tours.findFirst({
+        where: and(
+          eq(schema.tours.id, tourId),
+          eq(schema.tours.operatorId, operatorId),
+        ),
+      });
+
+      if (!tour) {
+        throw new NotFoundException(
+          `Tour with ID ${tourId} not found or you don't have permission to update it.`,
+        );
+      }
+
+      const photo = await tx.query.tourPhotos.findFirst({
+        where: and(
+          eq(schema.tourPhotos.id, photoId),
+          eq(schema.tourPhotos.tourId, tourId),
+        ),
+      });
+
+      if (!photo) {
+        throw new NotFoundException(`Photo with ID ${photoId} not found.`);
+      }
+
+      if (updateTourPhotoDto.isMain) {
+        await tx
+          .update(schema.tourPhotos)
+          .set({ isMain: false })
+          .where(eq(schema.tourPhotos.tourId, tourId));
+      }
+
+      const [updatedPhoto] = await tx
+        .update(schema.tourPhotos)
+        .set({
+          ...updateTourPhotoDto,
+          url: photoUrl,
+        })
+        .where(eq(schema.tourPhotos.id, photoId))
+        .returning();
+
+      return updatedPhoto;
+    });
   }
 }
