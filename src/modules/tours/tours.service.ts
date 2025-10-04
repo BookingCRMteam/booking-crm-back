@@ -291,7 +291,6 @@ export class ToursService {
         }
 
         if (photos !== undefined) {
-          console.log('Incoming photos:', JSON.stringify(photos, null, 2));
           const mainPhotos = photos.filter((p) => p.isMain);
           if (mainPhotos.length > 1) {
             throw new BadRequestException('Only one photo can be set as main.');
@@ -300,20 +299,12 @@ export class ToursService {
           const existingDbPhotos = await tx.query.tourPhotos.findMany({
             where: eq(schema.tourPhotos.tourId, id),
           });
-          console.log(
-            'Existing DB photos:',
-            JSON.stringify(existingDbPhotos, null, 2),
-          );
           const existingDbPhotoUrls = new Set(
             existingDbPhotos.map((p) => p.url),
           );
 
           const newPhotos = photos.filter(
             (p) => p.url && !existingDbPhotoUrls.has(p.url),
-          );
-          console.log(
-            'New photos to insert:',
-            JSON.stringify(newPhotos, null, 2),
           );
 
           if (newPhotos.length > 0) {
@@ -347,10 +338,6 @@ export class ToursService {
           where: eq(schema.tours.id, updatedTour.id),
           with: { photos: true },
         });
-        console.log(
-          'Final tour with photos:',
-          JSON.stringify(tourWithPhotos, null, 2),
-        );
 
         if (!tourWithPhotos) {
           throw new NotFoundException(
