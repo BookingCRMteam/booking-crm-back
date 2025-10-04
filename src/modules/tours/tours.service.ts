@@ -429,7 +429,7 @@ export class ToursService {
         .update(schema.tourPhotos)
         .set({
           ...updateTourPhotoDto,
-          url: photoUrl,
+          url: photoUrl ?? photo.url,
         })
         .where(eq(schema.tourPhotos.id, photoId))
         .returning();
