@@ -146,10 +146,10 @@ export class ToursService {
       whereConditions.push(lte(schema.tours.endDate, maxEndDate));
     }
     if (minPrice !== undefined) {
-      whereConditions.push(sql`${schema.tours.price}::numeric >= ${minPrice}`);
+      whereConditions.push(gte(schema.tours.price, minPrice.toString()));
     }
     if (maxPrice !== undefined) {
-      whereConditions.push(sql`${schema.tours.price}::numeric <= ${maxPrice}`);
+      whereConditions.push(lte(schema.tours.price, maxPrice.toString()));
     }
 
     // Типізуємо orderByColumn коректно, використовуючи columns з schema.tours
