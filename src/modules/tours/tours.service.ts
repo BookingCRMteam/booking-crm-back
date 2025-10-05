@@ -134,22 +134,22 @@ export class ToursService {
       whereConditions.push(eq(schema.tours.type, type));
     }
     if (minStartDate) {
-      whereConditions.push(gte(schema.tours.startDate, sql`${minStartDate}`));
+      whereConditions.push(gte(schema.tours.startDate, minStartDate));
     }
     if (maxStartDate) {
-      whereConditions.push(lte(schema.tours.startDate, sql`${maxStartDate}`));
+      whereConditions.push(lte(schema.tours.startDate, maxStartDate));
     }
     if (minEndDate) {
-      whereConditions.push(gte(schema.tours.endDate, sql`${minEndDate}`));
+      whereConditions.push(gte(schema.tours.endDate, minEndDate));
     }
     if (maxEndDate) {
-      whereConditions.push(lte(schema.tours.endDate, sql`${maxEndDate}`));
+      whereConditions.push(lte(schema.tours.endDate, maxEndDate));
     }
     if (minPrice !== undefined) {
-      whereConditions.push(gte(schema.tours.price, String(minPrice)));
+      whereConditions.push(sql`${schema.tours.price}::numeric >= ${minPrice}`);
     }
     if (maxPrice !== undefined) {
-      whereConditions.push(lte(schema.tours.price, String(maxPrice)));
+      whereConditions.push(sql`${schema.tours.price}::numeric <= ${maxPrice}`);
     }
 
     // Типізуємо orderByColumn коректно, використовуючи columns з schema.tours
