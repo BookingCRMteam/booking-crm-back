@@ -7,7 +7,7 @@ import {
 import { CreateTourDto } from './dto/create-tour.dto';
 import { Tour, TourPhoto } from './tours.types';
 import { GetToursQueryDto, SortOrder } from './dto/get-tours-query.dto';
-import { and, asc, desc, eq, ne, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, lte, ne, sql } from 'drizzle-orm';
 import { UpdateTourDto } from './dto/update-tour.dto';
 import { UpdateTourPhotoDto } from './dto/update-tour-photo.dto';
 
@@ -111,14 +111,19 @@ export class ToursService {
       countryISO2Code,
       cityId,
       type,
+      minStartDate,
+      maxStartDate,
+      minEndDate,
+      maxEndDate,
+      minPrice,
+      maxPrice,
       limit = 10,
       offset = 0,
       sortBy = 'startDate',
       sortOrder = SortOrder.ASC,
     } = query;
 
-    const whereConditions = [eq(schema.tours.isActive, true)]; // Починаємо з обов'язкових умов
-
+    const whereConditions = [eq(schema.tours.isActive, true)]; // Start with mandatory conditions
     if (countryISO2Code) {
       whereConditions.push(eq(schema.tours.countryISO2Code, countryISO2Code));
     }
@@ -127,6 +132,24 @@ export class ToursService {
     }
     if (type) {
       whereConditions.push(eq(schema.tours.type, type));
+    }
+    if (minStartDate) {
+      whereConditions.push(gte(schema.tours.startDate, sql`${minStartDate}`));
+    }
+    if (maxStartDate) {
+      whereConditions.push(lte(schema.tours.startDate, sql`${maxStartDate}`));
+    }
+    if (minEndDate) {
+      whereConditions.push(gte(schema.tours.endDate, sql`${minEndDate}`));
+    }
+    if (maxEndDate) {
+      whereConditions.push(lte(schema.tours.endDate, sql`${maxEndDate}`));
+    }
+    if (minPrice !== undefined) {
+      whereConditions.push(gte(schema.tours.price, String(minPrice)));
+    }
+    if (maxPrice !== undefined) {
+      whereConditions.push(lte(schema.tours.price, String(maxPrice)));
     }
 
     // Типізуємо orderByColumn коректно, використовуючи columns з schema.tours

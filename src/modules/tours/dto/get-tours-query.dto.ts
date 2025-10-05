@@ -8,9 +8,11 @@ import {
   IsEnum,
   Length,
   IsISO31661Alpha2,
+  Validate,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { DateRangeValidator } from './date-range.validator';
 
 export enum SortOrder {
   ASC = 'asc',
@@ -18,6 +20,9 @@ export enum SortOrder {
 }
 
 export class GetToursQueryDto {
+  @Validate(DateRangeValidator)
+  _dummy?: undefined;
+
   @ApiPropertyOptional({
     description: 'Language for tour details',
     example: 'en',
@@ -67,6 +72,9 @@ export class GetToursQueryDto {
     description: 'Minimum start date for the tour search (YYYY-MM-DD)',
     required: false,
   })
+  @Transform(({ value }: { value: string }) =>
+    value === '' ? undefined : value,
+  )
   @IsDateString()
   @IsOptional()
   minStartDate?: string;
@@ -76,6 +84,9 @@ export class GetToursQueryDto {
     description: 'Maximum start date for the tour search (YYYY-MM-DD)',
     required: false,
   })
+  @Transform(({ value }: { value: string }) =>
+    value === '' ? undefined : value,
+  )
   @IsDateString()
   @IsOptional()
   maxStartDate?: string;
@@ -85,6 +96,9 @@ export class GetToursQueryDto {
     description: 'Minimum end date for the tour search (YYYY-MM-DD)',
     required: false,
   })
+  @Transform(({ value }: { value: string }) =>
+    value === '' ? undefined : value,
+  )
   @IsDateString()
   @IsOptional()
   minEndDate?: string;
