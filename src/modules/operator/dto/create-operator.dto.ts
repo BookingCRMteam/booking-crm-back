@@ -25,8 +25,9 @@ export class CreateOperatorDto {
 
   @IsString()
   @IsNotEmpty({ message: 'Phone number is required' })
-  @Matches(/^\+?[0-9]{9,15}$/, {
-    message: 'Phone number must be valid and contain 9 to 15 digits',
+  @Matches(/^\+?[1-9][0-9]{8,14}$/, {
+    message:
+      'Phone number must be digits only (9–15 chars), cannot start with 0, may include optional + at start',
   })
   phone: string;
 
