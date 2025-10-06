@@ -35,12 +35,18 @@ export class CreateOperatorDto {
   @Length(2, 50, {
     message: 'First name must be between 2 and 50 characters',
   })
+  @Matches(/^[A-Za-zА-Яа-яЁёЇїІіЄєҐґ'’ -]+$/, {
+    message: 'First name must contain only letters and cannot include digits',
+  })
   firstName: string;
 
   @IsString()
   @IsNotEmpty({ message: 'LastName is required' })
   @Length(2, 50, {
     message: 'Last name must be between 2 and 50 characters',
+  })
+  @Matches(/^[A-Za-zА-Яа-яЁёЇїІіЄєҐґ'’ -]+$/, {
+    message: 'Last name must contain only letters and cannot include digits',
   })
   lastName: string;
 
