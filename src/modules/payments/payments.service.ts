@@ -47,7 +47,7 @@ export class PaymentsService {
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
       const bookingId = session?.metadata?.bookingId;
-      if (!bookingId) {
+      if (!/^\d+$/.test(bookingId)) {
         throw new BadRequestException('Booking ID not found in metadata');
       }
 
