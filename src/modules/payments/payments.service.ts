@@ -1,4 +1,11 @@
-import { Inject, Injectable, RawBodyRequest } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  RawBodyRequest,
+  UnauthorizedException,
+} from '@nestjs/common';
 import * as schema from '@app/db/schema/schema';
 import { eq } from 'drizzle-orm';
 import Stripe from 'stripe';
@@ -27,7 +34,9 @@ export class PaymentsService {
 
   async handleStripeWebhook(req: RawBodyRequest<Request>, signature: string) {
     if (!process.env.STRIPE_WEBHOOK_SECRET) {
-      throw new Error('STRIPE_WEBHOOK_SECRET is not configured');
+      throw new InternalServerErrorException(
+        'STRIPE_WEBHOOK_SECRET is not configured',
+      );
     }
     const event = this.stripe.webhooks.constructEvent(
       req.rawBody,
@@ -39,7 +48,10 @@ export class PaymentsService {
       const session = event.data.object;
       const bookingId = session?.metadata?.bookingId;
       if (!bookingId) {
-        throw new Error('Booking ID not found in metadata');
+        throw new BadRequestException('Booking ID not found in metadata');
+      }
+      if (!/^\d+$/.test(bookingId)) {
+        throw new BadRequestException('Invalid booking ID format in metadata');
       }
 
       const booking = await this.db.query.bookings.findFirst({
@@ -68,7 +80,9 @@ export class PaymentsService {
 
   async handleLiqpayWebhook(data: { data: string; signature: string }) {
     if (!process.env.LIQPAY_PRIVATE_KEY) {
-      throw new Error('LIQPAY_PRIVATE_KEY is not configured');
+      throw new InternalServerErrorException(
+        'LIQPAY_PRIVATE_KEY is not configured',
+      );
     }
     // Верифікація підпису liqpayjs-sdk
     const validSignature = this.liqpay.str_to_sign(
@@ -78,7 +92,7 @@ export class PaymentsService {
     );
 
     if (validSignature !== data.signature) {
-      throw new Error('Liqpay signature verification failed');
+      throw new UnauthorizedException('Liqpay signature verification failed');
     }
 
     const decodedData = JSON.parse(
@@ -88,11 +102,13 @@ export class PaymentsService {
       const orderId = decodedData.order_id;
       const orderIdParts = orderId.split('_');
       if (orderIdParts.length < 2 || orderIdParts[0] !== 'booking') {
-        throw new Error(`Invalid order_id format: ${orderId}`);
+        throw new BadRequestException(`Invalid order_id format: ${orderId}`);
       }
       const bookingId = parseInt(orderIdParts[1]);
       if (isNaN(bookingId)) {
-        throw new Error(`Invalid booking ID in order_id: ${orderId}`);
+        throw new BadRequestException(
+          `Invalid booking ID in order_id: ${orderId}`,
+        );
       }
 
       const booking = await this.db.query.bookings.findFirst({
