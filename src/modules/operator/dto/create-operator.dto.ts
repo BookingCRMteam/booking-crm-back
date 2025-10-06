@@ -7,6 +7,11 @@ import {
   Matches,
 } from 'class-validator';
 
+// Common name validation constants
+const NAME_PATTERN =
+  /^[A-Za-zА-Яа-яЁёЇїІіЄєҐґ](?:[ '-]?[A-Za-zА-Яа-яЁёЇїІіЄєҐґ])*$/;
+const NAME_ERROR_MESSAGE =
+  'must contain only letters, internal spaces, hyphens or apostrophes, and cannot start or end with a separator';
 export class CreateOperatorDto {
   [x: string]: string;
   @IsOptional()
@@ -35,8 +40,8 @@ export class CreateOperatorDto {
   @Length(2, 50, {
     message: 'First name must be between 2 and 50 characters',
   })
-  @Matches(/^[A-Za-zА-Яа-яЁёЇїІіЄєҐґ'’ -]+$/, {
-    message: 'First name must contain only letters and cannot include digits',
+  @Matches(NAME_PATTERN, {
+    message: `First name ${NAME_ERROR_MESSAGE}`,
   })
   firstName: string;
 
@@ -45,8 +50,8 @@ export class CreateOperatorDto {
   @Length(2, 50, {
     message: 'Last name must be between 2 and 50 characters',
   })
-  @Matches(/^[A-Za-zА-Яа-яЁёЇїІіЄєҐґ'’ -]+$/, {
-    message: 'Last name must contain only letters and cannot include digits',
+  @Matches(NAME_PATTERN, {
+    message: `Last name ${NAME_ERROR_MESSAGE}`,
   })
   lastName: string;
 
