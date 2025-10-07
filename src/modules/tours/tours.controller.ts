@@ -306,20 +306,12 @@ export class ToursController {
     @Param('tourId', ParseIntPipe) tourId: number,
     @Param('photoId', ParseIntPipe) photoId: number,
     @Req() req: AuthenticatedRequest,
-  ): Promise<{ message: string }> {
+  ): Promise<void> {
     const operatorId = req.user.operatorId;
     if (!operatorId) {
       throw new BadRequestException('Operator ID not found.');
     }
 
-    const result = await this.toursService.deletePhoto(
-      tourId,
-      photoId,
-      operatorId,
-    );
-    if (!result) {
-      throw new NotFoundException('Failed to delete photo');
-    }
-    return { message: 'Photo deleted successfully' };
+    await this.toursService.deletePhoto(tourId, photoId, operatorId);
   }
 }
