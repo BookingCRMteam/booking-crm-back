@@ -19,6 +19,7 @@ import {
   BadRequestException,
   UseGuards,
   UploadedFile,
+  NotFoundException,
 } from '@nestjs/common';
 import { ToursService } from './tours.service';
 import { CreateTourDto } from './dto/create-tour.dto';
@@ -226,7 +227,6 @@ export class ToursController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBearerAuth('bearer')
   async remove(
     @Param('id', ParseIntPipe) id: number,
@@ -318,7 +318,7 @@ export class ToursController {
       operatorId,
     );
     if (!result) {
-      throw new BadRequestException('Failed to delete photo');
+      throw new NotFoundException('Failed to delete photo');
     }
     return { message: 'Photo deleted successfully' };
   }
