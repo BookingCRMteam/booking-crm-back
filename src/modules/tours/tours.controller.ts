@@ -297,4 +297,29 @@ export class ToursController {
       );
     }
   }
+
+  @Delete(':tourId/photos/:photoId')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth('bearer')
+  async deletePhoto(
+    @Param('tourId', ParseIntPipe) tourId: number,
+    @Param('photoId', ParseIntPipe) photoId: number,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<{ message: string }> {
+    const operatorId = req.user.operatorId;
+    if (!operatorId) {
+      throw new BadRequestException('Operator ID not found.');
+    }
+
+    const result = await this.toursService.deletePhoto(
+      tourId,
+      photoId,
+      operatorId,
+    );
+    if (!result) {
+      throw new BadRequestException('Failed to delete photo');
+    }
+    return { message: 'Photo deleted successfully' };
+  }
 }

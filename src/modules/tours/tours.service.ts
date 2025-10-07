@@ -460,4 +460,49 @@ export class ToursService {
       return updatedPhoto;
     });
   }
+
+  async deletePhoto(
+    tourId: number,
+    photoId: number,
+    operatorId: number,
+  ): Promise<{ message: string }> {
+    return await this.db.transaction(async (tx) => {
+      const tour = await tx.query.tours.findFirst({
+        where: and(
+          eq(schema.tours.id, tourId),
+          eq(schema.tours.operatorId, operatorId),
+        ),
+      });
+
+      if (!tour) {
+        throw new NotFoundException(
+          `Tour with ID ${tourId} not found or you don't have permission to modify it.`,
+        );
+      }
+
+      const photo = await tx.query.tourPhotos.findFirst({
+        where: and(
+          eq(schema.tourPhotos.id, photoId),
+          eq(schema.tourPhotos.tourId, tourId),
+        ),
+      });
+
+      if (!photo) {
+        throw new NotFoundException(
+          `Photo with ID ${photoId} not found in tour ${tourId}.`,
+        );
+      }
+      if (photo.isMain) {
+        throw new BadRequestException(
+          'The main photo cannot be deleted. Please set another photo as main first.',
+        );
+      }
+
+      await tx
+        .delete(schema.tourPhotos)
+        .where(eq(schema.tourPhotos.id, photoId));
+
+      return { message: 'Photo deleted successfully.' };
+    });
+  }
 }
