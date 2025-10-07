@@ -1,8 +1,20 @@
-import { IsOptional, IsString, IsUrl, Matches } from 'class-validator';
-
+import { IsOptional, IsString, IsUrl, Length, Matches } from 'class-validator';
+import { Transform } from 'class-transformer';
 export class UpdateOperatorDto {
   @IsOptional()
-  @IsString()
+  @Length(3, 100, {
+    message: 'Company name must be between 3 and 100 characters long',
+  })
+  @Matches(/^(?!.*(--|\.\.))[\p{L}\p{N}\s.,'"-]+$/u, {
+    message:
+      'Company name may only contain letters, numbers, spaces, and symbols . , \' " - without repeats',
+  })
+  @Transform(({ value }: { value: unknown }) => {
+    if (typeof value === 'string') {
+      return value.trim();
+    }
+    return value as string | undefined;
+  })
   companyName?: string;
 
   @IsOptional()
