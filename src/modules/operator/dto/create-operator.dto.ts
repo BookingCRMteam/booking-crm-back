@@ -7,11 +7,12 @@ import {
   Matches,
 } from 'class-validator';
 
-// Common name validation constants
 const NAME_PATTERN =
-  /^[A-Za-zА-Яа-яЁёЇїІіЄєҐґ](?:[ '-]?[A-Za-zА-Яа-яЁёЇїІіЄєҐґ])*$/;
+  /^(?!.*(--|''))(?!(?:.*[-']$)|(?:^[-']))[A-Za-zА-Яа-яЁёЇїІіЄєҐґ'-]{2,50}$/;
+
 const NAME_ERROR_MESSAGE =
-  'must contain only letters, internal spaces, hyphens or apostrophes, and cannot start or end with a separator';
+  'must be 2–50 characters long, contain only letters (Latin or Cyrillic), single hyphens or apostrophes. ' +
+  'Digits, spaces, special characters, consecutive or leading/trailing separators are not allowed.';
 export class CreateOperatorDto {
   [x: string]: string;
   @IsOptional()
