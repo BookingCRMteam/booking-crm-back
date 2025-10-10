@@ -19,7 +19,6 @@ import {
   BadRequestException,
   UseGuards,
   UploadedFile,
-  NotFoundException,
 } from '@nestjs/common';
 import { ToursService } from './tours.service';
 import { CreateTourDto } from './dto/create-tour.dto';
