@@ -150,6 +150,7 @@ export class ToursService {
       lang = 'en',
       countryISO2Code,
       cityId,
+      operatorId,
       type,
       minStartDate,
       maxStartDate,
@@ -169,6 +170,9 @@ export class ToursService {
     }
     if (cityId) {
       whereConditions.push(eq(schema.tours.cityId, cityId));
+    }
+    if (operatorId) {
+      whereConditions.push(eq(schema.tours.operatorId, operatorId));
     }
     if (type) {
       whereConditions.push(eq(schema.tours.type, type));

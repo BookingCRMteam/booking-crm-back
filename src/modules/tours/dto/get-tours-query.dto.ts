@@ -57,6 +57,17 @@ export class GetToursQueryDto {
   @Type(() => Number)
   cityId?: number;
 
+  @ApiProperty({
+    example: null,
+    description: 'ID of the operator',
+    required: false,
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  @Type(() => Number)
+  operatorId?: number;
+
   @ApiPropertyOptional({
     example: '',
     description: 'Type of the tour (e.g., Adventure, Sightseeing)',
