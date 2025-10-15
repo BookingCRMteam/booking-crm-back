@@ -1,13 +1,24 @@
-import { IsOptional, IsString, IsUrl, Length, Matches } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  Length,
+  Matches,
+  ValidateIf,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
+
+const NAME_PATTERN =
+  /^(?!.*(--|''))(?!(?:.*[-']$)|(?:^[-']))[A-Za-zА-Яа-яЁёЇїІіЄєҐґ'-]{2,50}$/;
+
+const NAME_ERROR_MESSAGE =
+  'must be 2–50 characters long, contain only letters (Latin or Cyrillic), single hyphens or apostrophes. ' +
+  'Digits, spaces, special characters, consecutive or leading/trailing separators are not allowed.';
+
 export class UpdateOperatorDto {
   @IsOptional()
-  @Length(3, 100, {
-    message: 'Company name must be between 3 and 100 characters long',
-  })
-  @Matches(/^(?!.*(--|\.\.))[\p{L}\p{N}\s.,'"-]+$/u, {
-    message:
-      'Company name may only contain letters, numbers, spaces, and symbols . , \' " - without repeats',
+  @IsString()
+  @Length(2, 100, {
+    message: 'Company name must be between 2 and 100 characters',
   })
   @Transform(({ value }: { value: unknown }) => {
     if (typeof value === 'string') {
@@ -19,28 +30,53 @@ export class UpdateOperatorDto {
 
   @IsOptional()
   @IsString()
+  @Length(10, 500, {
+    message: 'Description must be between 10 and 500 characters',
+  })
   description?: string;
 
   @IsOptional()
   @IsString()
   philosophy?: string;
 
-  @IsOptional()
+  @ValidateIf((o: UpdateOperatorDto) => o.phone !== undefined && o.phone !== '')
   @IsString()
-  @Matches(/^\+?[0-9]{9,15}$/, {
-    message: 'Phone number must be valid and contain 9 to 15 digits',
+  @Matches(/^\+?[1-9][0-9]{8,14}$/, {
+    message:
+      'Phone number must be digits only (9–15 chars), cannot start with 0, may include optional + at start',
   })
   phone?: string;
 
-  @IsOptional()
+  @ValidateIf(
+    (o: UpdateOperatorDto) => o.firstName !== undefined && o.firstName !== '',
+  )
   @IsString()
+  @Length(2, 50, {
+    message: 'First name must be between 2 and 50 characters',
+  })
+  @Matches(NAME_PATTERN, {
+    message: `First name ${NAME_ERROR_MESSAGE}`,
+  })
   firstName?: string;
 
-  @IsOptional()
+  @ValidateIf(
+    (o: UpdateOperatorDto) => o.lastName !== undefined && o.lastName !== '',
+  )
   @IsString()
+  @Length(2, 50, {
+    message: 'Last name must be between 2 and 50 characters',
+  })
+  @Matches(NAME_PATTERN, {
+    message: `Last name ${NAME_ERROR_MESSAGE}`,
+  })
   lastName?: string;
 
-  @IsOptional()
-  @IsUrl({}, { message: 'Website must be a valid URL' })
+  @ValidateIf(
+    (o: UpdateOperatorDto) => o.website !== undefined && o.website !== '',
+  )
+  @IsString()
+  @Matches(/^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w- ./?%&=]*)?$/, {
+    message: 'Website must be a valid URL',
+  })
   website?: string;
 }
