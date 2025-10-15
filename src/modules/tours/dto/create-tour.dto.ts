@@ -217,7 +217,7 @@ export class CreateTourDto {
 
   @ApiPropertyOptional({
     description:
-      'Metadata for tour photos. The order should correspond to the uploaded files. Example: photos[0][isMain]=true&photos[0][description]=Main photo',
+      'Metadata for tour photos. The order should correspond to the uploaded files.',
     type: [TourPhotoDto],
   })
   // Трансформація для поля photos, щоб коректно обробляти різні формати вхідних даних (JSON-рядок, об'єкт, масив)

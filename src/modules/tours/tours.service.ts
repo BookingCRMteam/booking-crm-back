@@ -91,9 +91,30 @@ export class ToursService {
           }));
 
           await tx.insert(schema.tourPhotos).values(tourPhotosToInsert);
+
+          const tourPhotos = await tx.query.tourPhotos.findMany({
+            where: eq(schema.tourPhotos.tourId, newTour.id),
+          });
+
+          const hasMainPhoto = tourPhotos.some((p) => p.isMain);
+
+          if (!hasMainPhoto && tourPhotos.length > 0) {
+            const firstPhoto = tourPhotos[0];
+            await tx
+              .update(schema.tourPhotos)
+              .set({ isMain: true })
+              .where(eq(schema.tourPhotos.id, firstPhoto.id));
+          }
         }
 
-        return newTour;
+        const finalTour = await tx.query.tours.findFirst({
+          where: eq(schema.tours.id, newTour.id),
+          with: { photos: true },
+        });
+        finalTour.photos.sort((a, b) =>
+          a.isMain === b.isMain ? 0 : a.isMain ? -1 : 1,
+        );
+        return finalTour;
       } catch (error) {
         if (error instanceof BadRequestException) {
           throw error;
@@ -171,7 +192,7 @@ export class ToursService {
 
     try {
       // Виконання запиту до бази даних
-      const allTours = await this.db.query.tours.findMany({
+      const preAllTours = await this.db.query.tours.findMany({
         // Використовуйте this.db
         where: and(...whereConditions),
         orderBy: orderFunction(orderByColumn),
@@ -196,7 +217,13 @@ export class ToursService {
           },
         },
       });
-
+      const allTours = preAllTours.map((tour) => ({
+        ...tour,
+        photos: tour.photos.sort((a, b) =>
+          a.isMain === b.isMain ? 0 : a.isMain ? -1 : 1,
+        ),
+      }));
+      // Отримання загальної кількості записів для пагінації
       const totalCountResult = await this.db // Використовуйте this.db
         .select({ count: sql<number>`count(*)` }) // Явно вказуємо, що count - це число
         .from(schema.tours) // Використовуйте schema.tours
@@ -250,7 +277,7 @@ export class ToursService {
         `Tour with ID ${id} not found or is inactive.`,
       );
     }
-
+    tour.photos.sort((a, b) => (a.isMain === b.isMain ? 0 : a.isMain ? -1 : 1));
     return tour;
   }
 
@@ -368,8 +395,34 @@ export class ToursService {
           );
         }
 
+        // Check if there is a main photo, if not, set the first one as main
+        const hasMainPhoto = tourWithPhotos.photos.some((p) => p.isMain);
+        if (!hasMainPhoto && tourWithPhotos.photos.length > 0) {
+          const firstPhoto = tourWithPhotos.photos[0];
+          await tx
+            .update(schema.tourPhotos)
+            .set({ isMain: true })
+            .where(eq(schema.tourPhotos.id, firstPhoto.id));
+          // Refresh tourWithPhotos to include the change
+          const refreshedTourWithPhotos = await tx.query.tours.findFirst({
+            where: eq(schema.tours.id, updatedTour.id),
+            with: { photos: true },
+          });
+          if (refreshedTourWithPhotos) {
+            return {
+              ...refreshedTourWithPhotos,
+              price: parseFloat(refreshedTourWithPhotos.price),
+              createdAt: refreshedTourWithPhotos.createdAt.toISOString(),
+              updatedAt: refreshedTourWithPhotos.updatedAt.toISOString(),
+            };
+          }
+        }
+
         return {
           ...tourWithPhotos,
+          photos: tourWithPhotos.photos.sort((a, b) =>
+            a.isMain === b.isMain ? 0 : a.isMain ? -1 : 1,
+          ),
           price: parseFloat(tourWithPhotos.price),
           createdAt: tourWithPhotos.createdAt.toISOString(),
           updatedAt: tourWithPhotos.updatedAt.toISOString(),
@@ -457,7 +510,30 @@ export class ToursService {
         .where(eq(schema.tourPhotos.id, photoId))
         .returning();
 
-      return updatedPhoto;
+      if (updateTourPhotoDto.isMain === false) {
+        const otherPhotos = await tx.query.tourPhotos.findMany({
+          where: and(
+            eq(schema.tourPhotos.tourId, tourId),
+            ne(schema.tourPhotos.id, photoId),
+          ),
+        });
+
+        const hasMainPhoto = otherPhotos.some((p) => p.isMain);
+
+        if (!hasMainPhoto && otherPhotos.length > 0) {
+          const firstPhoto = otherPhotos[0];
+          await tx
+            .update(schema.tourPhotos)
+            .set({ isMain: true })
+            .where(eq(schema.tourPhotos.id, firstPhoto.id));
+        }
+      }
+
+      const finalUpdatedPhoto = await tx.query.tourPhotos.findFirst({
+        where: eq(schema.tourPhotos.id, updatedPhoto.id),
+      });
+
+      return finalUpdatedPhoto;
     });
   }
 }
