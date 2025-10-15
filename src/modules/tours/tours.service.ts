@@ -270,14 +270,7 @@ export class ToursService {
       where: eq(schema.tours.id, id),
       with: {
         photos: true,
-        operator: {
-          columns: {
-            companyName: true,
-            firstName: true,
-            lastName: true,
-            website: true,
-          },
-        },
+        operator: true,
         country: {
           with: {
             translations: {
