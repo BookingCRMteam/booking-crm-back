@@ -130,7 +130,6 @@ export class ToursController {
         throw error;
       }
       // Handle the error here
-      console.error(error);
       throw new HttpException(
         'Failed to retrieve tours',
         HttpStatus.INTERNAL_SERVER_ERROR,
