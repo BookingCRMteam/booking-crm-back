@@ -57,10 +57,9 @@ export class GetToursQueryDto {
   @Type(() => Number)
   cityId?: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: null,
     description: 'ID of the operator',
-    required: false,
   })
   @IsNumber()
   @IsOptional()
