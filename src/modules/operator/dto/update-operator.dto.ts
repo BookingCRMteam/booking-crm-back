@@ -6,7 +6,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { IsFileValid } from '../../common/validators/file-type-size.validator';
+import { IsFileValid } from '../../../common/validators/file-type-size.validator';
 
 const NAME_PATTERN =
   /^(?!.*(--|''))(?!(?:.*[-']$)|(?:^[-']))[A-Za-zА-Яа-яЁёЇїІіЄєҐґ'-]{2,50}$/;
