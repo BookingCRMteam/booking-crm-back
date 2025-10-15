@@ -6,7 +6,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { IsFileValid } from 'src/common/validators/file-type-size.validator';
+import { IsFileValid } from '../../common/validators/file-type-size.validator';
 
 const NAME_PATTERN =
   /^(?!.*(--|''))(?!(?:.*[-']$)|(?:^[-']))[A-Za-zА-Яа-яЁёЇїІіЄєҐґ'-]{2,50}$/;
@@ -91,7 +91,8 @@ export class UpdateOperatorDto {
   })
   website?: string;
 
-  @ValidateIf((o: UpdateOperatorDto) => o.photo !== undefined)
+  @ValidateIf((o: UpdateOperatorDto) => !!o.photo)
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   @IsFileValid(['image/jpeg', 'image/png'], 5, {
     message: 'Photo must be JPEG or PNG and up to 5MB',
   })

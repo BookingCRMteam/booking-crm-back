@@ -18,11 +18,10 @@ export function IsFileValid(
 
           const file = value as Express.Multer.File;
 
-          if (!file.mimetype || !file.size) return false;
+          if (!file?.mimetype || !file?.size) return false;
 
-          const [allowedMimeTypes, maxSize] = [mimeTypes, maxSizeMb];
-          const isMimeValid = allowedMimeTypes.includes(file.mimetype);
-          const isSizeValid = file.size <= maxSize * 1024 * 1024;
+          const isMimeValid = mimeTypes.includes(file.mimetype);
+          const isSizeValid = file.size <= maxSizeMb * 1024 * 1024;
 
           return isMimeValid && isSizeValid;
         },

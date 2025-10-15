@@ -6,7 +6,7 @@ import {
   Length,
   Matches,
 } from 'class-validator';
-import { IsFileValid } from 'src/common/validators/file-type-size.validator';
+import { IsFileValid } from '../../common/validators/file-type-size.validator';
 
 const NAME_PATTERN =
   /^(?!.*(--|''))(?!(?:.*[-']$)|(?:^[-']))[A-Za-zА-Яа-яЁёЇїІіЄєҐґ'-]{2,50}$/;
@@ -70,6 +70,8 @@ export class CreateOperatorDto {
   @IsEmpty({ message: 'email cannot be provided in body' })
   email?: string;
 
+  @IsNotEmpty({ message: 'Photo is required' })
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   @IsFileValid(['image/jpeg', 'image/png'], 5, {
     message: 'Photo must be JPEG or PNG and up to 5MB',
   })
