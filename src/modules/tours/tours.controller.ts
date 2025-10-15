@@ -298,8 +298,8 @@ export class ToursController {
 
   @Delete(':tourId/photos/:photoId')
   @UseGuards(JwtAuthGuard)
-  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBearerAuth('bearer')
+  @HttpCode(HttpStatus.NO_CONTENT)
   async deletePhoto(
     @Param('tourId', ParseIntPipe) tourId: number,
     @Param('photoId', ParseIntPipe) photoId: number,

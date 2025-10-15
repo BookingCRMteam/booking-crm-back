@@ -558,15 +558,24 @@ export class ToursService {
           `Photo with ID ${photoId} not found in tour ${tourId}.`,
         );
       }
-      if (photo.isMain) {
-        throw new BadRequestException(
-          'The main photo cannot be deleted. Please set another photo as main first.',
-        );
-      }
 
       await tx
         .delete(schema.tourPhotos)
         .where(eq(schema.tourPhotos.id, photoId));
+
+      if (photo.isMain) {
+        const remainingPhotos = await tx.query.tourPhotos.findMany({
+          where: eq(schema.tourPhotos.tourId, tourId),
+          orderBy: asc(schema.tourPhotos.id),
+        });
+
+        if (remainingPhotos.length > 0) {
+          await tx
+            .update(schema.tourPhotos)
+            .set({ isMain: true })
+            .where(eq(schema.tourPhotos.id, remainingPhotos[0].id));
+        }
+      }
 
       return { message: 'Photo deleted successfully.' };
     });
