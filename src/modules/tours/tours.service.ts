@@ -56,6 +56,25 @@ export class ToursService {
       );
     }
   }
+  private async validateTourOwnership(
+    tourId: number,
+    operatorId: number,
+    tx: NodePgDatabase<typeof schema>,
+  ): Promise<typeof schema.tours.$inferSelect> {
+    const tour = await tx.query.tours.findFirst({
+      where: and(
+        eq(schema.tours.id, tourId),
+        eq(schema.tours.operatorId, operatorId),
+      ),
+    });
+
+    if (!tour) {
+      throw new NotFoundException(
+        `Tour with ID ${tourId} not found or you don't have permission to modify it.`,
+      );
+    }
+    return tour;
+  }
   async create(
     createTourDto: CreateTourDto,
     operatorId: number,
@@ -259,18 +278,11 @@ export class ToursService {
       try {
         const { photos, ...tourData } = updateTourDto;
 
-        const existingTour = await tx.query.tours.findFirst({
-          where: and(
-            eq(schema.tours.id, id),
-            eq(schema.tours.operatorId, operatorId),
-          ),
-        });
-
-        if (!existingTour) {
-          throw new NotFoundException(
-            `Tour with ID ${id} not found or you don't have permission to update it.`,
-          );
-        }
+        const existingTour = await this.validateTourOwnership(
+          id,
+          operatorId,
+          tx,
+        );
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -417,18 +429,7 @@ export class ToursService {
     photoUrl?: string,
   ): Promise<TourPhoto> {
     return await this.db.transaction(async (tx) => {
-      const tour = await tx.query.tours.findFirst({
-        where: and(
-          eq(schema.tours.id, tourId),
-          eq(schema.tours.operatorId, operatorId),
-        ),
-      });
-
-      if (!tour) {
-        throw new NotFoundException(
-          `Tour with ID ${tourId} not found or you don't have permission to update it.`,
-        );
-      }
+      await this.validateTourOwnership(tourId, operatorId, tx);
 
       const photo = await tx.query.tourPhotos.findFirst({
         where: and(
@@ -458,6 +459,40 @@ export class ToursService {
         .returning();
 
       return updatedPhoto;
+    });
+  }
+
+  async deletePhoto(
+    tourId: number,
+    photoId: number,
+    operatorId: number,
+  ): Promise<{ message: string }> {
+    return await this.db.transaction(async (tx) => {
+      await this.validateTourOwnership(tourId, operatorId, tx);
+
+      const photo = await tx.query.tourPhotos.findFirst({
+        where: and(
+          eq(schema.tourPhotos.id, photoId),
+          eq(schema.tourPhotos.tourId, tourId),
+        ),
+      });
+
+      if (!photo) {
+        throw new NotFoundException(
+          `Photo with ID ${photoId} not found in tour ${tourId}.`,
+        );
+      }
+      if (photo.isMain) {
+        throw new BadRequestException(
+          'The main photo cannot be deleted. Please set another photo as main first.',
+        );
+      }
+
+      await tx
+        .delete(schema.tourPhotos)
+        .where(eq(schema.tourPhotos.id, photoId));
+
+      return { message: 'Photo deleted successfully.' };
     });
   }
 }

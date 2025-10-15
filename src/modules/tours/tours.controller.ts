@@ -226,7 +226,6 @@ export class ToursController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBearerAuth('bearer')
   async remove(
     @Param('id', ParseIntPipe) id: number,
@@ -296,5 +295,22 @@ export class ToursController {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  @Delete(':tourId/photos/:photoId')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth('bearer')
+  async deletePhoto(
+    @Param('tourId', ParseIntPipe) tourId: number,
+    @Param('photoId', ParseIntPipe) photoId: number,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<void> {
+    const operatorId = req.user.operatorId;
+    if (!operatorId) {
+      throw new BadRequestException('Operator ID not found.');
+    }
+
+    await this.toursService.deletePhoto(tourId, photoId, operatorId);
   }
 }
