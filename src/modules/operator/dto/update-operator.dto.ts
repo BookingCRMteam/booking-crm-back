@@ -16,6 +16,11 @@ const NAME_ERROR_MESSAGE =
   'Digits, spaces, special characters, consecutive or leading/trailing separators are not allowed.';
 
 const NO_HTML_PATTERN = /^[^<>]*$/;
+const WEBSITE_URL_PATTERN =
+  /^(https?:\/\/)([a-zA-Z0-9]+([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}(?::\d{1,5})?(\/[^\s]*)?$/;
+
+const WEBSITE_URL_ERROR_MESSAGE =
+  'Website must start with http:// or https://, contain a valid domain, and not include spaces';
 
 export class UpdateOperatorDto {
   @IsOptional()
@@ -86,17 +91,13 @@ export class UpdateOperatorDto {
     (o: UpdateOperatorDto) => o.website !== undefined && o.website !== '',
   )
   @IsString()
-  @Length(1, 255, {
-    message: 'Website URL must be at most 255 characters long',
+  @Length(13, 255, {
+    message: 'Website URL must be between 13 and 255 characters long',
   })
-  @Matches(
-    /^(https?:\/\/)([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?::\d{1,5})?(\/[^\s]*)?$/,
-    {
-      message:
-        'Website must start with http:// or https://, contain a valid domain, and not include spaces',
-    },
-  )
-  website: string;
+  @Matches(WEBSITE_URL_PATTERN, {
+    message: WEBSITE_URL_ERROR_MESSAGE,
+  })
+  website?: string;
 
   @ValidateIf((o: UpdateOperatorDto) => !!o.photo)
   @IsFileValid(['image/jpeg', 'image/png'], 5, {

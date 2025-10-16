@@ -13,6 +13,11 @@ const NAME_PATTERN =
 const NAME_ERROR_MESSAGE =
   'must be 2–50 characters long, contain only letters (Latin or Cyrillic), single hyphens or apostrophes. ' +
   'Digits, spaces, special characters, consecutive or leading/trailing separators are not allowed.';
+const WEBSITE_URL_PATTERN =
+  /^(https?:\/\/)([a-zA-Z0-9]+([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}(?::\d{1,5})?(\/[^\s]*)?$/;
+
+const WEBSITE_URL_ERROR_MESSAGE =
+  'Website must start with http:// or https://, contain a valid domain, and not include spaces';
 export class CreateOperatorDto {
   @IsOptional()
   @IsString()
@@ -54,16 +59,12 @@ export class CreateOperatorDto {
   lastName: string;
 
   @IsString()
-  @Length(1, 255, {
-    message: 'Website URL must be at most 255 characters long',
+  @Length(13, 255, {
+    message: 'Website URL must be between 13 and 255 characters long',
   })
-  @Matches(
-    /^(https?:\/\/)([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?::\d{1,5})?(\/[^\s]*)?$/,
-    {
-      message:
-        'Website must start with http:// or https://, contain a valid domain, and not include spaces',
-    },
-  )
+  @Matches(WEBSITE_URL_PATTERN, {
+    message: WEBSITE_URL_ERROR_MESSAGE,
+  })
   website: string;
 
   @IsEmpty({ message: 'id cannot be provided in body' })
