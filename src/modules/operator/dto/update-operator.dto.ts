@@ -6,6 +6,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { IsFileValid } from '../../../common/validators/file-type-size.validator';
 
 const NAME_PATTERN =
   /^(?!.*(--|''))(?!(?:.*[-']$)|(?:^[-']))[A-Za-zА-Яа-яЁёЇїІіЄєҐґ'-]{2,50}$/;
@@ -13,6 +14,8 @@ const NAME_PATTERN =
 const NAME_ERROR_MESSAGE =
   'must be 2–50 characters long, contain only letters (Latin or Cyrillic), single hyphens or apostrophes. ' +
   'Digits, spaces, special characters, consecutive or leading/trailing separators are not allowed.';
+
+const NO_HTML_PATTERN = /^[^<>]*$/;
 
 export class UpdateOperatorDto {
   @IsOptional()
@@ -28,16 +31,24 @@ export class UpdateOperatorDto {
   })
   companyName?: string;
 
+  @ValidateIf(
+    (o: UpdateOperatorDto) => o.philosophy !== undefined && o.philosophy !== '',
+  )
+  @IsString()
+  @Length(0, 1000, {
+    message: 'Philosophy must be at most 1000 characters long',
+  })
+  @Matches(NO_HTML_PATTERN, {
+    message: 'Philosophy must not contain HTML tags',
+  })
+  philosophy?: string;
+
   @IsOptional()
   @IsString()
   @Length(10, 500, {
     message: 'Description must be between 10 and 500 characters',
   })
   description?: string;
-
-  @IsOptional()
-  @IsString()
-  philosophy?: string;
 
   @ValidateIf((o: UpdateOperatorDto) => o.phone !== undefined && o.phone !== '')
   @IsString()
@@ -79,4 +90,11 @@ export class UpdateOperatorDto {
     message: 'Website must be a valid URL',
   })
   website?: string;
+
+  @ValidateIf((o: UpdateOperatorDto) => !!o.photo)
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+  @IsFileValid(['image/jpeg', 'image/png'], 5, {
+    message: 'Photo must be JPEG or PNG and up to 5MB',
+  })
+  photo?: Express.Multer.File;
 }
