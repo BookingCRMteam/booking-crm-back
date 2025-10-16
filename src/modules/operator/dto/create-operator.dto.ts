@@ -54,9 +54,16 @@ export class CreateOperatorDto {
   lastName: string;
 
   @IsString()
-  @Matches(/^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w- ./?%&=]*)?$/, {
-    message: 'Website must be a valid URL',
+  @Length(1, 255, {
+    message: 'Website URL must be at most 255 characters long',
   })
+  @Matches(
+    /^(https?:\/\/)([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?::\d{1,5})?(\/[^\s]*)?$/,
+    {
+      message:
+        'Website must start with http:// or https://, contain a valid domain, and not include spaces',
+    },
+  )
   website: string;
 
   @IsEmpty({ message: 'id cannot be provided in body' })

@@ -86,13 +86,19 @@ export class UpdateOperatorDto {
     (o: UpdateOperatorDto) => o.website !== undefined && o.website !== '',
   )
   @IsString()
-  @Matches(/^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w- ./?%&=]*)?$/, {
-    message: 'Website must be a valid URL',
+  @Length(1, 255, {
+    message: 'Website URL must be at most 255 characters long',
   })
-  website?: string;
+  @Matches(
+    /^(https?:\/\/)([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?::\d{1,5})?(\/[^\s]*)?$/,
+    {
+      message:
+        'Website must start with http:// or https://, contain a valid domain, and not include spaces',
+    },
+  )
+  website: string;
 
   @ValidateIf((o: UpdateOperatorDto) => !!o.photo)
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   @IsFileValid(['image/jpeg', 'image/png'], 5, {
     message: 'Photo must be JPEG or PNG and up to 5MB',
   })
