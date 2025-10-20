@@ -160,10 +160,9 @@ export class ToursService {
       maxPrice,
       limit = 10,
       offset = 0,
-      sortBy = 'startDate',
+      sortBy = 'id',
       sortOrder = SortOrder.ASC,
     } = query;
-
     const whereConditions = [eq(schema.tours.isActive, true)]; // Start with mandatory conditions
     if (countryISO2Code) {
       whereConditions.push(eq(schema.tours.countryISO2Code, countryISO2Code));
@@ -199,26 +198,30 @@ export class ToursService {
     // Типізуємо orderByColumn коректно, використовуючи columns з schema.tours
     let orderByColumn:
       | typeof schema.tours.price
-      | typeof schema.tours.startDate;
+      | typeof schema.tours.startDate
+      | typeof schema.tours.id;
     switch (sortBy) {
       case 'price':
         orderByColumn = schema.tours.price;
         break;
       case 'startDate':
-      default:
         orderByColumn = schema.tours.startDate;
+        break;
+      default:
+        orderByColumn = schema.tours.id;
         break;
     }
 
     // Визначаємо функцію сортування (asc або desc)
-    const orderFunction = sortOrder === SortOrder.DESC ? desc : asc;
-
     try {
       // Виконання запиту до бази даних
       const preAllTours = await this.db.query.tours.findMany({
         // Використовуйте this.db
         where: and(...whereConditions),
-        orderBy: orderFunction(orderByColumn),
+        orderBy:
+          sortOrder === SortOrder.DESC
+            ? desc(orderByColumn)
+            : asc(orderByColumn),
         limit: limit,
         offset: offset,
         with: {
