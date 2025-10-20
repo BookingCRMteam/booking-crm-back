@@ -170,13 +170,13 @@ export class GetToursQueryDto {
 
   @ApiPropertyOptional({
     example: '',
-    description: 'Field to sort by (e.g., startDate, price)',
+    description: 'Field to sort by (e.g., startDate, price, isActive)',
     required: false,
-    enum: ['startDate', 'price'],
+    enum: ['startDate', 'price', 'id', 'isActive'],
   })
   @IsString()
   @IsOptional()
-  sortBy?: 'startDate' | 'price';
+  sortBy?: 'startDate' | 'price' | 'id' | 'isActive';
 
   @ApiProperty({
     example: '',
