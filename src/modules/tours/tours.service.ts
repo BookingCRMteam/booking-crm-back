@@ -199,17 +199,13 @@ export class ToursService {
     let orderByColumn:
       | typeof schema.tours.price
       | typeof schema.tours.startDate
-      | typeof schema.tours.id
-      | typeof schema.tours.isActive;
+      | typeof schema.tours.id;
     switch (sortBy) {
       case 'price':
         orderByColumn = schema.tours.price;
         break;
       case 'startDate':
         orderByColumn = schema.tours.startDate;
-        break;
-      case 'isActive':
-        orderByColumn = schema.tours.isActive;
         break;
       default:
         orderByColumn = schema.tours.id;

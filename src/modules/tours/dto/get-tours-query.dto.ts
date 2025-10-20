@@ -9,6 +9,7 @@ import {
   Length,
   IsISO31661Alpha2,
   Validate,
+  IsIn,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -174,6 +175,7 @@ export class GetToursQueryDto {
     required: false,
     enum: ['startDate', 'price', 'id', 'isActive'],
   })
+  @IsIn(['startDate', 'price', 'id', 'isActive'])
   @IsString()
   @IsOptional()
   sortBy?: 'startDate' | 'price' | 'id' | 'isActive';
