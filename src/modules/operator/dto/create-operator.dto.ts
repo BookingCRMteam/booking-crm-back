@@ -34,9 +34,9 @@ export class CreateOperatorDto {
   description?: string;
 
   @IsString()
-  @Matches(/^\+?[1-9][0-9]{8,14}$/, {
+  @Matches(/^\+?\d{1,3}\d{9,15}$/, {
     message:
-      'Phone number must be digits only (9–15 chars), cannot start with 0, may include optional + at start',
+      'Phone number must contain a 1–3 digit country code and 9–15 digits after it, only digits are allowed, optional + at the start',
   })
   phone: string;
 
