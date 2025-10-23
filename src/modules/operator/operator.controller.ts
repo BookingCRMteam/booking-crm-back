@@ -178,4 +178,19 @@ export class OperatorController {
   deletePhoto(@Req() req: AuthenticatedRequest) {
     return this.operatorService.deletePhoto(req);
   }
+
+  @Get('popular')
+  @ApiOperation({ summary: 'Отримати список популярних операторів' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: String, // <- обов'язково String
+    description: 'Кількість операторів, які повернути',
+    example: '10',
+  })
+  getPopular(
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+  ) {
+    return this.operatorService.getPopularOperators(limit);
+  }
 }

@@ -13,11 +13,11 @@ import { eq } from 'drizzle-orm';
 import { CloudinaryService } from '@app/cloudinary/cloudinary.service';
 import { AuthenticatedRequest } from '@app/types/authenticated.request';
 import { OperatorStatus } from '@app/types/operator-status';
-
+import * as schema from '@app/db/schema/schema';
 @Injectable()
 export class OperatorService {
   constructor(
-    @Inject('DRIZZLE_CLIENT') private db: NodePgDatabase<typeof operatorSchema>,
+    @Inject('DRIZZLE_CLIENT') private db: NodePgDatabase<typeof schema>,
     private userService: UserService,
     private readonly cloudinaryService: CloudinaryService,
   ) {}
@@ -143,5 +143,57 @@ export class OperatorService {
       .where(eq(operatorSchema.operators.userId, req.user.id))
       .returning();
     return updatedOperator[0];
+  }
+  async getPopularOperators(limit = 6): Promise<
+    Array<{
+      id: number;
+      companyName: string;
+      logo: string | null;
+      bookingsCount: number;
+      toursCount: number;
+    }>
+  > {
+    const rawSql = `
+    SELECT
+      o.id,
+      o.company_name AS "companyName",
+      o.photo AS "logo",
+      COUNT(b.id) AS "bookingsCount",
+      COUNT(DISTINCT t.id) AS "toursCount"
+    FROM operators o
+    LEFT JOIN tours t ON t.operator_id = o.id
+    LEFT JOIN bookings b ON b.tour_id = t.id
+    GROUP BY o.id
+    ORDER BY "bookingsCount" DESC
+    LIMIT $1
+  `;
+
+    // Коректна типізація client
+    type RawRow = {
+      id: number;
+      companyName: string;
+      logo: string | null;
+      bookingsCount: string;
+      toursCount: string;
+    };
+
+    const client = (
+      this.db as unknown as {
+        client: {
+          query: (sql: string, params: any[]) => Promise<{ rows: RawRow[] }>;
+        };
+      }
+    ).client;
+
+    const result = await client.query(rawSql, [limit]);
+
+    // Типізуємо і приводимо до number
+    return result.rows.map((r) => ({
+      id: r.id,
+      companyName: r.companyName,
+      logo: r.logo,
+      bookingsCount: Number(r.bookingsCount),
+      toursCount: Number(r.toursCount),
+    }));
   }
 }
