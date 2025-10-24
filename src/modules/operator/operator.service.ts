@@ -9,7 +9,7 @@ import * as operatorSchema from '@app/modules/operator/operator.schema';
 import { CreateOperatorDto } from './dto/create-operator.dto';
 import { UserService } from '../user/user.service';
 import { UpdateOperatorDto } from './dto/update-operator.dto';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { CloudinaryService } from '@app/cloudinary/cloudinary.service';
 import { AuthenticatedRequest } from '@app/types/authenticated.request';
 import { OperatorStatus } from '@app/types/operator-status';
@@ -144,56 +144,41 @@ export class OperatorService {
       .returning();
     return updatedOperator[0];
   }
-  async getPopularOperators(limit = 6): Promise<
-    Array<{
-      id: number;
-      companyName: string;
-      logo: string | null;
-      bookingsCount: number;
-      toursCount: number;
-    }>
-  > {
-    const rawSql = `
-    SELECT
-      o.id,
-      o.company_name AS "companyName",
-      o.photo AS "logo",
-      COUNT(b.id) AS "bookingsCount",
-      COUNT(DISTINCT t.id) AS "toursCount"
-    FROM operators o
-    LEFT JOIN tours t ON t.operator_id = o.id
-    LEFT JOIN bookings b ON b.tour_id = t.id
-    GROUP BY o.id
-    ORDER BY "bookingsCount" DESC
-    LIMIT $1
-  `;
+  async getPopularOperators(limit = 6) {
+    const operators = await this.db
+      .select({
+        id: operatorSchema.operators.id,
+        email: operatorSchema.operators.email,
+        createdAt: operatorSchema.operators.createdAt,
+        updatedAt: operatorSchema.operators.updatedAt,
+        userId: operatorSchema.operators.userId,
+        companyName: operatorSchema.operators.companyName,
+        description: operatorSchema.operators.description,
+        firstName: operatorSchema.operators.firstName,
+        lastName: operatorSchema.operators.lastName,
+        website: operatorSchema.operators.website,
+        phone: operatorSchema.operators.phone,
+        status: operatorSchema.operators.status,
+        philosophy: operatorSchema.operators.philosophy,
+        photo: operatorSchema.operators.photo,
+        bookingsCount: sql<number>`COUNT(DISTINCT ${schema.bookings.id})`,
+        toursCount: sql<number>`COUNT(DISTINCT ${schema.tours.id})`,
+      })
+      .from(operatorSchema.operators)
+      .leftJoin(
+        schema.tours,
+        eq(schema.tours.operatorId, operatorSchema.operators.id),
+      )
+      .leftJoin(schema.bookings, eq(schema.bookings.tourId, schema.tours.id))
+      .groupBy(operatorSchema.operators.id)
+      .orderBy(sql`COUNT(DISTINCT ${schema.bookings.id}) DESC`)
+      .limit(limit);
 
-    // Коректна типізація client
-    type RawRow = {
-      id: number;
-      companyName: string;
-      logo: string | null;
-      bookingsCount: string;
-      toursCount: string;
-    };
-
-    const client = (
-      this.db as unknown as {
-        client: {
-          query: (sql: string, params: any[]) => Promise<{ rows: RawRow[] }>;
-        };
-      }
-    ).client;
-
-    const result = await client.query(rawSql, [limit]);
-
-    // Типізуємо і приводимо до number
-    return result.rows.map((r) => ({
-      id: r.id,
-      companyName: r.companyName,
-      logo: r.logo,
-      bookingsCount: Number(r.bookingsCount),
-      toursCount: Number(r.toursCount),
+    // Перетворюємо COUNT з рядка в число
+    return operators.map((op) => ({
+      ...op,
+      bookingsCount: Number(op.bookingsCount),
+      toursCount: Number(op.toursCount),
     }));
   }
 }
