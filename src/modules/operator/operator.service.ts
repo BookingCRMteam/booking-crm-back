@@ -174,7 +174,6 @@ export class OperatorService {
       .orderBy(sql`COUNT(DISTINCT ${schema.bookings.id}) DESC`)
       .limit(limit);
 
-    // Перетворюємо COUNT з рядка в число
     return operators.map((op) => ({
       ...op,
       bookingsCount: Number(op.bookingsCount),
