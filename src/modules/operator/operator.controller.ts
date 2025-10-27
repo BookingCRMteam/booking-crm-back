@@ -29,7 +29,7 @@ import { UpdateOperatorDto } from './dto/update-operator.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import multer from 'multer';
 import { OperatorStatus } from '@app/types/operator-status';
-import { GetPopularOperatorsDto } from 'src/modules/operator/dto/get-popular-operators.dto';
+import { GetPopularOperatorsDto } from './dto/get-popular-operators.dto';
 
 @Controller('operator')
 export class OperatorController {
