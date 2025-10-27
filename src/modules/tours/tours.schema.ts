@@ -52,7 +52,7 @@ export const tours = pgTable(
     return {
       availableSpotsCheck: check(
         'available_spots_check',
-        sql`"available_spots" >= 2 AND "available_spots" <= 100 AND "available_spots" % 2 = 0`,
+        sql`"available_spots" >= 0 AND "available_spots" <= 100 AND "available_spots" % 2 = 0`,
       ),
       priceCheck: check(
         'price_check',

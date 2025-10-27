@@ -127,6 +127,20 @@
       "when": 1759408334748,
       "tag": "0017_flaky_bastion",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1761388250789,
+      "tag": "0018_wide_jubilee",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1761563163176,
+      "tag": "0019_chunky_metal_master",
+      "breakpoints": true
     }
   ]
 }

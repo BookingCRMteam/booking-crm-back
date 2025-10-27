@@ -18,6 +18,7 @@ export const bookings = pgTable('bookings', {
   tourId: integer('tour_id')
     .notNull()
     .references(() => tours.id),
+  numberOfPeople: integer('number_of_people').notNull().default(1),
   status: varchar('status', { length: 50 })
     .notNull()
     .default('pending_payment'), // pending_payment, paid, confirmed, cancelled, failed

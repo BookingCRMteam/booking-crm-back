@@ -311,9 +311,33 @@ export class ToursService {
           tx,
         );
 
+        const bookingsCount = await tx.query.bookings.findMany({
+          where: eq(schema.bookings.tourId, id),
+        });
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        if (new Date(existingTour.startDate) < today) {
+        const tourStartDate = new Date(existingTour.startDate);
+
+        if (bookingsCount.length > 0) {
+          const allowedUpdates: (keyof UpdateTourDto)[] = [
+            'description',
+            'availableSpots',
+          ];
+          const requestedUpdates = Object.keys(tourData).filter(
+            (key) => tourData[key] !== undefined,
+          );
+
+          const isUpdateAllowed = requestedUpdates.every((key) =>
+            allowedUpdates.includes(key as keyof UpdateTourDto),
+          );
+
+          if (!isUpdateAllowed) {
+            throw new BadRequestException(
+              'This tour has bookings. Only description and available spots can be updated.',
+            );
+          }
+        } else if (tourStartDate < today) {
           const allowedUpdates = { isActive: false };
           const updates = Object.keys(tourData);
           const isOnlyDeactivating = updates.every(

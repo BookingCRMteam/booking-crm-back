@@ -42,8 +42,6 @@ export class BookingsService {
       throw new NotFoundException(`User with id ${data.userId} not found`);
     }
 
-    console.log('Creating booking with data.tourId:', data.tourId);
-
     const tour = await this.db.query.tours.findFirst({
       where: (tours, { eq }) => eq(tours.id, data.tourId),
     });
@@ -51,29 +49,65 @@ export class BookingsService {
       throw new NotFoundException(`Tour with id ${data.tourId} not found`);
     }
 
-    const totalPrice = tour.price; // Спрощений розрахунок
+    if (
+      data.numberOfPeople > 100 ||
+      data.numberOfPeople < 2 ||
+      data.numberOfPeople % 2 !== 0
+    ) {
+      throw new ConflictException(
+        `Booking for ${data.numberOfPeople} people for tour with id ${data.tourId} has an invalid number of  spots: ${data.numberOfPeople}. Booking spots must be between 2 and 100 (inclusive) and an even number.`,
+      );
+    }
 
-    let newBooking: typeof bookings.$inferSelect;
-    try {
-      [newBooking] = await this.db
+    if (tour.availableSpots < data.numberOfPeople) {
+      throw new ConflictException(
+        `Not enough available spots for this tour. Available spots: ${tour.availableSpots}`,
+      );
+    }
+
+    const newAvailableSpots = tour.availableSpots - data.numberOfPeople;
+
+    console.log('Debug: tour.availableSpots', tour.availableSpots);
+    console.log('Debug: data.numberOfPeople', data.numberOfPeople);
+    console.log('Debug: newAvailableSpots', newAvailableSpots);
+
+    if (
+      newAvailableSpots < 0 ||
+      newAvailableSpots > 100 ||
+      newAvailableSpots % 2 !== 0
+    ) {
+      throw new ConflictException(
+        `Booking for ${data.numberOfPeople} people would result in an invalid number of available spots (${newAvailableSpots}) for tour with id ${data.tourId}. Available spots must be between 2 and 100 (inclusive) and an even number.`,
+      );
+    }
+
+    const totalPrice = Number(tour.price) * data.numberOfPeople;
+
+    const newBooking = await this.db.transaction(async (tx) => {
+      const [booking] = await tx
         .insert(bookings)
         .values({
           userId: data.userId,
           tourId: data.tourId,
-          totalPrice: totalPrice,
+          numberOfPeople: data.numberOfPeople,
+          totalPrice: totalPrice.toString(),
           currency: tour.currency,
           paymentProvider: data.paymentProvider,
           status: 'pending_payment',
         })
         .returning();
-    } catch (error) {
-      if ((error as { cause?: { code?: string } }).cause?.code === '23505') {
-        throw new ConflictException(
-          'A pending booking for this tour and user already exists.',
-        );
-      }
-      throw error;
-    }
+
+      const updatedTour = await tx
+        .update(schema.tours)
+        .set({
+          availableSpots: newAvailableSpots,
+        })
+        .where(eq(schema.tours.id, data.tourId));
+
+      console.log('Updated tour after booking:', updatedTour);
+
+      return booking;
+    });
 
     // 3. Згенерувати посилання для оплати залежно від провайдера
     let paymentLink: string | undefined;
@@ -94,8 +128,8 @@ export class BookingsService {
           },
         ],
         mode: 'payment',
-        success_url: `${process.env.FRONTEND_URL}/booking/${newBooking.id}?success=true`,
-        cancel_url: `${process.env.FRONTEND_URL}/booking/${newBooking.id}?cancelled=true`,
+        success_url: `${process.env.FRONTEND_URL}/catalog/tour/${newBooking.id}?success=true`,
+        cancel_url: `${process.env.FRONTEND_URL}/catalog/${newBooking.id}?cancelled=true`,
         // Метадані для webhook
         metadata: {
           bookingId: newBooking.id.toString(),
@@ -112,7 +146,7 @@ export class BookingsService {
         description: `Booking for tour ${tour.title}`,
         order_id: orderId,
         server_url: `${process.env.API_URL}/payments/liqpay-webhook`,
-        result_url: `${process.env.FRONTEND_URL}/booking/${newBooking.id}?success=true`,
+        result_url: `${process.env.FRONTEND_URL}/catalog/tour/${newBooking.id}?success=true`,
         version: 3,
         language: 'en',
       };
