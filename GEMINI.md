@@ -53,13 +53,15 @@ docker-compose up --build
 ## Database Migrations (Drizzle ORM)
 
 *   **Generate a new migration:**
-    ```bash
+*   **Generate a new migration:**
+```bash
 pnpm run db:generate
-    ```
+```
 *   **Apply migrations:**
-    ```bash
+*   **Apply migrations:**
+```bash
 pnpm run db:migrate
-    ```
+```
 *   **Open Drizzle Studio:**
     ```bash
 pnpm run db:studio

@@ -6,7 +6,7 @@ import { Type } from 'class-transformer';
 export class UpdateTourDto extends PartialType(CreateTourDto) {
   @ApiProperty({
     description: 'Number of available spots for the tour (e.g., 20)',
-    default: '',
+    default: 0,
     minimum: 0,
     maximum: 100,
   })

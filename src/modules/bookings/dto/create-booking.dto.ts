@@ -45,6 +45,7 @@ export class CreateBookingDto {
     description: "First person's name",
   })
   @IsString()
+  @IsNotEmpty()
   firstPersonName: string;
 
   @ApiProperty({
@@ -52,29 +53,31 @@ export class CreateBookingDto {
     description: "First person's surname",
   })
   @IsString()
+  @IsNotEmpty()
   firstPersonSurname: string;
 
   @ApiProperty({
     example: 'Jane',
     description: "Second person's name",
-    required: false,
   })
   @IsString()
-  secondPersonName?: string;
+  @IsNotEmpty()
+  secondPersonName: string;
 
   @ApiProperty({
     example: 'Doe',
     description: "Second person's surname",
-    required: false,
   })
   @IsString()
-  secondPersonSurname?: string;
+  @IsNotEmpty()
+  secondPersonSurname: string;
 
   @ApiProperty({
     example: '+380123456789',
     description: 'Contact phone number',
   })
   @IsString()
+  @IsNotEmpty()
   phone: string;
 
   @ApiProperty({

@@ -55,7 +55,7 @@ export class BookingsService {
       data.numberOfPeople % 2 !== 0
     ) {
       throw new ConflictException(
-        `Booking for ${data.numberOfPeople} people for tour with id ${data.tourId} has an invalid number of  spots: ${data.numberOfPeople}. Booking spots must be between 2 and 100 (inclusive) and an even number.`,
+        `Booking for ${data.numberOfPeople} people for tour with id ${data.tourId} is invalid. Number of people must be between 2 and 100 (inclusive) and an even number.`,
       );
     }
 
@@ -65,25 +65,15 @@ export class BookingsService {
       );
     }
 
-    if (data.firstPersonName && (!data.firstPersonSurname || !data.phone)) {
-      throw new ConflictException(
-        `If you provide a first person's name, you must also provide a surname and a phone number.`,
-      );
-    }
-
     const newAvailableSpots = tour.availableSpots - data.numberOfPeople;
 
     console.log('Debug: tour.availableSpots', tour.availableSpots);
     console.log('Debug: data.numberOfPeople', data.numberOfPeople);
     console.log('Debug: newAvailableSpots', newAvailableSpots);
 
-    if (
-      newAvailableSpots < 0 ||
-      newAvailableSpots > 100 ||
-      newAvailableSpots % 2 !== 0
-    ) {
+    if (newAvailableSpots > 100) {
       throw new ConflictException(
-        `Booking for ${data.numberOfPeople} people would result in an invalid number of available spots (${newAvailableSpots}) for tour with id ${data.tourId}. Available spots must be between 2 and 100 (inclusive) and an even number.`,
+        `Booking for ${data.numberOfPeople} people would result in an invalid number of available spots (${newAvailableSpots}) for tour with id ${data.tourId}. Available spots must be between 0 and 100 (inclusive).`,
       );
     }
 
@@ -140,7 +130,7 @@ export class BookingsService {
         ],
         mode: 'payment',
         success_url: `${process.env.FRONTEND_URL}/catalog/tour/${newBooking.id}?success=true`,
-        cancel_url: `${process.env.FRONTEND_URL}/catalog/${newBooking.id}?cancelled=true`,
+        cancel_url: `${process.env.FRONTEND_URL}/catalog/tour/${newBooking.id}?cancelled=true`,
         // Метадані для webhook
         metadata: {
           bookingId: newBooking.id.toString(),
