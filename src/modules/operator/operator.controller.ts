@@ -29,6 +29,7 @@ import { UpdateOperatorDto } from './dto/update-operator.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import multer from 'multer';
 import { OperatorStatus } from '@app/types/operator-status';
+import { GetPopularOperatorsDto } from './dto/get-popular-operators.dto';
 
 @Controller('operator')
 export class OperatorController {
@@ -167,12 +168,16 @@ export class OperatorController {
 
     return this.operatorService.getAllOperators(limit, offset, validStatus);
   }
-
+  @Get('popular')
+  @ApiOperation({ summary: 'Отримати список популярних операторів' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 4 })
+  async getPopular(@Query() query: GetPopularOperatorsDto) {
+    return this.operatorService.getPopularOperators(query.limit);
+  }
   @Get(':id')
   getById(@Param('id', ParseIntPipe) id: number) {
     return this.operatorService.getOperatorById(id);
   }
-
   @UseGuards(JwtAuthGuard)
   @Delete('me/photo')
   deletePhoto(@Req() req: AuthenticatedRequest) {

@@ -9,15 +9,15 @@ import * as operatorSchema from '@app/modules/operator/operator.schema';
 import { CreateOperatorDto } from './dto/create-operator.dto';
 import { UserService } from '../user/user.service';
 import { UpdateOperatorDto } from './dto/update-operator.dto';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { CloudinaryService } from '@app/cloudinary/cloudinary.service';
 import { AuthenticatedRequest } from '@app/types/authenticated.request';
 import { OperatorStatus } from '@app/types/operator-status';
-
+import * as schema from '@app/db/schema/schema';
 @Injectable()
 export class OperatorService {
   constructor(
-    @Inject('DRIZZLE_CLIENT') private db: NodePgDatabase<typeof operatorSchema>,
+    @Inject('DRIZZLE_CLIENT') private db: NodePgDatabase<typeof schema>,
     private userService: UserService,
     private readonly cloudinaryService: CloudinaryService,
   ) {}
@@ -143,5 +143,41 @@ export class OperatorService {
       .where(eq(operatorSchema.operators.userId, req.user.id))
       .returning();
     return updatedOperator[0];
+  }
+  async getPopularOperators(limit = 6) {
+    const operators = await this.db
+      .select({
+        id: operatorSchema.operators.id,
+        email: operatorSchema.operators.email,
+        createdAt: operatorSchema.operators.createdAt,
+        updatedAt: operatorSchema.operators.updatedAt,
+        userId: operatorSchema.operators.userId,
+        companyName: operatorSchema.operators.companyName,
+        description: operatorSchema.operators.description,
+        firstName: operatorSchema.operators.firstName,
+        lastName: operatorSchema.operators.lastName,
+        website: operatorSchema.operators.website,
+        phone: operatorSchema.operators.phone,
+        status: operatorSchema.operators.status,
+        philosophy: operatorSchema.operators.philosophy,
+        photo: operatorSchema.operators.photo,
+        bookingsCount: sql<number>`COUNT(DISTINCT ${schema.bookings.id})`,
+        toursCount: sql<number>`COUNT(DISTINCT ${schema.tours.id})`,
+      })
+      .from(operatorSchema.operators)
+      .leftJoin(
+        schema.tours,
+        eq(schema.tours.operatorId, operatorSchema.operators.id),
+      )
+      .leftJoin(schema.bookings, eq(schema.bookings.tourId, schema.tours.id))
+      .groupBy(operatorSchema.operators.id)
+      .orderBy(sql`COUNT(DISTINCT ${schema.bookings.id}) DESC`)
+      .limit(limit);
+
+    return operators.map((op) => ({
+      ...op,
+      bookingsCount: Number(op.bookingsCount),
+      toursCount: Number(op.toursCount),
+    }));
   }
 }
