@@ -127,6 +127,34 @@
       "when": 1759408334748,
       "tag": "0017_flaky_bastion",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1761388250789,
+      "tag": "0018_wide_jubilee",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1761563163176,
+      "tag": "0019_chunky_metal_master",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1762013658459,
+      "tag": "0021_grey_nuke",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1762066585648,
+      "tag": "0022_broad_dracula",
+      "breakpoints": true
     }
   ]
 }

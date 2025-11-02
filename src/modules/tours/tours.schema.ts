@@ -48,26 +48,18 @@ export const tours = pgTable(
     createdAt: timestamp('created_at').defaultNow(),
     updatedAt: timestamp('updated_at').defaultNow(),
   },
-  () => {
-    return {
-      availableSpotsCheck: check(
-        'available_spots_check',
-        sql`"available_spots" >= 2 AND "available_spots" <= 100 AND "available_spots" % 2 = 0`,
-      ),
-      priceCheck: check(
-        'price_check',
-        sql`"price" >= 100 AND "price" <= 100000`,
-      ),
-      currencyCheck: check(
-        'currency_check',
-        sql`"currency" IN ('UAH', 'USD', 'EUR')`,
-      ),
-      datesCheck: check(
-        'dates_check',
-        sql`"start_date" > current_date and "end_date" > "start_date"`,
-      ),
-    };
-  },
+  () => [
+    check(
+      'available_spots_check',
+      sql`"available_spots" >= 0 AND "available_spots" <= 100 AND "available_spots" % 2 = 0`,
+    ),
+    check('price_check', sql`"price" >= 100 AND "price" <= 100000`),
+    check('currency_check', sql`"currency" IN ('UAH', 'USD', 'EUR')`),
+    check(
+      'dates_check',
+      sql`"start_date" > current_date and "end_date" > "start_date"`,
+    ),
+  ],
 );
 
 export const tourPhotos = pgTable(
@@ -81,13 +73,11 @@ export const tourPhotos = pgTable(
     isMain: boolean('is_main').default(false).notNull(),
     description: text('description'),
   },
-  (table) => {
-    return {
-      mainPhotoIdx: uniqueIndex('main_photo_idx')
-        .on(table.tourId)
-        .where(sql`"is_main" = true`),
-    };
-  },
+  (table) => [
+    uniqueIndex('main_photo_idx')
+      .on(table.tourId)
+      .where(sql`"is_main" = true`),
+  ],
 );
 
 export const toursRelations = relations(tours, ({ one, many }) => ({

@@ -4,6 +4,7 @@ import {
   IsInt,
   IsNotEmpty,
   IsNumber,
+  IsPositive,
   IsString,
   Max,
 } from 'class-validator';
@@ -26,6 +27,58 @@ export class CreateBookingDto {
   @IsInt()
   @Max(2147483647)
   userId: number;
+
+  @ApiProperty({
+    example: 2,
+    description: 'Number of people for the booking',
+    default: 2,
+  })
+  @IsNumber()
+  @IsNotEmpty()
+  @IsInt()
+  @IsPositive()
+  @Max(100)
+  numberOfPeople: number;
+
+  @ApiProperty({
+    example: 'John',
+    description: "First person's name",
+  })
+  @IsString()
+  @IsNotEmpty()
+  firstPersonName: string;
+
+  @ApiProperty({
+    example: 'Doe',
+    description: "First person's surname",
+  })
+  @IsString()
+  @IsNotEmpty()
+  firstPersonSurname: string;
+
+  @ApiProperty({
+    example: 'Jane',
+    description: "Second person's name",
+  })
+  @IsString()
+  @IsNotEmpty()
+  secondPersonName: string;
+
+  @ApiProperty({
+    example: 'Doe',
+    description: "Second person's surname",
+  })
+  @IsString()
+  @IsNotEmpty()
+  secondPersonSurname: string;
+
+  @ApiProperty({
+    example: '+380123456789',
+    description: 'Contact phone number',
+  })
+  @IsString()
+  @IsNotEmpty()
+  phone: string;
 
   @ApiProperty({
     example: 'liqpay',

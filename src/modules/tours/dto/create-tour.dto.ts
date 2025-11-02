@@ -162,7 +162,7 @@ export class CreateTourDto {
   @IsOptional()
   @MaxLength(3)
   @IsIn(['UAH', 'USD', 'EUR'])
-  currency?: string = 'UAH';
+  currency?: string;
 
   @ApiProperty({
     description:

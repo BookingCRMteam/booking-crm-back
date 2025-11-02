@@ -1,4 +1,4 @@
-import { IsBooleanLike } from '@app/common/validators/boolean-validator';
+import { IsBooleanLike } from '@app/common/validators';
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsOptional, IsString } from 'class-validator';
