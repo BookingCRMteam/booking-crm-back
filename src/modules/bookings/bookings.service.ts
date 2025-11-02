@@ -67,10 +67,6 @@ export class BookingsService {
 
     const newAvailableSpots = tour.availableSpots - data.numberOfPeople;
 
-    console.log('Debug: tour.availableSpots', tour.availableSpots);
-    console.log('Debug: data.numberOfPeople', data.numberOfPeople);
-    console.log('Debug: newAvailableSpots', newAvailableSpots);
-
     if (newAvailableSpots > 100) {
       throw new ConflictException(
         `Booking for ${data.numberOfPeople} people would result in an invalid number of available spots (${newAvailableSpots}) for tour with id ${data.tourId}. Available spots must be between 0 and 100 (inclusive).`,
@@ -80,6 +76,29 @@ export class BookingsService {
     const totalPrice = Number(tour.price) * data.numberOfPeople;
 
     const newBooking = await this.db.transaction(async (tx) => {
+      const [tourForUpdate] = await tx
+        .select()
+        .from(schema.tours)
+        .where(eq(schema.tours.id, data.tourId))
+        .for('update');
+
+      if (!tourForUpdate) {
+        throw new NotFoundException(`Tour with id ${data.tourId} not found`);
+      }
+
+      if (tourForUpdate.availableSpots < data.numberOfPeople) {
+        throw new ConflictException(
+          `Not enough available spots for this tour. Available spots: ${tourForUpdate.availableSpots}`,
+        );
+      }
+      const newAvailableSpots =
+        tourForUpdate.availableSpots - data.numberOfPeople;
+
+      if (newAvailableSpots > 100) {
+        throw new ConflictException(
+          `Booking for ${data.numberOfPeople} people would result in an invalid number of available spots (${newAvailableSpots}) for tour with id ${data.tourId}. Available spots must be between 0 and 100 (inclusive).`,
+        );
+      }
       const [booking] = await tx
         .insert(bookings)
         .values({
