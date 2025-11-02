@@ -19,6 +19,13 @@ export const bookings = pgTable('bookings', {
     .notNull()
     .references(() => tours.id),
   numberOfPeople: integer('number_of_people').notNull().default(1),
+  firstPersonName: varchar('first_person_name', { length: 255 }),
+  firstPersonSurname: varchar('first_person_surname', {
+    length: 255,
+  }),
+  secondPersonName: varchar('second_person_name', { length: 255 }),
+  secondPersonSurname: varchar('second_person_surname', { length: 255 }),
+  phone: varchar('phone', { length: 20 }),
   status: varchar('status', { length: 50 })
     .notNull()
     .default('pending_payment'), // pending_payment, paid, confirmed, cancelled, failed

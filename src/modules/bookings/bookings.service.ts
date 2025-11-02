@@ -65,6 +65,12 @@ export class BookingsService {
       );
     }
 
+    if (data.firstPersonName && (!data.firstPersonSurname || !data.phone)) {
+      throw new ConflictException(
+        `If you provide a first person's name, you must also provide a surname and a phone number.`,
+      );
+    }
+
     const newAvailableSpots = tour.availableSpots - data.numberOfPeople;
 
     console.log('Debug: tour.availableSpots', tour.availableSpots);
@@ -90,6 +96,11 @@ export class BookingsService {
           userId: data.userId,
           tourId: data.tourId,
           numberOfPeople: data.numberOfPeople,
+          firstPersonName: data.firstPersonName,
+          firstPersonSurname: data.firstPersonSurname,
+          secondPersonName: data.secondPersonName,
+          secondPersonSurname: data.secondPersonSurname,
+          phone: data.phone,
           totalPrice: totalPrice.toString(),
           currency: tour.currency,
           paymentProvider: data.paymentProvider,

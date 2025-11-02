@@ -41,6 +41,43 @@ export class CreateBookingDto {
   numberOfPeople: number;
 
   @ApiProperty({
+    example: 'John',
+    description: "First person's name",
+  })
+  @IsString()
+  firstPersonName: string;
+
+  @ApiProperty({
+    example: 'Doe',
+    description: "First person's surname",
+  })
+  @IsString()
+  firstPersonSurname: string;
+
+  @ApiProperty({
+    example: 'Jane',
+    description: "Second person's name",
+    required: false,
+  })
+  @IsString()
+  secondPersonName?: string;
+
+  @ApiProperty({
+    example: 'Doe',
+    description: "Second person's surname",
+    required: false,
+  })
+  @IsString()
+  secondPersonSurname?: string;
+
+  @ApiProperty({
+    example: '+380123456789',
+    description: 'Contact phone number',
+  })
+  @IsString()
+  phone: string;
+
+  @ApiProperty({
     example: 'liqpay',
     description: 'Payment provider to use for now only liqpay',
     default: 'liqpay',
