@@ -30,6 +30,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import multer from 'multer';
 import { OperatorStatus } from '@app/types/operator-status';
 import { GetPopularOperatorsDto } from './dto/get-popular-operators.dto';
+import { validate } from 'class-validator';
+import { BadRequestException } from '@nestjs/common';
 
 @Controller('operator')
 export class OperatorController {
@@ -100,19 +102,22 @@ export class OperatorController {
         lastName: { type: 'string' },
         website: { type: 'string' },
         philosophy: { type: 'string' },
-        photo: {
-          type: 'string',
-          format: 'binary',
-          nullable: true,
-        },
+        photo: { type: 'string', format: 'binary', nullable: true },
       },
     },
   })
-  updateOperator(
+  async updateOperator(
     @Body() operatorInfoDTO: UpdateOperatorDto,
     @Req() req: AuthenticatedRequest,
     @UploadedFile() file?: Express.Multer.File,
   ) {
+    if (file) operatorInfoDTO.photo = file;
+
+    const errors = await validate(operatorInfoDTO);
+    if (errors.length > 0) {
+      throw new BadRequestException(errors);
+    }
+
     return this.operatorService.updateOperator(
       operatorInfoDTO,
       req,
