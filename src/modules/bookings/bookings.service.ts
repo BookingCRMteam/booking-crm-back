@@ -192,4 +192,14 @@ export class BookingsService {
       paymentLink: paymentLink,
     };
   }
+
+  async findOne(id: number) {
+    const booking = await this.db.query.bookings.findFirst({
+      where: (bookings, { eq }) => eq(bookings.id, id),
+    });
+    if (!booking) {
+      throw new NotFoundException(`Booking with id ${id} not found`);
+    }
+    return booking;
+  }
 }

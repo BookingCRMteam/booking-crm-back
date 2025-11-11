@@ -6,10 +6,14 @@ import {
   ConnectedSocket,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  WsException,
 } from '@nestjs/websockets';
-import { ValidationPipe, UsePipes } from '@nestjs/common';
-import { Server, Socket } from 'socket.io';
+import { UseGuards, ValidationPipe, UsePipes } from '@nestjs/common';
+import { Server } from 'socket.io';
 import { SubscribeBookingDto } from './dto/subscribe-booking.dto';
+import { WsAuthGuard } from '../auth/ws-auth.guard';
+import { BookingsService } from '../bookings/bookings.service';
+import { SocketWithUser } from '@app/types/socket-with-user';
 
 @WebSocketGateway()
 export class NotificationsGateway
@@ -17,6 +21,8 @@ export class NotificationsGateway
 {
   @WebSocketServer()
   server: Server;
+
+  constructor(private readonly bookingsService: BookingsService) {}
 
   // map socketId -> set of bookingIds the client subscribed to
   private socketBookingMap = new Map<string, Set<number>>();
@@ -30,13 +36,22 @@ export class NotificationsGateway
    * Client requests to subscribe to updates for a specific booking.
    * Payload: { bookingId: number }
    */
+  @UseGuards(WsAuthGuard)
   @UsePipes(new ValidationPipe())
   @SubscribeMessage('subscribeBooking')
-  handleSubscribeBooking(
+  async handleSubscribeBooking(
     @MessageBody() payload: SubscribeBookingDto,
-    @ConnectedSocket() socket: Socket,
+    @ConnectedSocket() socket: SocketWithUser,
   ) {
     const bookingId = payload.bookingId;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    const userId = socket.data.user.sub;
+
+    const booking = await this.bookingsService.findOne(bookingId);
+
+    if (!booking || booking.userId !== userId) {
+      throw new WsException('Unauthorized');
+    }
 
     const roomName = `booking-${bookingId}`;
     // join the room for that booking; socket.join is safe to call without await
@@ -58,7 +73,7 @@ export class NotificationsGateway
   @SubscribeMessage('unsubscribeBooking')
   handleUnsubscribeBooking(
     @MessageBody() payload: SubscribeBookingDto,
-    @ConnectedSocket() socket: Socket,
+    @ConnectedSocket() socket: SocketWithUser,
   ) {
     const bookingId = payload.bookingId;
 
@@ -87,13 +102,13 @@ export class NotificationsGateway
     this.server.to(roomName).emit('paymentStatus', { bookingId, status });
   }
 
-  handleConnection(_socket: Socket) {
+  handleConnection(_socket: SocketWithUser) {
     // noop - clients should explicitly subscribe to booking rooms
     // reference param to satisfy linter
     void _socket;
   }
 
-  handleDisconnect(socket: Socket) {
+  handleDisconnect(socket: SocketWithUser) {
     const sid = socket.id;
     const set = this.socketBookingMap.get(sid);
     if (set) {
