@@ -100,8 +100,8 @@ export class UpdateOperatorDto {
   website?: string;
 
   @ValidateIf((o: UpdateOperatorDto) => !!o.photo)
-  @IsFileValid(['image/jpeg', 'image/png'], 5, {
-    message: 'Photo must be JPEG or PNG and up to 5MB',
+  @IsFileValid(['image/jpeg', 'image/png', 'image/webp'], 5, {
+    message: 'Photo must be JPEG, PNG or WEBP and up to 5MB',
   })
   photo?: Express.Multer.File;
 }
