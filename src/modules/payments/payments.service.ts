@@ -12,6 +12,7 @@ import Stripe from 'stripe';
 import LiqPay from 'liqpayjs-sdk';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { Request } from 'express';
+import { NotificationsService } from '../notifications/notifications.service';
 
 const { bookings } = schema;
 @Injectable()
@@ -22,6 +23,7 @@ export class PaymentsService {
   constructor(
     @Inject('DRIZZLE_CLIENT')
     private db: NodePgDatabase<typeof schema>,
+    private readonly notificationsService: NotificationsService,
   ) {
     this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: '2025-07-30.basil',
@@ -70,6 +72,10 @@ export class PaymentsService {
               .update(bookings)
               .set({ status: 'confirmed', updatedAt: new Date() })
               .where(eq(bookings.id, booking.id));
+            this.notificationsService.sendPaymentStatusUpdate(
+              booking.id,
+              'confirmed',
+            );
           }
         });
         console.log(`Booking ${booking.id} confirmed via Stripe webhook.`);
@@ -126,6 +132,10 @@ export class PaymentsService {
               .update(bookings)
               .set({ status: 'confirmed', updatedAt: new Date() })
               .where(eq(bookings.id, booking.id));
+            this.notificationsService.sendPaymentStatusUpdate(
+              booking.id,
+              'confirmed',
+            );
           }
         });
         console.log(`Booking ${booking.id} confirmed via Liqpay webhook.`);
