@@ -7,13 +7,17 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
+import { ValidationPipe, UsePipes } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
+import { SubscribeBookingDto } from './dto/subscribe-booking.dto';
+
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
+  'http://localhost:3000',
+];
 
 @WebSocketGateway({
   cors: {
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || [
-      'http://localhost:3000',
-    ],
+    origin: allowedOrigins,
   },
 })
 export class NotificationsGateway
@@ -34,13 +38,13 @@ export class NotificationsGateway
    * Client requests to subscribe to updates for a specific booking.
    * Payload: { bookingId: number }
    */
+  @UsePipes(new ValidationPipe())
   @SubscribeMessage('subscribeBooking')
   handleSubscribeBooking(
-    @MessageBody() payload: { bookingId: number },
+    @MessageBody() payload: SubscribeBookingDto,
     @ConnectedSocket() socket: Socket,
   ) {
-    const bookingId = payload?.bookingId;
-    if (!bookingId) return { ok: false };
+    const bookingId = payload.bookingId;
 
     const roomName = `booking-${bookingId}`;
     // join the room for that booking; socket.join is safe to call without await
@@ -58,13 +62,13 @@ export class NotificationsGateway
   /**
    * Client unsubscribes from booking updates.
    */
+  @UsePipes(new ValidationPipe())
   @SubscribeMessage('unsubscribeBooking')
   handleUnsubscribeBooking(
-    @MessageBody() payload: { bookingId: number },
+    @MessageBody() payload: SubscribeBookingDto,
     @ConnectedSocket() socket: Socket,
   ) {
-    const bookingId = payload?.bookingId;
-    if (!bookingId) return { ok: false };
+    const bookingId = payload.bookingId;
 
     const roomName = `booking-${bookingId}`;
     // intentionally not awaiting leave promise
