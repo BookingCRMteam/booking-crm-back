@@ -5,6 +5,8 @@ import { config } from 'dotenv';
 import { ValidationPipe } from '@nestjs/common';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { json, Request } from 'express';
+import { SocketIoAdapter } from './common/adapters/socket-io.adapter';
+import { ConfigService } from '@nestjs/config';
 
 config({ path: `.env.${process.env.NODE_ENV || 'development'}` });
 
@@ -13,7 +15,11 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
   app.enableCors();
-  const config = new DocumentBuilder()
+
+  const configService = app.get(ConfigService);
+  app.useWebSocketAdapter(new SocketIoAdapter(app, configService));
+
+  const swaggerConfig = new DocumentBuilder()
     .setTitle('Booking CRM API')
     .setDescription('Booking CRM API description')
     .setVersion('1.0')
@@ -23,7 +29,8 @@ async function bootstrap() {
       scheme: 'bearer',
     })
     .build();
-  const documentFactory = () => SwaggerModule.createDocument(app, config);
+  const documentFactory = () =>
+    SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('docs', app, documentFactory);
   app.setGlobalPrefix('api/v1');
   app.useGlobalFilters(new HttpExceptionFilter());

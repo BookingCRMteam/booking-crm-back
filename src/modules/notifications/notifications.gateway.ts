@@ -11,15 +11,7 @@ import { ValidationPipe, UsePipes } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { SubscribeBookingDto } from './dto/subscribe-booking.dto';
 
-const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
-  'http://localhost:3000',
-];
-
-@WebSocketGateway({
-  cors: {
-    origin: allowedOrigins,
-  },
-})
+@WebSocketGateway()
 export class NotificationsGateway
   implements OnGatewayConnection, OnGatewayDisconnect
 {
