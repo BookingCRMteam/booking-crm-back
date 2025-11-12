@@ -32,7 +32,6 @@ interface TourResponse {
   // Додайте інші поля, що повертаються після створення туру, якщо потрібно
 }
 
-// --- Конфігурація ---
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000/api/v1'; // Використовуйте змінну оточення
 const TOURS_ENDPOINT = '/tours';
 const CITIES_ENDPOINT = '/cities';

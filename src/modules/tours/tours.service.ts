@@ -212,11 +212,8 @@ export class ToursService {
         break;
     }
 
-    // Визначаємо функцію сортування (asc або desc)
     try {
-      // Виконання запиту до бази даних
       const preAllTours = await this.db.query.tours.findMany({
-        // Використовуйте this.db
         where: and(...whereConditions),
         orderBy:
           sortOrder === SortOrder.DESC
@@ -249,10 +246,9 @@ export class ToursService {
           a.isMain === b.isMain ? 0 : a.isMain ? -1 : 1,
         ),
       }));
-      // Отримання загальної кількості записів для пагінації
       const totalCountResult = await this.db // Використовуйте this.db
-        .select({ count: sql<number>`count(*)` }) // Явно вказуємо, що count - це число
-        .from(schema.tours) // Використовуйте schema.tours
+        .select({ count: sql<number>`count(*)` })
+        .from(schema.tours)
         .where(and(...whereConditions));
       const totalCount = totalCountResult[0].count;
 

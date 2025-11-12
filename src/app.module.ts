@@ -38,7 +38,6 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
           enableReadyCheck: false,
           maxRetriesPerRequest: null,
         };
-        console.log('Конфігурація кешу:', config);
         return config;
       },
     }),

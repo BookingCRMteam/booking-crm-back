@@ -68,6 +68,7 @@ export class NotificationsGateway
   /**
    * Client unsubscribes from booking updates.
    */
+  @UseGuards(WsAuthGuard)
   @UsePipes(new ValidationPipe())
   @SubscribeMessage('unsubscribeBooking')
   handleUnsubscribeBooking(
