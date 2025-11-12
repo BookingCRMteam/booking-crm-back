@@ -48,7 +48,7 @@ export class NotificationsGateway
 
     const booking = await this.bookingsService.findOne(bookingId);
 
-    if (!booking || booking.userId !== userId) {
+    if (!booking || booking.userId !== parseInt(userId, 10)) {
       throw new WsException('Unauthorized');
     }
 

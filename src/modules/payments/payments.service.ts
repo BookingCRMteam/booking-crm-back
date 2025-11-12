@@ -75,10 +75,17 @@ export class PaymentsService {
           }
         });
         console.log(`Booking ${booking.id} confirmed via Stripe webhook.`);
-        this.notificationsService.sendPaymentStatusUpdate(
-          booking.id,
-          'confirmed',
-        );
+        try {
+          this.notificationsService.sendPaymentStatusUpdate(
+            booking.id,
+            'confirmed',
+          );
+        } catch (error) {
+          console.error(
+            `Failed to send payment notification for booking ${booking.id}:`,
+            error,
+          );
+        }
       }
     }
   }

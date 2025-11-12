@@ -17,10 +17,9 @@ export class WsAuthGuard implements CanActivate {
     }
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const payload = await this.jwtService.verifyAsync<JwtPayload>(token);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      client.data = { user: payload };
+
+      client.data = { ...client.data, user: payload };
     } catch {
       throw new WsException('Unauthorized');
     }
@@ -28,7 +27,9 @@ export class WsAuthGuard implements CanActivate {
     return true;
   }
 
-  private extractTokenFromHandshake(client: SocketWithUser): string | undefined {
+  private extractTokenFromHandshake(
+    client: SocketWithUser,
+  ): string | undefined {
     const authHeader = client.handshake.headers.authorization;
     if (!authHeader) {
       return undefined;
