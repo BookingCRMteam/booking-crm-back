@@ -24,7 +24,7 @@ export class PaymentsService {
     private db: NodePgDatabase<typeof schema>,
   ) {
     this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2025-08-27.basil',
+      apiVersion: '2025-10-29.clover',
     });
     this.liqpay = new LiqPay(
       process.env.LIQPAY_PUBLIC_KEY,
