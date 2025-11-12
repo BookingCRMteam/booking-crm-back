@@ -72,14 +72,13 @@ export class PaymentsService {
               .update(bookings)
               .set({ status: 'confirmed', updatedAt: new Date() })
               .where(eq(bookings.id, booking.id));
-            this.notificationsService.sendPaymentStatusUpdate(
-              booking.id,
-              'confirmed',
-            );
           }
         });
         console.log(`Booking ${booking.id} confirmed via Stripe webhook.`);
-        // Тут можна додати логіку сповіщення користувача
+        this.notificationsService.sendPaymentStatusUpdate(
+          booking.id,
+          'confirmed',
+        );
       }
     }
   }

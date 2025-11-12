@@ -11,8 +11,8 @@ import {
 import { UseGuards, ValidationPipe, UsePipes } from '@nestjs/common';
 import { Server } from 'socket.io';
 import { SubscribeBookingDto } from './dto/subscribe-booking.dto';
-import { WsAuthGuard } from '../auth/ws-auth.guard';
-import { BookingsService } from '../bookings/bookings.service';
+import { WsAuthGuard } from '@app/modules/auth/ws-auth.guard';
+import { BookingsService } from '@app/modules/bookings/bookings.service';
 import { SocketWithUser } from '@app/types/socket-with-user';
 
 @WebSocketGateway()
@@ -44,7 +44,6 @@ export class NotificationsGateway
     @ConnectedSocket() socket: SocketWithUser,
   ) {
     const bookingId = payload.bookingId;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const userId = socket.data.user.sub;
 
     const booking = await this.bookingsService.findOne(bookingId);
