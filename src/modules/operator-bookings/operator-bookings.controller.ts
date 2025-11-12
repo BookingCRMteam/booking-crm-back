@@ -7,16 +7,8 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@app/common/guards/jwt-auth.guard';
 import { OperatorBookingsService } from './operator-bookings.service';
-import { Request } from 'express';
 import { OperatorBookingResponseDto } from './dto/operator-booking-response.dto';
-
-interface AuthenticatedUser {
-  id: number;
-}
-
-interface AuthRequest extends Request {
-  user?: AuthenticatedUser;
-}
+import { AuthRequest } from '@app/common/interfaces/auth.interface';
 
 @ApiTags('Operator Bookings')
 @ApiBearerAuth()
@@ -35,11 +27,6 @@ export class OperatorBookingsController {
     type: [OperatorBookingResponseDto],
   })
   async getOperatorBookings(@Req() req: AuthRequest) {
-    const userId = req.user?.id;
-    if (typeof userId !== 'number') {
-      return [];
-    }
-
-    return this.operatorBookingsService.getOperatorBookings(userId);
+    return this.operatorBookingsService.getOperatorBookings(req.user.id);
   }
 }
