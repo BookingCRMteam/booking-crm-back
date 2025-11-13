@@ -21,14 +21,6 @@ const WEBSITE_URL_PATTERN =
 
 const WEBSITE_URL_ERROR_MESSAGE =
   'Website must start with http:// or https://, contain a valid domain, and not include spaces';
-const COUNTRY_CODE_PATTERN = /^\+[1-9][0-9]{0,3}$/; // +380, +1, +44, etc.
-const COUNTRY_CODE_ERROR =
-  'Country code must start with + followed by 1–3 digits (e.g. +380, +1, +44)';
-
-const PHONE_NUMBER_PATTERN = /^[1-9][0-9]{8,14}$/;
-const PHONE_NUMBER_ERROR =
-  'Phone number must contain only digits (9–15 characters), cannot start with 0, and cannot include spaces or symbols.';
-
 export class UpdateOperatorDto {
   @IsOptional()
   @IsString()
@@ -62,25 +54,12 @@ export class UpdateOperatorDto {
   })
   description?: string;
 
-  @ValidateIf(
-    (o: UpdateOperatorDto) =>
-      o.countryCode !== undefined && o.countryCode !== '',
-  )
   @IsString()
-  @Matches(COUNTRY_CODE_PATTERN, {
-    message: COUNTRY_CODE_ERROR,
+  @Matches(/^\+?[1-9][0-9]{8,14}$/, {
+    message:
+      'Phone number must be digits only (9–15 chars), cannot start with 0, may include optional + at start',
   })
-  countryCode?: string;
-
-  @ValidateIf(
-    (o: UpdateOperatorDto) =>
-      o.phoneNumber !== undefined && o.phoneNumber !== '',
-  )
-  @IsString()
-  @Matches(PHONE_NUMBER_PATTERN, {
-    message: PHONE_NUMBER_ERROR,
-  })
-  phoneNumber?: string;
+  phone?: string;
 
   @ValidateIf(
     (o: UpdateOperatorDto) => o.firstName !== undefined && o.firstName !== '',

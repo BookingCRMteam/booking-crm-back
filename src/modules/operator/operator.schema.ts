@@ -15,8 +15,7 @@ export const operators = pgTable('operators', {
   firstName: text('first_name').notNull(),
   lastName: text('last_name').notNull(),
   website: text('website').notNull(),
-  countryCode: text('country_code'), // <-- нове поле
-  phoneNumber: text('phone_number'),
+  phone: text('phone').notNull(),
   status: text('status').default('pending').notNull(),
   philosophy: text('philosophy'),
   photo: text('photo'),
