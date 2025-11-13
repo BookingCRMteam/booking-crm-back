@@ -1,0 +1,67 @@
+import { Injectable, Inject } from '@nestjs/common';
+import { eq, inArray, and } from 'drizzle-orm';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { bookings, tours, operators } from '@app/db/schema/schema';
+import type { OperatorBookingResponseDto } from './dto/operator-booking-response.dto';
+
+@Injectable()
+export class OperatorBookingsService {
+  constructor(
+    @Inject('DRIZZLE_CLIENT')
+    private readonly db: NodePgDatabase,
+  ) {}
+
+  async getOperatorBookings(
+    operatorUserId: number,
+  ): Promise<OperatorBookingResponseDto[]> {
+    if (!operatorUserId) return [];
+
+    const [operator] = await this.db
+      .select({ operatorId: operators.id })
+      .from(operators)
+      .where(eq(operators.userId, operatorUserId));
+
+    if (!operator) return [];
+
+    const toursList = await this.db
+      .select({ id: tours.id })
+      .from(tours)
+      .where(eq(tours.operatorId, operator.operatorId));
+
+    const tourIds = toursList.map((t) => t.id);
+
+    if (tourIds.length === 0) return [];
+
+    const operatorBookings = await this.db
+      .select({
+        bookingId: bookings.id,
+        status: bookings.status,
+        totalPrice: bookings.totalPrice,
+        currency: bookings.currency,
+        createdAt: bookings.createdAt,
+        tourTitle: tours.title,
+        startDate: tours.startDate,
+        endDate: tours.endDate,
+      })
+      .from(bookings)
+      .innerJoin(tours, eq(bookings.tourId, tours.id))
+      .where(
+        and(inArray(bookings.tourId, tourIds), eq(bookings.status, 'paid')),
+      );
+
+    return operatorBookings.map((b) => ({
+      bookingId: b.bookingId,
+      status: b.status,
+      totalPrice: b.totalPrice,
+      currency: b.currency,
+      createdAt: new Date(b.createdAt as unknown as string).toISOString(),
+      tourTitle: b.tourTitle,
+      startDate: new Date(b.startDate as unknown as string)
+        .toISOString()
+        .split('T')[0],
+      endDate: new Date(b.endDate as unknown as string)
+        .toISOString()
+        .split('T')[0],
+    }));
+  }
+}
