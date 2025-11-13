@@ -1,4 +1,10 @@
-import { Controller, Get, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  UseGuards,
+  Req,
+  UnauthorizedException,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiTags,
@@ -8,7 +14,12 @@ import {
 import { JwtAuthGuard } from '@app/common/guards/jwt-auth.guard';
 import { OperatorBookingsService } from './operator-bookings.service';
 import { OperatorBookingResponseDto } from './dto/operator-booking-response.dto';
-import { AuthRequest } from '@app/common/interfaces/auth.interface';
+import { Request } from 'express';
+
+interface JwtPayload {
+  id: number; // або string, якщо id користувача зберігається як рядок
+  email?: string;
+}
 
 @ApiTags('Operator Bookings')
 @ApiBearerAuth()
@@ -26,7 +37,12 @@ export class OperatorBookingsController {
     description: 'Список успішних бронювань',
     type: [OperatorBookingResponseDto],
   })
-  async getOperatorBookings(@Req() req: AuthRequest) {
-    return this.operatorBookingsService.getOperatorBookings(req.user.id);
+  async getOperatorBookings(@Req() req: Request & { user?: JwtPayload }) {
+    const user = req.user;
+    if (!user || !user.id) {
+      throw new UnauthorizedException('User not found in request');
+    }
+
+    return this.operatorBookingsService.getOperatorBookings(user.id);
   }
 }
