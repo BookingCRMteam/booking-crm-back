@@ -53,9 +53,7 @@ export class NotificationsGateway
     }
 
     const roomName = `booking-${bookingId}`;
-    // join the room for that booking; socket.join is safe to call without await
-    // intentionally not awaiting join promise
-    void socket.join(roomName);
+    await socket.join(roomName);
 
     const sid = socket.id;
     const set = this.socketBookingMap.get(sid) ?? new Set<number>();
@@ -71,15 +69,20 @@ export class NotificationsGateway
   @UseGuards(WsAuthGuard)
   @UsePipes(new ValidationPipe())
   @SubscribeMessage('unsubscribeBooking')
-  handleUnsubscribeBooking(
+  async handleUnsubscribeBooking(
     @MessageBody() payload: SubscribeBookingDto,
     @ConnectedSocket() socket: SocketWithUser,
   ) {
     const bookingId = payload.bookingId;
+    const userId = socket.data.user.sub;
 
+    const booking = await this.bookingsService.findOne(bookingId);
+    if (!booking || booking.userId !== parseInt(userId, 10)) {
+      throw new WsException('Unauthorized');
+    }
     const roomName = `booking-${bookingId}`;
     // intentionally not awaiting leave promise
-    void socket.leave(roomName);
+    await socket.leave(roomName);
 
     const sid = socket.id;
     const set = this.socketBookingMap.get(sid);
