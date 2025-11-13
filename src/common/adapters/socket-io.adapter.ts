@@ -13,17 +13,18 @@ export class SocketIoAdapter extends IoAdapter {
 
   createIOServer(port: number, options?: ServerOptions): any {
     const allowedOriginsStr = this.configService.get<string>('ALLOWED_ORIGINS');
+    let allowedOrigins: string[];
     if (!allowedOriginsStr?.trim()) {
-      const fallback = ['http://localhost:3000'];
+      allowedOrigins = ['http://localhost:3000'];
       console.warn(
-        `ALLOWED_ORIGINS not configured, falling back to ${fallback.join(', ')}. ` +
+        `ALLOWED_ORIGINS not configured, falling back to ${allowedOrigins.join(', ')}. ` +
           'This may cause CORS errors in production.',
       );
-      return fallback;
+    } else {
+      allowedOrigins = allowedOriginsStr
+        .split(',')
+        .map((origin) => origin.trim());
     }
-    const allowedOrigins = allowedOriginsStr?.trim()
-      ? allowedOriginsStr.split(',').map((origin) => origin.trim())
-      : ['http://localhost:3000'];
     const corsOptions = {
       origin: allowedOrigins,
       methods: ['GET', 'POST'],
