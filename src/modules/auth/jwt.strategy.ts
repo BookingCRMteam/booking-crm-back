@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
@@ -18,7 +18,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         jwksRequestsPerMinute: 5,
         jwksUri: process.env.ISSUER + '.well-known/jwks.json',
       }),
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken() as string,
       audience: process.env.AUDIENCE,
       issuer: process.env.ISSUER,
       algorithms: ['RS256'],

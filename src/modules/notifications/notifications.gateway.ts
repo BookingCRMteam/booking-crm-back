@@ -11,18 +11,29 @@ import {
 import { UseGuards, ValidationPipe, UsePipes } from '@nestjs/common';
 import { Server } from 'socket.io';
 import { SubscribeBookingDto } from './dto/subscribe-booking.dto';
-import { WsAuthGuard } from '@app/modules/auth/ws-auth.guard';
+import { JwtAuthGuard } from '@app/common/guards/jwt-auth.guard';
 import { BookingsService } from '@app/modules/bookings/bookings.service';
 import { SocketWithUser } from '@app/types/socket-with-user';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { JwtPayload } from '@app/types/jwt-payload.interface';
 
-@WebSocketGateway()
+@WebSocketGateway({
+  cors: {
+    origin: '*',
+  },
+})
 export class NotificationsGateway
   implements OnGatewayConnection, OnGatewayDisconnect
 {
   @WebSocketServer()
   server: Server;
 
-  constructor(private readonly bookingsService: BookingsService) {}
+  constructor(
+    private readonly bookingsService: BookingsService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+  ) {}
 
   // map socketId -> set of bookingIds the client subscribed to
   private socketBookingMap = new Map<string, Set<number>>();
@@ -36,7 +47,7 @@ export class NotificationsGateway
    * Client requests to subscribe to updates for a specific booking.
    * Payload: { bookingId: number }
    */
-  @UseGuards(WsAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe())
   @SubscribeMessage('subscribeBooking')
   async handleSubscribeBooking(
@@ -66,7 +77,7 @@ export class NotificationsGateway
   /**
    * Client unsubscribes from booking updates.
    */
-  @UseGuards(WsAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe())
   @SubscribeMessage('unsubscribeBooking')
   async handleUnsubscribeBooking(
@@ -105,10 +116,28 @@ export class NotificationsGateway
     this.server.to(roomName).emit('paymentStatus', { bookingId, status });
   }
 
-  handleConnection(_socket: SocketWithUser) {
-    // noop - clients should explicitly subscribe to booking rooms
-    // reference param to satisfy linter
-    void _socket;
+  async handleConnection(socket: SocketWithUser) {
+    const token: string | undefined =
+      (socket.handshake.auth.token as string | undefined) ||
+      socket.handshake.headers['authorization'];
+
+    if (!token) {
+      // If no token is provided, throw an unauthorized exception
+      throw new WsException('Unauthorized');
+    }
+
+    try {
+      // Verify the token using the JWT secret
+      const payload = await this.jwtService.verifyAsync<JwtPayload>(token, {
+        secret: this.configService.get<string>('JWT_SECRET'),
+      });
+
+      // Set the user data on the socket
+      socket.data = { ...(socket.data || {}), user: payload };
+    } catch {
+      // If the token is invalid, throw an unauthorized exception
+      throw new WsException('Unauthorized');
+    }
   }
 
   handleDisconnect(socket: SocketWithUser) {
