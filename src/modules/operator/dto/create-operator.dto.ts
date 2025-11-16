@@ -4,7 +4,6 @@ import {
   IsString,
   Length,
   Matches,
-  ValidateIf,
 } from 'class-validator';
 import { IsFileValid } from '../../../common/validators/file-type-size.validator';
 
@@ -20,13 +19,10 @@ const WEBSITE_URL_PATTERN =
 const WEBSITE_URL_ERROR_MESSAGE =
   'Website must start with http:// or https://, contain a valid domain, and not include spaces';
 
-const COUNTRY_CODE_PATTERN = /^\+[1-9][0-9]{0,3}$/; // +380, +1, +44, etc.
-const COUNTRY_CODE_ERROR =
-  'Country code must start with + followed by 1–3 digits (e.g. +380, +1, +44)';
-
-const PHONE_NUMBER_PATTERN = /^[1-9][0-9]{8,14}$/;
-const PHONE_NUMBER_ERROR =
-  'Phone number must contain only digits (9–15 characters), cannot start with 0, and cannot include spaces or symbols.';
+const COUNTRY_CODES = ['+380', '+1']; // список дозволених кодів країн
+const COUNTRY_CODE_REGEX = COUNTRY_CODES.map((code) =>
+  code.replace('+', '\\+'),
+).join('|');
 export class CreateOperatorDto {
   @IsOptional()
   @IsString()
@@ -42,25 +38,13 @@ export class CreateOperatorDto {
   })
   description?: string;
 
-  @ValidateIf(
-    (o: CreateOperatorDto) =>
-      o.countryCode !== undefined && o.countryCode !== '',
-  )
   @IsString()
-  @Matches(COUNTRY_CODE_PATTERN, {
-    message: COUNTRY_CODE_ERROR,
+  @Matches(new RegExp(`^(${COUNTRY_CODE_REGEX})([1-9][0-9]{8,14})$`), {
+    message: `Phone number must start with a valid country code (${COUNTRY_CODES.join(
+      ', ',
+    )}), followed by 9–15 digits, cannot start with 0, no spaces or special symbols`,
   })
-  countryCode?: string;
-
-  @ValidateIf(
-    (o: CreateOperatorDto) =>
-      o.phoneNumber !== undefined && o.phoneNumber !== '',
-  )
-  @IsString()
-  @Matches(PHONE_NUMBER_PATTERN, {
-    message: PHONE_NUMBER_ERROR,
-  })
-  phoneNumber?: string;
+  phone: string;
 
   @IsString()
   @Length(2, 50, {

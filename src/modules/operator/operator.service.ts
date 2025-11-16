@@ -42,8 +42,7 @@ export class OperatorService {
         description: dto.description || 'Приватна особа оператор турів',
         firstName: dto.firstName,
         lastName: dto.lastName,
-        countryCode: dto.countryCode,
-        phoneNumber: dto.phoneNumber,
+        phone: dto.phone,
         website: dto.website,
         userId: req.user.id,
         email: req.user.email,
@@ -64,8 +63,7 @@ export class OperatorService {
     if (dto.description !== undefined) updateData.description = dto.description;
     if (dto.firstName !== undefined) updateData.firstName = dto.firstName;
     if (dto.lastName !== undefined) updateData.lastName = dto.lastName;
-    if (dto.countryCode !== undefined) updateData.countryCode = dto.countryCode;
-    if (dto.phoneNumber !== undefined) updateData.phoneNumber = dto.phoneNumber;
+    if (dto.phone !== undefined) updateData.phone = dto.phone;
     if (dto.website !== undefined) updateData.website = dto.website;
     if (dto.philosophy !== undefined) updateData.philosophy = dto.philosophy;
     if (file) {
@@ -159,8 +157,7 @@ export class OperatorService {
         firstName: operatorSchema.operators.firstName,
         lastName: operatorSchema.operators.lastName,
         website: operatorSchema.operators.website,
-        countryCode: operatorSchema.operators.countryCode,
-        phoneNumber: operatorSchema.operators.phoneNumber,
+        phone: operatorSchema.operators.phone,
         status: operatorSchema.operators.status,
         philosophy: operatorSchema.operators.philosophy,
         photo: operatorSchema.operators.photo,
