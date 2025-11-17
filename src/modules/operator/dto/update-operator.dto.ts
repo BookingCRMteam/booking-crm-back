@@ -38,6 +38,7 @@ export class UpdateOperatorDto {
   @ValidateIf(
     (o: UpdateOperatorDto) => o.philosophy !== undefined && o.philosophy !== '',
   )
+  @IsOptional()
   @IsString()
   @Length(0, 1000, {
     message: 'Philosophy must be at most 1000 characters long',
@@ -54,6 +55,7 @@ export class UpdateOperatorDto {
   })
   description?: string;
 
+  @IsOptional()
   @IsString()
   @Matches(/^\+?[1-9][0-9]{8,14}$/, {
     message:
@@ -88,6 +90,7 @@ export class UpdateOperatorDto {
   @ValidateIf(
     (o: UpdateOperatorDto) => o.website !== undefined && o.website !== '',
   )
+  @IsOptional()
   @IsString()
   @Length(13, 255, {
     message: 'Website URL must be between 13 and 255 characters long',
@@ -97,6 +100,7 @@ export class UpdateOperatorDto {
   })
   website?: string;
 
+  @IsOptional()
   @ValidateIf((o: UpdateOperatorDto) => !!o.photo)
   @IsFileValid(['image/jpeg', 'image/png', 'image/webp'], 5, {
     message: 'Photo must be JPEG, PNG or WEBP and up to 5MB',
