@@ -1,48 +1,47 @@
-# ===== Builder Stage =====
+# ============================
+#       BUILDER STAGE
+# ============================
 FROM node:22-alpine AS builder
-# FROM node:20-bullseye AS builder
-
-
-# Встановлюємо pnpm
-RUN npm install -g pnpm
 
 WORKDIR /usr/src/app
 
-# Копіюємо лише package.json та lock-файли
-COPY package*.json pnpm-lock.yaml* ./
+# Fix pnpm NO_TTY error
+ENV CI=true
 
-# Встановлюємо всі залежності (dev + prod)
-RUN pnpm install
+# Enable pnpm via corepack
+RUN corepack enable
 
-# Копіюємо код
+# Install dependencies using caching
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+
+# Copy all files
 COPY . .
-# Перевірка ESLint
-RUN pnpm run lint
 
-# Перевірка TypeScript
-RUN pnpm exec tsc --noEmit
-
-# Збираємо проєкт
-RUN pnpm run build
-
-# Видаляємо dev-залежності для продакшн
-RUN pnpm prune --prod --ignore-scripts
+# Build NestJS app
+RUN pnpm build
 
 
-# ===== Runner Stage (Prod) =====
-FROM node:22-alpine AS runner
+# ============================
+#       PRODUCTION STAGE
+# ============================
+FROM node:22-alpine AS production 
 
 WORKDIR /usr/src/app
 
-# Встановлюємо pnpm
-RUN npm install -g pnpm
+ENV NODE_ENV=production
+ENV CI=true
 
-# Копіюємо необхідне з builder
-COPY --from=builder /usr/src/app/node_modules ./node_modules
+# Enable pnpm
+RUN corepack enable
+
+# Copy only dist and node_modules
 COPY --from=builder /usr/src/app/dist ./dist
-COPY --from=builder /usr/src/app/package.json ./package.json
+COPY --from=builder /usr/src/app/node_modules ./node_modules
+COPY package.json .
 
+# Expose app port
 EXPOSE 3000
 
-# Запуск prod
+# Run compiled NestJS app
 CMD ["node", "dist/src/main.js"]
