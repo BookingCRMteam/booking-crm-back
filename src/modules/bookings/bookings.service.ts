@@ -11,7 +11,22 @@ import Stripe from 'stripe';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq } from 'drizzle-orm';
 import { CreateBookingDto } from './dto/create-booking.dto';
-
+import { NotificationsService } from '../notifications/notifications.service';
+function isPgError(err: unknown): err is { cause: { code: string } } {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'cause' in err &&
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    typeof (err as any).cause === 'object' &&
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    (err as any).cause !== null &&
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    'code' in (err as any).cause &&
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    typeof (err as any).cause.code === 'string'
+  );
+}
 @Injectable()
 export class BookingsService {
   private stripe: Stripe;
@@ -20,6 +35,7 @@ export class BookingsService {
   constructor(
     @Inject('DRIZZLE_CLIENT')
     private db: NodePgDatabase<typeof schema>,
+    private readonly notificationsService: NotificationsService,
   ) {
     this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: '2025-10-29.clover',
@@ -99,34 +115,47 @@ export class BookingsService {
           `Booking for ${data.numberOfPeople} people would result in an invalid number of available spots (${newAvailableSpots}) for tour with id ${data.tourId}. Available spots must be between 0 and 100 (inclusive).`,
         );
       }
-      const [booking] = await tx
-        .insert(bookings)
-        .values({
-          userId: data.userId,
-          tourId: data.tourId,
-          numberOfPeople: data.numberOfPeople,
-          firstPersonName: data.firstPersonName,
-          firstPersonSurname: data.firstPersonSurname,
-          secondPersonName: data.secondPersonName,
-          secondPersonSurname: data.secondPersonSurname,
-          phone: data.phone,
-          totalPrice: totalPrice.toString(),
-          currency: tour.currency,
-          paymentProvider: data.paymentProvider,
-          status: 'pending_payment',
-        })
-        .returning();
 
-      const updatedTour = await tx
-        .update(schema.tours)
-        .set({
-          availableSpots: newAvailableSpots,
-        })
-        .where(eq(schema.tours.id, data.tourId));
+      try {
+        const [booking] = await tx
+          .insert(bookings)
+          .values({
+            userId: data.userId,
+            tourId: data.tourId,
+            numberOfPeople: data.numberOfPeople,
+            firstPersonName: data.firstPersonName,
+            firstPersonSurname: data.firstPersonSurname,
+            secondPersonName: data.secondPersonName,
+            secondPersonSurname: data.secondPersonSurname,
+            phone: data.phone,
+            totalPrice: totalPrice.toString(),
+            currency: tour.currency,
+            paymentProvider: data.paymentProvider,
+            status: 'pending_payment',
+          })
+          .returning();
 
-      console.log('Updated tour after booking:', updatedTour);
+        await tx
+          .update(schema.tours)
+          .set({
+            availableSpots: newAvailableSpots,
+          })
+          .where(eq(schema.tours.id, data.tourId));
+        this.notificationsService.sendPaymentStatusUpdate(
+          booking.id,
+          'pending_payment',
+        );
+        return booking;
+      } catch (error: unknown) {
+        if (isPgError(error) && error.cause.code === '23505') {
+          console.error('Error during booking transaction:', error.cause.code);
 
-      return booking;
+          throw new ConflictException(
+            'Booking already exists for this user and tour.',
+          );
+        }
+        throw error;
+      }
     });
 
     // 3. Згенерувати посилання для оплати залежно від провайдера

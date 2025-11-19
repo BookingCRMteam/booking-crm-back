@@ -1,3 +1,0 @@
-[submodule "liqpay"]
-	path = liqpay
-	url = https://github.com/liqpay/sdk-nodejs
