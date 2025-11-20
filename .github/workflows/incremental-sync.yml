@@ -18,6 +18,14 @@ jobs:
                   SRC: ${{ secrets.SOURCE_DB }}
                   DEST: ${{ secrets.TARGET_DB }}
               run: |
+                  set -euo pipefail  # Exit on error, undefined vars, pipe failures
+
+                  # Validate secrets
+                  if [ -z "$SRC" ] || [ -z "$DEST" ]; then
+                    echo "ERROR: SOURCE_DB and TARGET_DB secrets must be set"
+                    exit 1
+                  fi
+
                   echo "Fetching table list..."
                   tables=$(psql "$SRC" -t -c "SELECT tablename FROM pg_tables WHERE schemaname='public';")
 
@@ -51,13 +59,13 @@ jobs:
 
                     echo "Generating row hashes..."
                     psql "$SRC" -t -A -F"," -c "
-                      SELECT $pk, md5(row($tbl.*)::text)
-                      FROM $tbl
+                      SELECT $pk, md5(\"$tbl\".*::text)
+                      FROM \"$tbl\"
                     " > src_hashes.csv
 
                     psql "$DEST" -t -A -F"," -c "
-                      SELECT $pk, md5(row($tbl.*)::text)
-                      FROM $tbl
+                       SELECT $pk, md5(\"$tbl\".*::text)
+                       FROM \"$tbl\"
                     " > dest_hashes.csv
 
                     # 3. INSERT / UPDATE / DELETE DETECTION
@@ -73,17 +81,27 @@ jobs:
                     # DELETE rows that disappeared
                     if [ -s to_delete.csv ]; then
                       pks=$(cut -d',' -f1 to_delete.csv | paste -sd "," -)
-                      echo "Deleting rows: $pks"
-                      psql "$DEST" -c "DELETE FROM $tbl WHERE $pk IN ($pks);"
+                      echo "Deleting rows: $pks" echo "Deleting rows..."
+                      psql "$DEST" -c "
+                       DELETE FROM \"$tbl\" WHERE \"$pk\" IN (
+                         SELECT format('%L'::text, id)::int FROM (VALUES
+                         $(cut -d',' -f1 to_delete.csv | paste -sd "," - | sed "s/^/(/; s/),$/)/")
+                         ) AS t(id)
+                       );"
                     fi
 
                     # INSERT or UPDATE
                     if [ -s to_insert_or_update.csv ]; then
                       echo "Reinserting changed/new rows..."
-                      ids=$(cut -d',' -f1 to_insert_or_update.csv | paste -sd "," -)
-                      pg_dump "$SRC" -t "$tbl" --data-only --inserts --column-inserts |
-                        grep -E "($pk = ($ids))" |
-                        psql "$DEST"
+                      # Use a temp table to safely identify rows to sync
+                      psql "$DEST" <<EOF
+                      CREATE TEMP TABLE pks_to_sync AS
+                        SELECT * FROM (VALUES
+                        $(cut -d',' -f1 to_insert_or_update.csv | paste -sd "," - | sed "s/^/(/; s/),$/)/")
+                        ) AS t(id);
+                      DELETE FROM \"$tbl\" WHERE \"$pk\" IN (SELECT id FROM pks_to_sync);
+                      EOF
+                      pg_dump "$SRC" -t "$tbl" --data-only --column-inserts | psql "$DEST"
                     fi
 
                     echo "Table $tbl sync completed."
