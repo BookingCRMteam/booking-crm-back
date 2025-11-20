@@ -1,0 +1,109 @@
+name: Incremental Sync (INSERT + UPDATE + DELETE)
+
+on:
+    schedule:
+        - cron: "0 0 * * *" # every day at midnight UTC
+    workflow_dispatch:
+
+jobs:
+    sync:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Install PostgreSQL client
+              run: sudo apt-get update && sudo apt-get install -y postgresql-client jq
+
+            - name: Sync tables + rows
+              env:
+                  SRC: ${{ secrets.SOURCE_DB }}
+                  DEST: ${{ secrets.TARGET_DB }}
+              run: |
+                  set -euo pipefail  # Exit on error, undefined vars, pipe failures
+
+                  # Validate secrets
+                  if [ -z "$SRC" ] || [ -z "$DEST" ]; then
+                    echo "ERROR: SOURCE_DB and TARGET_DB secrets must be set"
+                    exit 1
+                  fi
+
+                  echo "Fetching table list..."
+                  tables=$(psql "$SRC" -t -c "SELECT tablename FROM pg_tables WHERE schemaname='public';")
+
+                  for tbl in $tables; do
+                    echo "=== Processing table: $tbl ==="
+
+                    # якщо таблиці нема у TARGET — створюємо її
+                    exists=$(psql "$DEST" -t -c "SELECT to_regclass('public.$tbl');" | tr -d ' ')
+                    if [ "$exists" = "" ]; then
+                      echo "Table $tbl does not exist on TARGET. Creating..."
+                      pg_dump "$SRC" -t "$tbl" --schema-only | psql "$DEST"
+                    fi
+
+                    # 1. GET PRIMARY KEY
+                    pk=$(psql "$SRC" -t -c "
+                      SELECT a.attname
+                      FROM   pg_index i
+                      JOIN   pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+                      WHERE  i.indrelid = 'public.$tbl'::regclass
+                      AND    i.indisprimary;
+                    " | tr -d ' ')
+
+                    if [ "$pk" = "" ]; then
+                      echo "Skipping $tbl — it has no primary key."
+                      continue
+                    fi
+
+                    echo "Primary key: $pk"
+
+                    # 2. HASH-BASED DIFF
+
+                    echo "Generating row hashes..."
+                    psql "$SRC" -t -A -F"," -c "
+                      SELECT $pk, md5(\"$tbl\".*::text)
+                      FROM \"$tbl\"
+                    " > src_hashes.csv
+
+                    psql "$DEST" -t -A -F"," -c "
+                       SELECT $pk, md5(\"$tbl\".*::text)
+                       FROM \"$tbl\"
+                    " > dest_hashes.csv
+
+                    # 3. INSERT / UPDATE / DELETE DETECTION
+
+                    echo "Detecting INSERT/UPDATE..."
+                    join -t, -v1 -j1 <(sort src_hashes.csv) <(sort dest_hashes.csv) > to_insert_or_update.csv || true
+
+                    echo "Detecting DELETE..."
+                    join -t, -v2 -j1 <(sort src_hashes.csv) <(sort dest_hashes.csv) > to_delete.csv || true
+
+                    # 4. APPLY CHANGES
+
+                    # DELETE rows that disappeared
+                    if [ -s to_delete.csv ]; then
+                      pks=$(cut -d',' -f1 to_delete.csv | paste -sd "," -)
+                      echo "Deleting rows: $pks" echo "Deleting rows..."
+                      psql "$DEST" -c "
+                       DELETE FROM \"$tbl\" WHERE \"$pk\" IN (
+                         SELECT format('%L'::text, id)::int FROM (VALUES
+                         $(cut -d',' -f1 to_delete.csv | paste -sd "," - | sed "s/^/(/; s/),$/)/")
+                         ) AS t(id)
+                       );"
+                    fi
+
+                    # INSERT or UPDATE
+                    if [ -s to_insert_or_update.csv ]; then
+                      echo "Reinserting changed/new rows..."
+                      # Use a temp table to safely identify rows to sync
+                      psql "$DEST" <<EOF
+                      CREATE TEMP TABLE pks_to_sync AS
+                        SELECT * FROM (VALUES
+                        $(cut -d',' -f1 to_insert_or_update.csv | paste -sd "," - | sed "s/^/(/; s/),$/)/")
+                        ) AS t(id);
+                      DELETE FROM \"$tbl\" WHERE \"$pk\" IN (SELECT id FROM pks_to_sync);
+                      EOF
+                      pg_dump "$SRC" -t "$tbl" --data-only --column-inserts | psql "$DEST"
+                    fi
+
+                    echo "Table $tbl sync completed."
+                    echo ""
+                  done
