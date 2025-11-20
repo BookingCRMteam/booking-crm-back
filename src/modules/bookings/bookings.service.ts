@@ -11,7 +11,7 @@ import Stripe from 'stripe';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq } from 'drizzle-orm';
 import { CreateBookingDto } from './dto/create-booking.dto';
-import { NotificationsService } from '../notifications/notifications.service';
+
 function isPgError(err: unknown): err is { cause: { code: string } } {
   return (
     typeof err === 'object' &&
@@ -35,7 +35,6 @@ export class BookingsService {
   constructor(
     @Inject('DRIZZLE_CLIENT')
     private db: NodePgDatabase<typeof schema>,
-    private readonly notificationsService: NotificationsService,
   ) {
     this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: '2025-10-29.clover',
@@ -141,10 +140,7 @@ export class BookingsService {
             availableSpots: newAvailableSpots,
           })
           .where(eq(schema.tours.id, data.tourId));
-        this.notificationsService.sendPaymentStatusUpdate(
-          booking.id,
-          'pending_payment',
-        );
+
         return booking;
       } catch (error: unknown) {
         if (isPgError(error) && error.cause.code === '23505') {

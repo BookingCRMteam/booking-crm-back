@@ -1,8 +1,8 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { eq, inArray, and } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { bookings, tours, operators } from '@app/db/schema/schema';
-import type { OperatorBookingResponseDto } from './dto/operator-booking-response.dto';
+import { OperatorBookingResponseDto } from './dto/operator-booking-response.dto';
 
 @Injectable()
 export class OperatorBookingsService {

@@ -2,9 +2,9 @@ import { Module, Global } from '@nestjs/common';
 import { Pool } from 'pg';
 import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schemaImport from './schema/schema';
-import type { AnyPgTable } from 'drizzle-orm/pg-core';
+import { AnyPgTable } from 'drizzle-orm/pg-core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import type { PoolConfig } from 'pg'; // тип конфігурації
+import { PoolConfig } from 'pg'; // тип конфігурації
 type SchemaType = Record<string, AnyPgTable>;
 const schema = schemaImport as unknown as SchemaType;
 @Global()

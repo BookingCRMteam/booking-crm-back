@@ -11,7 +11,7 @@ import { eq } from 'drizzle-orm';
 import Stripe from 'stripe';
 import LiqPay from 'liqpayjs-sdk';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { Request } from 'express';
+import { Request } from 'express';
 import { NotificationsService } from '../notifications/notifications.service';
 
 const { bookings } = schema;
@@ -110,6 +110,7 @@ export class PaymentsService {
     const decodedData = JSON.parse(
       Buffer.from(data.data, 'base64').toString('utf8'),
     ) as { status: string; order_id: string };
+    console.log('decodeData staturs', decodedData.status);
     if (decodedData.status === 'success' || decodedData.status === 'sandbox') {
       const orderId = decodedData.order_id;
       const orderIdParts = orderId.split('_');
@@ -122,7 +123,7 @@ export class PaymentsService {
           `Invalid booking ID in order_id: ${orderId}`,
         );
       }
-
+      console.log('booking id', bookingId);
       const booking = await this.db.query.bookings.findFirst({
         where: (bookings, { eq }) => eq(bookings.id, bookingId),
       });
@@ -138,6 +139,7 @@ export class PaymentsService {
               .update(bookings)
               .set({ status: 'confirmed', updatedAt: new Date() })
               .where(eq(bookings.id, booking.id));
+
             this.notificationsService.sendPaymentStatusUpdate(
               booking.id,
               'confirmed',
