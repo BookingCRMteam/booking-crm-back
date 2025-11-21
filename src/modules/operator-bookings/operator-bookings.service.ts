@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { eq, inArray, and, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { bookings, tours, users, operators } from '@app/db/schema/schema';
+import { bookings, tours, operators } from '@app/db/schema/schema';
 import type { OperatorBookingResponseDto } from './dto/operator-booking-response.dto';
 
 @Injectable()
@@ -12,9 +12,12 @@ export class OperatorBookingsService {
   ) {}
 
   private convertToUAH(amount: string, currency: string): string {
-    if (currency === 'UAH') return amount;
+    if (!['USD', 'EUR', 'UAH'].includes(currency))
+      throw new Error(`Unsupported currency: ${currency}`);
 
-    const rate = currency === 'USD' ? 40 : 43; // USD≈40, EUR≈43 — базові значення
+    // TODO: Replace with real-time exchange rates
+    const rate = currency === 'USD' ? 40 : currency === 'EUR' ? 43 : 1; // UAH → UAH = 1
+
     return (parseFloat(amount) * rate).toFixed(2);
   }
 
@@ -50,15 +53,14 @@ export class OperatorBookingsService {
         startDate: tours.startDate,
         endDate: tours.endDate,
         customerName: sql`
-          ${users.firstPersonName} || ' ' || ${users.firstPersonSurname} ||
-          ' та ' ||
-          ${users.secondPersonName} || ' ' || ${users.secondPersonSurname}
+        ${bookings.firstPersonName} || ' ' || ${bookings.firstPersonSurname} ||
+         ' та ' ||
+        ${bookings.secondPersonName} || ' ' || ${bookings.secondPersonSurname}
         `.as('customer_name'),
-        customerPhone: users.phone,
+        customerPhone: bookings.phone,
       })
       .from(bookings)
       .innerJoin(tours, eq(bookings.tourId, tours.id))
-      .innerJoin(users, eq(bookings.userId, users.id))
       .where(
         and(inArray(bookings.tourId, tourIds), eq(bookings.status, 'paid')),
       );

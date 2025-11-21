@@ -7,17 +7,8 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@app/common/guards/jwt-auth.guard';
 import { OperatorBookingsService } from './operator-bookings.service';
-import { Request } from 'express';
 import { OperatorBookingResponseDto } from './dto/operator-booking-response.dto';
-
-interface AuthUser {
-  id: number;
-}
-
-interface AuthRequest extends Request {
-  user?: AuthUser;
-}
-
+import { AuthenticatedRequest } from '@app/types/authenticated.request';
 @ApiTags('Operator Bookings')
 @ApiBearerAuth()
 @Controller('operator-bookings')
@@ -34,7 +25,7 @@ export class OperatorBookingsController {
     type: [OperatorBookingResponseDto],
     description: 'Список бронювань',
   })
-  async getOperatorBookings(@Req() req: AuthRequest) {
+  async getOperatorBookings(@Req() req: AuthenticatedRequest) {
     const userId = req.user?.id;
     if (!userId) return [];
     return this.operatorBookingsService.getOperatorBookings(userId);
