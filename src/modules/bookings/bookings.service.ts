@@ -130,6 +130,15 @@ export class BookingsService {
         return booking;
       });
     } catch (error: unknown) {
+      // Re-throw NestJS exceptions (ConflictException, NotFoundException, etc.) as-is
+      // to preserve their HTTP status codes
+      if (
+        error instanceof ConflictException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+
       // Handle PostgreSQL unique constraint violation
       if (
         typeof error === 'object' &&
