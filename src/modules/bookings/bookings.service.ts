@@ -75,60 +75,77 @@ export class BookingsService {
 
     const totalPrice = Number(tour.price) * data.numberOfPeople;
 
-    const newBooking = await this.db.transaction(async (tx) => {
-      const [tourForUpdate] = await tx
-        .select()
-        .from(schema.tours)
-        .where(eq(schema.tours.id, data.tourId))
-        .for('update');
+    let newBooking: typeof bookings.$inferSelect;
+    try {
+      newBooking = await this.db.transaction(async (tx) => {
+        const [tourForUpdate] = await tx
+          .select()
+          .from(schema.tours)
+          .where(eq(schema.tours.id, data.tourId))
+          .for('update');
 
-      if (!tourForUpdate) {
-        throw new NotFoundException(`Tour with id ${data.tourId} not found`);
-      }
+        if (!tourForUpdate) {
+          throw new NotFoundException(`Tour with id ${data.tourId} not found`);
+        }
 
-      if (tourForUpdate.availableSpots < data.numberOfPeople) {
+        if (tourForUpdate.availableSpots < data.numberOfPeople) {
+          throw new ConflictException(
+            `Not enough available spots for this tour. Available spots: ${tourForUpdate.availableSpots}`,
+          );
+        }
+        const newAvailableSpots =
+          tourForUpdate.availableSpots - data.numberOfPeople;
+
+        if (newAvailableSpots > 100) {
+          throw new ConflictException(
+            `Booking for ${data.numberOfPeople} people would result in an invalid number of available spots (${newAvailableSpots}) for tour with id ${data.tourId}. Available spots must be between 0 and 100 (inclusive).`,
+          );
+        }
+        const [booking] = await tx
+          .insert(bookings)
+          .values({
+            userId: data.userId,
+            tourId: data.tourId,
+            numberOfPeople: data.numberOfPeople,
+            firstPersonName: data.firstPersonName,
+            firstPersonSurname: data.firstPersonSurname,
+            secondPersonName: data.secondPersonName,
+            secondPersonSurname: data.secondPersonSurname,
+            phone: data.phone,
+            totalPrice: totalPrice.toString(),
+            currency: tour.currency,
+            paymentProvider: data.paymentProvider,
+            status: 'pending_payment',
+          })
+          .returning();
+
+        await tx
+          .update(schema.tours)
+          .set({
+            availableSpots: newAvailableSpots,
+          })
+          .where(eq(schema.tours.id, data.tourId))
+          .returning();
+
+        return booking;
+      });
+    } catch (error: unknown) {
+      // Handle PostgreSQL unique constraint violation
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        'constraint' in error &&
+        error.code === '23505' &&
+        error.constraint === 'booking_user_tour_pending_idx'
+      ) {
         throw new ConflictException(
-          `Not enough available spots for this tour. Available spots: ${tourForUpdate.availableSpots}`,
+          'You already have a pending booking for this tour. Please complete or cancel your existing booking before creating a new one.',
         );
       }
-      const newAvailableSpots =
-        tourForUpdate.availableSpots - data.numberOfPeople;
-
-      if (newAvailableSpots > 100) {
-        throw new ConflictException(
-          `Booking for ${data.numberOfPeople} people would result in an invalid number of available spots (${newAvailableSpots}) for tour with id ${data.tourId}. Available spots must be between 0 and 100 (inclusive).`,
-        );
-      }
-      const [booking] = await tx
-        .insert(bookings)
-        .values({
-          userId: data.userId,
-          tourId: data.tourId,
-          numberOfPeople: data.numberOfPeople,
-          firstPersonName: data.firstPersonName,
-          firstPersonSurname: data.firstPersonSurname,
-          secondPersonName: data.secondPersonName,
-          secondPersonSurname: data.secondPersonSurname,
-          phone: data.phone,
-          totalPrice: totalPrice.toString(),
-          currency: tour.currency,
-          paymentProvider: data.paymentProvider,
-          status: 'pending_payment',
-        })
-        .returning();
-
-      const updatedTour = await tx
-        .update(schema.tours)
-        .set({
-          availableSpots: newAvailableSpots,
-        })
-        .where(eq(schema.tours.id, data.tourId))
-        .returning();
-
-      console.log('Updated tour after booking:', updatedTour);
-
-      return booking;
-    });
+      // Re-throw other errors
+      throw error;
+    }
 
     // 3. Згенерувати посилання для оплати залежно від провайдера
     let paymentLink: string | undefined;
@@ -139,7 +156,7 @@ export class BookingsService {
         line_items: [
           {
             price_data: {
-              currency: newBooking.currency,
+              currency: String(newBooking.currency).toLowerCase(),
               product_data: {
                 name: `Booking for tour ${tour.title}`,
               },
