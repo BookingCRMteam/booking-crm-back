@@ -1,13 +1,16 @@
-import {
-  WebSocketGateway,
-  WebSocketServer,
-  OnGatewayConnection,
-  OnGatewayDisconnect,
-} from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
 import { JwksClient, SigningKey } from 'jwks-rsa';
+import {
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  WebSocketGateway,
+  WebSocketServer,
+  SubscribeMessage,
+  MessageBody,
+  ConnectedSocket,
+} from '@nestjs/websockets';
 
 @WebSocketGateway({
   cors: {
@@ -75,17 +78,35 @@ export class BookingGateway
     this.logger.log(`Client disconnected: ${client.id}`);
   }
 
+  @SubscribeMessage('subscribeBooking')
+  async handleSubscribeBooking(
+    @MessageBody() data: { bookingId: number },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const roomName = `booking_${data.bookingId}`;
+    await client.join(roomName);
+    this.logger.log(`Client ${client.id} joined room ${roomName}`);
+    return { ok: true, message: `Subscribed to booking ${data.bookingId}` };
+  }
+
+  @SubscribeMessage('unsubscribeBooking')
+  async handleUnsubscribeBooking(
+    @MessageBody() data: { bookingId: number },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const roomName = `booking_${data.bookingId}`;
+    await client.leave(roomName);
+    this.logger.log(`Client ${client.id} left room ${roomName}`);
+    return { ok: true, message: `Unsubscribed from booking ${data.bookingId}` };
+  }
+
   notifyBookingStatusChange(bookingId: number, status: string, userId: string) {
-    // In a real-world scenario, you might want to emit to a specific user room
-    // For now, we will emit to all connected clients or you can implement room logic
-    // client.join(`user_${userId}`);
-
-    // Emitting to all for demonstration, but ideally should be targeted
-    // this.server.to(`user_${userId}`).emit('bookingStatusChange', { bookingId, status });
-
-    this.server.emit('bookingStatusChange', { bookingId, status, userId });
+    const roomName = `booking_${bookingId}`;
+    this.server
+      .to(roomName)
+      .emit('bookingStatusChange', { bookingId, status, userId });
     this.logger.log(
-      `Emitted bookingStatusChange for booking ${bookingId} to status ${status}`,
+      `Emitted bookingStatusChange for booking ${bookingId} to status ${status} in room ${roomName}`,
     );
   }
 
@@ -97,6 +118,10 @@ export class BookingGateway
     const queryToken = client.handshake.query.token;
     if (typeof queryToken === 'string') {
       return queryToken;
+    }
+    const authToken: unknown = client.handshake.auth?.token;
+    if (typeof authToken === 'string') {
+      return authToken;
     }
     return undefined;
   }

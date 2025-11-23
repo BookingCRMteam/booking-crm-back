@@ -122,7 +122,8 @@ export class BookingsService {
         .set({
           availableSpots: newAvailableSpots,
         })
-        .where(eq(schema.tours.id, data.tourId));
+        .where(eq(schema.tours.id, data.tourId))
+        .returning();
 
       console.log('Updated tour after booking:', updatedTour);
 
