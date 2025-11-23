@@ -12,6 +12,7 @@ import Stripe from 'stripe';
 import LiqPay from 'liqpayjs-sdk';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { Request } from 'express';
+import { BookingGateway } from '../bookings/booking.gateway';
 
 const { bookings } = schema;
 @Injectable()
@@ -22,6 +23,7 @@ export class PaymentsService {
   constructor(
     @Inject('DRIZZLE_CLIENT')
     private db: NodePgDatabase<typeof schema>,
+    private readonly bookingGateway: BookingGateway,
   ) {
     this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: '2025-10-29.clover',
@@ -73,7 +75,11 @@ export class PaymentsService {
           }
         });
         console.log(`Booking ${booking.id} confirmed via Stripe webhook.`);
-        // Тут можна додати логіку сповіщення користувача
+        this.bookingGateway.notifyBookingStatusChange(
+          booking.id,
+          'confirmed',
+          booking.userId.toString(),
+        );
       }
     }
   }
@@ -129,7 +135,11 @@ export class PaymentsService {
           }
         });
         console.log(`Booking ${booking.id} confirmed via Liqpay webhook.`);
-        // Тут можна додати логіку сповіщення користувача
+        this.bookingGateway.notifyBookingStatusChange(
+          booking.id,
+          'confirmed',
+          booking.userId.toString(),
+        );
       }
     }
   }
