@@ -15,9 +15,15 @@ export class WsJwtGuard implements CanActivate {
   private readonly client: JwksClient;
 
   constructor() {
-    const issuer = process.env.ISSUER?.endsWith('/')
-      ? process.env.ISSUER
-      : `${process.env.ISSUER}/`;
+    const issuerEnv = process.env.ISSUER;
+    if (!issuerEnv) {
+      throw new Error('ISSUER env variable is required for WsJwtGuard');
+    }
+    if (!process.env.AUDIENCE) {
+      throw new Error('AUDIENCE env variable is required for WsJwtGuard');
+    }
+
+    const issuer = issuerEnv.endsWith('/') ? issuerEnv : `${issuerEnv}/`;
 
     this.client = new JwksClient({
       jwksUri: `${issuer}.well-known/jwks.json`,

@@ -11,6 +11,9 @@ import {
   MessageBody,
   ConnectedSocket,
 } from '@nestjs/websockets';
+import { BookingsService } from './bookings.service';
+import { UserService } from '../user/user.service';
+import { JWTPayload } from '@app/types/jwt.payload';
 
 @WebSocketGateway({
   cors: {
@@ -28,10 +31,19 @@ export class BookingGateway
 
   private readonly client: JwksClient;
 
-  constructor() {
-    const issuer = process.env.ISSUER?.endsWith('/')
-      ? process.env.ISSUER
-      : `${process.env.ISSUER}/`;
+  constructor(
+    private readonly bookingsService: BookingsService,
+    private readonly userService: UserService,
+  ) {
+    const issuerEnv = process.env.ISSUER;
+    if (!issuerEnv) {
+      throw new Error('ISSUER env variable is required for BookingGateway');
+    }
+    if (!process.env.AUDIENCE) {
+      throw new Error('AUDIENCE env variable is required for BookingGateway');
+    }
+
+    const issuer = issuerEnv.endsWith('/') ? issuerEnv : `${issuerEnv}/`;
 
     this.client = new JwksClient({
       jwksUri: `${issuer}.well-known/jwks.json`,
@@ -83,10 +95,56 @@ export class BookingGateway
     @MessageBody() data: { bookingId: number },
     @ConnectedSocket() client: Socket,
   ) {
-    const roomName = `booking_${data.bookingId}`;
-    await client.join(roomName);
-    this.logger.log(`Client ${client.id} joined room ${roomName}`);
-    return { ok: true, message: `Subscribed to booking ${data.bookingId}` };
+    try {
+      // Fetch the booking to verify it exists
+      const booking = await this.bookingsService.findOne(data.bookingId);
+
+      // Extract authenticated user from client.data.user
+      const jwtPayload = (client.data as { user: JWTPayload }).user;
+      if (!jwtPayload || !jwtPayload.sub) {
+        this.logger.warn(
+          `Client ${client.id} attempted to subscribe without authentication`,
+        );
+        return {
+          ok: false,
+          error: 'Unauthorized: Authentication required',
+        };
+      }
+
+      // Get the user from the database using the JWT sub
+      const user = await this.userService.createOrGetUser(jwtPayload);
+
+      // Verify authorization: user owns the booking OR has operator/admin role
+      const isOwner = booking.userId === user.id;
+      const isOperatorOrAdmin =
+        user.role === 'operator' || user.role === 'admin';
+
+      if (!isOwner && !isOperatorOrAdmin) {
+        this.logger.warn(
+          `Client ${client.id} (user ${user.id}) attempted to subscribe to booking ${data.bookingId} without authorization`,
+        );
+        return {
+          ok: false,
+          error: 'Unauthorized: You do not have access to this booking',
+        };
+      }
+
+      // Authorization passed, join the room
+      const roomName = `booking_${data.bookingId}`;
+      await client.join(roomName);
+      this.logger.log(
+        `Client ${client.id} (user ${user.id}) joined room ${roomName}`,
+      );
+      return { ok: true, message: `Subscribed to booking ${data.bookingId}` };
+    } catch (error) {
+      this.logger.error(
+        `Error in handleSubscribeBooking: ${(error as Error).message}`,
+      );
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : 'Failed to subscribe',
+      };
+    }
   }
 
   @SubscribeMessage('unsubscribeBooking')
@@ -94,10 +152,59 @@ export class BookingGateway
     @MessageBody() data: { bookingId: number },
     @ConnectedSocket() client: Socket,
   ) {
-    const roomName = `booking_${data.bookingId}`;
-    await client.leave(roomName);
-    this.logger.log(`Client ${client.id} left room ${roomName}`);
-    return { ok: true, message: `Unsubscribed from booking ${data.bookingId}` };
+    try {
+      // Fetch the booking to verify it exists
+      const booking = await this.bookingsService.findOne(data.bookingId);
+
+      // Extract authenticated user from client.data.user
+      const jwtPayload = (client.data as { user: JWTPayload }).user;
+      if (!jwtPayload || !jwtPayload.sub) {
+        this.logger.warn(
+          `Client ${client.id} attempted to unsubscribe without authentication`,
+        );
+        return {
+          ok: false,
+          error: 'Unauthorized: Authentication required',
+        };
+      }
+
+      // Get the user from the database using the JWT sub
+      const user = await this.userService.createOrGetUser(jwtPayload);
+
+      // Verify authorization: user owns the booking OR has operator/admin role
+      const isOwner = booking.userId === user.id;
+      const isOperatorOrAdmin =
+        user.role === 'operator' || user.role === 'admin';
+
+      if (!isOwner && !isOperatorOrAdmin) {
+        this.logger.warn(
+          `Client ${client.id} (user ${user.id}) attempted to unsubscribe from booking ${data.bookingId} without authorization`,
+        );
+        return {
+          ok: false,
+          error: 'Unauthorized: You do not have access to this booking',
+        };
+      }
+
+      // Authorization passed, leave the room
+      const roomName = `booking_${data.bookingId}`;
+      await client.leave(roomName);
+      this.logger.log(
+        `Client ${client.id} (user ${user.id}) left room ${roomName}`,
+      );
+      return {
+        ok: true,
+        message: `Unsubscribed from booking ${data.bookingId}`,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Error in handleUnsubscribeBooking: ${(error as Error).message}`,
+      );
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : 'Failed to unsubscribe',
+      };
+    }
   }
 
   notifyBookingStatusChange(bookingId: number, status: string, userId: string) {
