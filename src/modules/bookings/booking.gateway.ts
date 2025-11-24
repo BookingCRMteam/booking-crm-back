@@ -14,6 +14,7 @@ import {
 import { BookingsService } from './bookings.service';
 import { UserService } from '../user/user.service';
 import { JWTPayload } from '@app/types/jwt.payload';
+import { UserModel } from '../user/user.schema';
 
 @WebSocketGateway({
   cors: {
@@ -98,6 +99,9 @@ export class BookingGateway
     try {
       // Fetch the booking to verify it exists
       const booking = await this.bookingsService.findOne(data.bookingId);
+      this.logger.log(
+        `Booking ${data.bookingId} found with userId: ${booking.userId}`,
+      );
 
       // Extract authenticated user from client.data.user
       const jwtPayload = (client.data as { user: JWTPayload }).user;
@@ -112,7 +116,22 @@ export class BookingGateway
       }
 
       // Get the user from the database using the JWT sub
-      const user = await this.userService.createOrGetUser(jwtPayload);
+      let user: UserModel;
+      try {
+        user = await this.userService.createOrGetUser(jwtPayload);
+        this.logger.log(
+          `User resolved: id=${user.id}, sub=${user.sub}, role=${user.role}`,
+        );
+      } catch (userError) {
+        this.logger.error(
+          `Failed to resolve user from JWT: ${(userError as Error).message}`,
+        );
+        this.logger.error(`JWT payload: ${JSON.stringify(jwtPayload)}`);
+        return {
+          ok: false,
+          error: 'Failed to authenticate user',
+        };
+      }
 
       // Verify authorization: user owns the booking OR has operator/admin role
       const isOwner = booking.userId === user.id;
@@ -121,7 +140,7 @@ export class BookingGateway
 
       if (!isOwner && !isOperatorOrAdmin) {
         this.logger.warn(
-          `Client ${client.id} (user ${user.id}) attempted to subscribe to booking ${data.bookingId} without authorization`,
+          `Client ${client.id} (user ${user.id}) attempted to subscribe to booking ${data.bookingId} (owner: ${booking.userId}) without authorization`,
         );
         return {
           ok: false,
@@ -140,6 +159,7 @@ export class BookingGateway
       this.logger.error(
         `Error in handleSubscribeBooking: ${(error as Error).message}`,
       );
+      this.logger.error(`Error stack: ${(error as Error).stack}`);
       return {
         ok: false,
         error: error instanceof Error ? error.message : 'Failed to subscribe',
@@ -169,7 +189,18 @@ export class BookingGateway
       }
 
       // Get the user from the database using the JWT sub
-      const user = await this.userService.createOrGetUser(jwtPayload);
+      let user: UserModel;
+      try {
+        user = await this.userService.createOrGetUser(jwtPayload);
+      } catch (userError) {
+        this.logger.error(
+          `Failed to resolve user from JWT: ${(userError as Error).message}`,
+        );
+        return {
+          ok: false,
+          error: 'Failed to authenticate user',
+        };
+      }
 
       // Verify authorization: user owns the booking OR has operator/admin role
       const isOwner = booking.userId === user.id;
@@ -200,6 +231,7 @@ export class BookingGateway
       this.logger.error(
         `Error in handleUnsubscribeBooking: ${(error as Error).message}`,
       );
+      this.logger.error(`Error stack: ${(error as Error).stack}`);
       return {
         ok: false,
         error: error instanceof Error ? error.message : 'Failed to unsubscribe',
