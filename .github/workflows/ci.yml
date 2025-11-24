@@ -54,3 +54,5 @@ jobs:
           LIQPAY_PRIVATE_KEY: ${{ secrets.LIQPAY_PRIVATE_KEY }}
           API_COUNTRY_STATE_CITY_KEY: ${{ secrets.API_COUNTRY_STATE_CITY_KEY }}
           API_COUNTRY_STATE_CITY_URL: ${{ secrets.API_COUNTRY_STATE_CITY_URL }}
+          AUDIENCE: ${{ secrets.AUDIENCE }}
+          ISSUER: ${{ secrets.ISSUER }}
