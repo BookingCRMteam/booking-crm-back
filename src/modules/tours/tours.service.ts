@@ -300,6 +300,29 @@ export class ToursService {
     return tour;
   }
 
+  async checkAvailability(tourId: number, spots: number) {
+    const tour = await this.db.query.tours.findFirst({
+      where: eq(schema.tours.id, tourId),
+    });
+
+    if (!tour) {
+      throw new NotFoundException(`Tour with ID ${tourId} not found.`);
+    }
+
+    if (!tour.isActive) {
+      throw new BadRequestException(`Tour with ID ${tourId} is not active.`);
+    }
+
+    const isAvailable = tour.availableSpots >= spots;
+
+    return {
+      tourId: tour.id,
+      requestedSpots: spots,
+      availableSpots: tour.availableSpots,
+      isAvailable,
+    };
+  }
+
   async update(id: number, updateTourDto: UpdateTourDto, operatorId: number) {
     return await this.db.transaction(async (tx) => {
       try {
