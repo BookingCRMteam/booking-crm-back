@@ -112,6 +112,7 @@ describe('PaymentsService', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    delete process.env.STRIPE_SECRET_KEY;
     delete process.env.LIQPAY_PRIVATE_KEY;
   });
 
