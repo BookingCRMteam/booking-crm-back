@@ -3,7 +3,7 @@ import { Controller, Get, Query, UseGuards, Logger } from '@nestjs/common';
 import { ToursService } from './tours.service';
 import { AdminGetToursQueryDto } from './dto/admin-get-tours-query.dto';
 
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 // ↑ цей guard у тебе точно існує
 //   якщо шлях інший — підкажу, куди вказати
 
