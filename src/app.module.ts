@@ -13,8 +13,6 @@ import { BookingsModule } from './modules/bookings/bookings.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { HttpModule } from '@nestjs/axios';
 import { CacheModule } from '@nestjs/cache-manager';
-// Важливо: правильний імпорт redisStore
-// import { redisStore } from 'cache-manager-ioredis-yet';
 import { CacheHealthModule } from './modules/cache-health/cache-health.module';
 import { redisStore } from 'cache-manager-ioredis-yet';
 import { OperatorBookingsModule } from '@app/modules/operator-bookings/operator-bookings.module';
