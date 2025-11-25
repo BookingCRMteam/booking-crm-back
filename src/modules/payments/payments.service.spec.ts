@@ -198,7 +198,7 @@ describe('PaymentsService', () => {
     it('should not update booking if status is not pending_payment', async () => {
       process.env.LIQPAY_PRIVATE_KEY = 'test_key';
       mockLiqPay.str_to_sign.mockReturnValue(validSignature);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       mockDb.query.bookings.findFirst.mockResolvedValue({
         ...mockBooking,
         status: 'confirmed',

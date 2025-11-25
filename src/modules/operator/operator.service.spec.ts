@@ -115,7 +115,7 @@ describe('OperatorService', () => {
         values: jest.fn().mockReturnThis(),
         returning: jest.fn().mockResolvedValue([mockOperator]),
       });
-      mockUserService.userToOperator.mockResolvedValue(undefined as any);
+      mockUserService.userToOperator.mockResolvedValue(undefined);
 
       const result = await service.addOperator(createOperatorDto, req);
       expect(result).toEqual(mockOperator);
