@@ -35,6 +35,7 @@ import { PhotoValidationPipe } from './pipes';
 
 import { EmptyStringToUndefinedInterceptor } from '@app/common/interceptors/empty-string-to-undefined.interceptor';
 import { UpdateTourPhotoDto } from './dto/update-tour-photo.dto';
+import { CheckAvailabilityDto } from './dto/check-availability.dto';
 
 @Controller('tours')
 export class ToursController {
@@ -103,6 +104,15 @@ export class ToursController {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  @Post('check-availability')
+  @HttpCode(HttpStatus.OK)
+  async checkAvailability(@Body() checkAvailabilityDto: CheckAvailabilityDto) {
+    return await this.toursService.checkAvailability(
+      checkAvailabilityDto.tourId,
+      checkAvailabilityDto.spots,
+    );
   }
 
   @Get()
