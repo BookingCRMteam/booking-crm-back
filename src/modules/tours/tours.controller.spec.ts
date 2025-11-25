@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/unbound-method */
+import { Readable } from 'stream';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ToursController } from './tours.controller';
 import { ToursService } from './tours.service';
@@ -200,7 +201,7 @@ describe('ToursController', () => {
           mimetype: 'image/jpeg',
           size: 12345,
           buffer: Buffer.from('test'),
-          stream: jest.fn(),
+          stream: new Readable(),
           destination: '',
           filename: '',
           path: '',

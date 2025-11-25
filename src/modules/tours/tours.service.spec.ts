@@ -77,6 +77,7 @@ describe('ToursService', () => {
 
   beforeEach(async () => {
     mockDb = mockDeep<NodePgDatabase<typeof schema>>();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     mockDb.transaction.mockImplementation((cb) => cb(mockDb as any));
 
     const module: TestingModule = await Test.createTestingModule({
@@ -98,6 +99,7 @@ describe('ToursService', () => {
 
   describe('checkAvailability', () => {
     it('should return availability when tour exists and is active', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       mockDb.query.tours.findFirst.mockResolvedValue(mockTour as any);
 
       const result = await service.checkAvailability(1, 5);
@@ -112,6 +114,7 @@ describe('ToursService', () => {
     });
 
     it('should return isAvailable false when not enough spots', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       mockDb.query.tours.findFirst.mockResolvedValue(mockTour as any);
 
       const result = await service.checkAvailability(1, 15);
@@ -136,6 +139,7 @@ describe('ToursService', () => {
     });
 
     it('should throw BadRequestException when tour is not active', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       mockDb.query.tours.findFirst.mockResolvedValue({
         ...mockTour,
         isActive: false,
@@ -153,6 +157,7 @@ describe('ToursService', () => {
   describe('findOne', () => {
     it('should return a tour with relations', async () => {
       mockDb.query.tours.findFirst.mockResolvedValue(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         mockTourWithRelations as any,
       );
 
@@ -174,6 +179,7 @@ describe('ToursService', () => {
     });
 
     it('should throw NotFoundException when tour is inactive', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       mockDb.query.tours.findFirst.mockResolvedValue({
         ...mockTour,
         isActive: false,
@@ -187,6 +193,7 @@ describe('ToursService', () => {
     it('should return tours with pagination', async () => {
       const mockTours = [{ ...mockTour, photos: [] }];
       const query: GetToursQueryDto = { limit: 10, offset: 0 };
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       mockDb.query.tours.findMany.mockResolvedValue(mockTours as any);
 
       const mockCount = [{ count: 1 }];
@@ -210,6 +217,7 @@ describe('ToursService', () => {
         limit: 10,
         offset: 0,
       };
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       mockDb.query.tours.findMany.mockResolvedValue([
         { ...mockTour, photos: [] },
       ] as any);
@@ -232,6 +240,7 @@ describe('ToursService', () => {
         limit: 10,
         offset: 0,
       };
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       mockDb.query.tours.findMany.mockResolvedValue([
         { ...mockTour, photos: [] },
       ] as any);
@@ -250,9 +259,11 @@ describe('ToursService', () => {
 
   describe('remove', () => {
     it('should deactivate a tour', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       mockDb.query.tours.findFirst.mockResolvedValue(mockTour as any);
       const mockReturning = {
         returning: jest
+
           .fn()
           .mockResolvedValue([{ ...mockTour, isActive: false }] as any),
       };
