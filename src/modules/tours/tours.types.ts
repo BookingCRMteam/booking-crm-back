@@ -10,6 +10,7 @@ interface Translation {
   id: number;
   languageCode: string;
   name: string;
+  [key: string]: any;
 }
 
 interface Country {
@@ -17,12 +18,22 @@ interface Country {
   iso2: string;
   iso3: string;
   translations: Translation[];
+  [key: string]: any;
 }
 
 interface City {
   id: number;
   countryIso2: string;
   translations: Translation[];
+  [key: string]: any;
+}
+
+interface Operator {
+  id: number;
+  email: string | null;
+  companyName: string;
+  phone: string;
+  [key: string]: any;
 }
 
 export interface Tour {
@@ -51,4 +62,5 @@ export interface Tour {
   country?: Country;
   city?: City;
   departureCity?: City;
+  operator?: Operator;
 }
