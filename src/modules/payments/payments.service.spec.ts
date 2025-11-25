@@ -88,6 +88,7 @@ describe('PaymentsService', () => {
   };
 
   beforeEach(async () => {
+    process.env.STRIPE_SECRET_KEY = 'test_key';
     mockDb = mockDeep<NodePgDatabase<typeof schema>>();
     mockBookingGateway = mockDeep<BookingGateway>();
 
@@ -111,6 +112,7 @@ describe('PaymentsService', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    delete process.env.STRIPE_SECRET_KEY;
     delete process.env.LIQPAY_PRIVATE_KEY;
   });
 
@@ -196,6 +198,7 @@ describe('PaymentsService', () => {
     it('should not update booking if status is not pending_payment', async () => {
       process.env.LIQPAY_PRIVATE_KEY = 'test_key';
       mockLiqPay.str_to_sign.mockReturnValue(validSignature);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       mockDb.query.bookings.findFirst.mockResolvedValue({
         ...mockBooking,
         status: 'confirmed',
