@@ -1,0 +1,256 @@
+import { operators } from './operator.schema';
+import { User } from '../user/user.schema';
+import { UpdateOperatorDto } from './dto/update-operator.dto';
+import { CreateOperatorDto } from './dto/create-operator.dto';
+import { AuthenticatedRequest } from '@app/types/authenticated.request';
+import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
+import * as schema from '@app/db/schema/schema';
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { CloudinaryService } from '@app/cloudinary/cloudinary.service';
+import { UserService } from '../user/user.service';
+import { OperatorService } from './operator.service';
+import { Test, TestingModule } from '@nestjs/testing';
+/* eslint-disable @typescript-eslint/unbound-method */
+
+type Operator = typeof operators.$inferSelect;
+
+describe('OperatorService', () => {
+  let service: OperatorService;
+  let mockDb: DeepMockProxy<NodePgDatabase<typeof schema>>;
+  let mockUserService: DeepMockProxy<UserService>;
+  let mockCloudinaryService: DeepMockProxy<CloudinaryService>;
+
+  const mockUser: User = {
+    id: 1,
+    email: 'test@example.com',
+    sub: 'sub123',
+    role: 'traveler',
+    operatorId: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    firstPersonName: 'Test',
+    firstPersonSurname: 'User',
+    secondPersonName: null,
+    secondPersonSurname: null,
+    phone: null,
+  };
+
+  const mockOperator: Operator = {
+    id: 1,
+    userId: 1,
+    email: 'test@example.com',
+    companyName: 'Test Company',
+    description: 'Test Description',
+    firstName: 'Test',
+    lastName: 'User',
+    phone: '1234567890',
+    website: 'https://test.com',
+    status: 'approved',
+    philosophy: null,
+    photo: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  beforeEach(async () => {
+    mockDb = mockDeep<NodePgDatabase<typeof schema>>();
+    mockUserService = mockDeep<UserService>();
+    mockCloudinaryService = mockDeep<CloudinaryService>();
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        OperatorService,
+        { provide: 'DRIZZLE_CLIENT', useValue: mockDb },
+        { provide: UserService, useValue: mockUserService },
+        { provide: CloudinaryService, useValue: mockCloudinaryService },
+      ],
+    }).compile();
+
+    service = module.get<OperatorService>(OperatorService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+
+  describe('addOperator', () => {
+    const createOperatorDto: CreateOperatorDto = {
+      companyName: 'Test Company',
+      description: 'Test Description',
+      firstName: 'Test',
+      lastName: 'User',
+      phone: '1234567890',
+      website: 'https://test.com',
+      photo: null,
+    };
+
+    it('should throw BadRequestException if email is missing', async () => {
+      const req = {
+        user: { ...mockUser, email: null },
+      } as AuthenticatedRequest;
+      await expect(service.addOperator(createOperatorDto, req)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw BadRequestException if user is already an operator', async () => {
+      const req = { user: mockUser } as AuthenticatedRequest;
+      (mockDb.select as jest.Mock).mockReturnValue({
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockResolvedValue([mockOperator]),
+      });
+      await expect(service.addOperator(createOperatorDto, req)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should add a new operator', async () => {
+      const req = { user: mockUser } as AuthenticatedRequest;
+      (mockDb.select as jest.Mock).mockReturnValue({
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockResolvedValue([]),
+      });
+      (mockDb.insert as jest.Mock).mockReturnValue({
+        values: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockResolvedValue([mockOperator]),
+      });
+      mockUserService.userToOperator.mockResolvedValue(undefined as any);
+
+      const result = await service.addOperator(createOperatorDto, req);
+      expect(result).toEqual(mockOperator);
+      expect(mockUserService.userToOperator).toHaveBeenCalledWith(1, 1);
+    });
+  });
+
+  describe('updateOperator', () => {
+    const updateOperatorDto: UpdateOperatorDto = { companyName: 'New Company' };
+    const req = {
+      user: { ...mockUser, operatorId: 1 },
+    } as AuthenticatedRequest;
+
+    it('should throw NotFoundException if operator not found', async () => {
+      mockDb.query.operators.findFirst.mockResolvedValue(undefined);
+      await expect(
+        service.updateOperator(updateOperatorDto, req),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should update an operator', async () => {
+      const updatedOperator = { ...mockOperator, ...updateOperatorDto };
+      mockDb.query.operators.findFirst.mockResolvedValue(mockOperator);
+      (mockDb.update as jest.Mock).mockReturnValue({
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockResolvedValue([updatedOperator]),
+      });
+
+      const result = await service.updateOperator(updateOperatorDto, req);
+      expect(result).toEqual(updatedOperator);
+    });
+  });
+
+  describe('getOperatorById', () => {
+    it('should get an operator by id', async () => {
+      (mockDb.select as jest.Mock).mockReturnValue({
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockResolvedValue([mockOperator]),
+      });
+      const result = await service.getOperatorById(1);
+      expect(result).toEqual(mockOperator);
+    });
+
+    it('should throw NotFoundException if operator not found', async () => {
+      (mockDb.select as jest.Mock).mockReturnValue({
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockResolvedValue([]),
+      });
+      await expect(service.getOperatorById(1)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('getMyOperator', () => {
+    const req = { user: mockUser } as AuthenticatedRequest;
+    it('should get my operator', async () => {
+      (mockDb.select as jest.Mock).mockReturnValue({
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockResolvedValue([mockOperator]),
+      });
+      const result = await service.getMyOperator(req);
+      expect(result).toEqual(mockOperator);
+    });
+
+    it('should throw NotFoundException if not an operator', async () => {
+      (mockDb.select as jest.Mock).mockReturnValue({
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockResolvedValue([]),
+      });
+      await expect(service.getMyOperator(req)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('getAllOperators', () => {
+    it('should get all operators', async () => {
+      const operators = [mockOperator];
+      (mockDb.select as jest.Mock).mockReturnValue({
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        offset: jest.fn().mockResolvedValue(operators),
+      });
+      const result = await service.getAllOperators(10, 0);
+      expect(result).toEqual(operators);
+    });
+  });
+
+  describe('deletePhoto', () => {
+    const req = { user: mockUser } as AuthenticatedRequest;
+
+    it('should throw NotFoundException if operator not found', async () => {
+      mockDb.query.operators.findFirst.mockResolvedValue(undefined);
+      await expect(service.deletePhoto(req)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException if no photo to delete', async () => {
+      mockDb.query.operators.findFirst.mockResolvedValue(mockOperator);
+      await expect(service.deletePhoto(req)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should delete a photo', async () => {
+      const operatorWithPhoto = { ...mockOperator, photo: 'some_url' };
+      const updatedOperator = { ...operatorWithPhoto, photo: null };
+      mockDb.query.operators.findFirst.mockResolvedValue(operatorWithPhoto);
+      (mockDb.update as jest.Mock).mockReturnValue({
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockResolvedValue([updatedOperator]),
+      });
+      const result = await service.deletePhoto(req);
+      expect(result.photo).toBeNull();
+    });
+  });
+
+  describe('getPopularOperators', () => {
+    it('should get popular operators', async () => {
+      const popularOperators = [
+        { ...mockOperator, bookingsCount: 10, toursCount: 5 },
+      ];
+      (mockDb.select as jest.Mock).mockReturnValue({
+        from: jest.fn().mockReturnThis(),
+        leftJoin: jest.fn().mockReturnThis(),
+        groupBy: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(popularOperators),
+      });
+
+      const result = await service.getPopularOperators(1);
+      expect(result[0].bookingsCount).toBe(10);
+    });
+  });
+});
