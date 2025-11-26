@@ -126,8 +126,8 @@ export class OperatorService {
       .limit(limit)
       .offset(offset);
   }
-  async getOperatorsForVerification() {
-    return this.db
+  async getOperatorsForVerification(limit = 50, offset = 0) {
+    return await this.db
       .select({
         firstName: operatorSchema.operators.firstName,
         lastName: operatorSchema.operators.lastName,
@@ -135,7 +135,9 @@ export class OperatorService {
         status: operatorSchema.operators.status,
       })
       .from(operatorSchema.operators)
-      .where(eq(operatorSchema.operators.status, 'pending'));
+      .where(eq(operatorSchema.operators.status, OperatorStatus.PENDING))
+      .limit(limit)
+      .offset(offset);
   }
   async deletePhoto(req: AuthenticatedRequest) {
     const operator = await this.db.query.operators.findFirst({
