@@ -171,20 +171,28 @@ export class PaymentsService {
 
         // Send booking confirmation email
         if (booking.user && booking.tour) {
-          await this.emailQueueService.addBookingConfirmationEmail({
-            email: booking.user.email,
-            bookingDetails: {
-              id: booking.id,
-              tourName: booking.tour.title,
-              startDate: new Date(booking.tour.startDate),
-              endDate: new Date(booking.tour.endDate),
-              price: parseFloat(booking.totalPrice),
-              currency: booking.currency,
-              numberOfPeople: booking.numberOfPeople,
-              firstPersonName: booking.firstPersonName,
-              firstPersonSurname: booking.firstPersonSurname,
-            },
-          });
+          try {
+            await this.emailQueueService.addBookingConfirmationEmail({
+              email: booking.user.email,
+              bookingDetails: {
+                id: booking.id,
+                tourName: booking.tour.title,
+                startDate: new Date(booking.tour.startDate),
+                endDate: new Date(booking.tour.endDate),
+                price: parseFloat(booking.totalPrice),
+                currency: booking.currency,
+                numberOfPeople: booking.numberOfPeople,
+                firstPersonName: booking.firstPersonName,
+                firstPersonSurname: booking.firstPersonSurname,
+              },
+            });
+          } catch (error) {
+            // TODO: replace with structured logger if available
+            console.error(
+              `Failed to enqueue booking confirmation email for booking ${booking.id}`,
+              error,
+            );
+          }
         }
       }
     }
