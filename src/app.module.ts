@@ -17,6 +17,7 @@ import { CacheHealthModule } from './modules/cache-health/cache-health.module';
 import { redisStore } from 'cache-manager-ioredis-yet';
 import { OperatorBookingsModule } from '@app/modules/operator-bookings/operator-bookings.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { EmailQueueModule } from './modules/email-queue/email-queue.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -41,6 +42,7 @@ import { AdminModule } from './modules/admin/admin.module';
         return config;
       },
     }),
+    EmailQueueModule,
     HealthModule,
     DrizzleModule,
     ToursModule,

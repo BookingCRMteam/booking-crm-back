@@ -1,17 +1,20 @@
-/* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentsController } from './payments.controller';
 import { PaymentsService } from './payments.service';
+import { RawBodyRequest } from '@nestjs/common';
+import { Request } from 'express';
 
 describe('PaymentsController', () => {
   let controller: PaymentsController;
-  let service: PaymentsService;
 
   const mockPaymentsService = {
+    handleStripeWebhook: jest.fn(),
     handleLiqpayWebhook: jest.fn(),
   };
 
   beforeEach(async () => {
+    mockPaymentsService.handleLiqpayWebhook.mockClear();
+    mockPaymentsService.handleStripeWebhook.mockClear();
     const module: TestingModule = await Test.createTestingModule({
       controllers: [PaymentsController],
       providers: [
@@ -23,11 +26,43 @@ describe('PaymentsController', () => {
     }).compile();
 
     controller = module.get<PaymentsController>(PaymentsController);
-    service = module.get<PaymentsService>(PaymentsService);
   });
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+  });
+
+  describe('handleStripeWebhook', () => {
+    it('should call handleStripeWebhook service method', async () => {
+      const mockReq = {
+        rawBody: Buffer.from('test'),
+      } as RawBodyRequest<Request>;
+      const signature = 'test_signature';
+      mockPaymentsService.handleStripeWebhook.mockResolvedValue(undefined);
+
+      const result = await controller.handleStripeWebhook(mockReq, signature);
+
+      expect(mockPaymentsService.handleStripeWebhook).toHaveBeenCalledWith(
+        mockReq,
+        signature,
+      );
+      expect(result).toEqual({ received: true });
+    });
+
+    it('should return { received: false } if no signature is provided', async () => {
+      const mockReq = {
+        rawBody: Buffer.from('test'),
+      } as RawBodyRequest<Request>;
+      const signature = undefined;
+
+      const result = await controller.handleStripeWebhook(
+        mockReq,
+        signature as string,
+      );
+
+      expect(mockPaymentsService.handleStripeWebhook).not.toHaveBeenCalled();
+      expect(result).toEqual({ received: false });
+    });
   });
 
   describe('handleLiqpayWebhook', () => {
@@ -37,7 +72,9 @@ describe('PaymentsController', () => {
 
       const result = await controller.handleLiqpayWebhook(data);
 
-      expect(service.handleLiqpayWebhook).toHaveBeenCalledWith(data);
+      expect(mockPaymentsService.handleLiqpayWebhook).toHaveBeenCalledWith(
+        data,
+      );
       expect(result).toEqual({ received: true });
     });
   });
