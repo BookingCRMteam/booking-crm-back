@@ -80,7 +80,6 @@ export class PaymentsService {
               .where(eq(bookings.id, booking.id));
           }
         });
-        console.log(`Booking ${booking.id} confirmed via Stripe webhook.`);
         this.bookingGateway.notifyBookingStatusChange(
           booking.id,
           'confirmed',
@@ -162,7 +161,6 @@ export class PaymentsService {
               .where(eq(bookings.id, booking.id));
           }
         });
-        console.log(`Booking ${booking.id} confirmed via Liqpay webhook.`);
         this.bookingGateway.notifyBookingStatusChange(
           booking.id,
           'confirmed',
