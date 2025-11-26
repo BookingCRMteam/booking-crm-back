@@ -46,6 +46,7 @@ describe('OperatorController', () => {
     status: 'approved',
     philosophy: null,
     photo: null,
+    rejectionReason: '',
     createdAt: new Date(),
     updatedAt: new Date(),
   };

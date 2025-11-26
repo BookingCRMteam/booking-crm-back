@@ -14,6 +14,9 @@ import { CloudinaryService } from '@app/cloudinary/cloudinary.service';
 import { AuthenticatedRequest } from '@app/types/authenticated.request';
 import { OperatorStatus } from '@app/types/operator-status';
 import * as schema from '@app/db/schema/schema';
+import { operators } from '@app/modules/operator/operator.schema';
+
+type OperatorSelect = typeof operators.$inferSelect;
 @Injectable()
 export class OperatorService {
   constructor(
@@ -130,16 +133,21 @@ export class OperatorService {
     const operator = await this.db
       .select()
       .from(operatorSchema.operators)
-      .where(eq(operatorSchema.operators.id, id));
+      .where(eq(operatorSchema.operators.id, id))
+      .then((res) => res[0]);
 
-    if (!operator[0]) {
+    if (!operator) {
       throw new NotFoundException(`Operator with id ${id} not found`);
+    }
+
+    if (operator.status !== OperatorStatus.PENDING.toString()) {
+      throw new BadRequestException('Operator must be pending to be rejected');
     }
 
     const updatedOperator = await this.db
       .update(operatorSchema.operators)
       .set({
-        status: 'rejected',
+        status: OperatorStatus.REJECTED,
         rejectionReason,
         updatedAt: new Date(),
       })
@@ -148,16 +156,14 @@ export class OperatorService {
 
     return updatedOperator[0];
   }
-  async getOperatorsForVerification(limit = 50, offset = 0) {
+  async getOperatorsForVerification(
+    limit = 50,
+    offset = 0,
+  ): Promise<OperatorSelect[]> {
     return await this.db
-      .select({
-        firstName: operatorSchema.operators.firstName,
-        lastName: operatorSchema.operators.lastName,
-        email: operatorSchema.operators.email,
-        status: operatorSchema.operators.status,
-      })
-      .from(operatorSchema.operators)
-      .where(eq(operatorSchema.operators.status, OperatorStatus.PENDING))
+      .select()
+      .from(operators)
+      .where(eq(operators.status, OperatorStatus.PENDING))
       .limit(limit)
       .offset(offset);
   }
