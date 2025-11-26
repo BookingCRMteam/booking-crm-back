@@ -25,13 +25,13 @@ Add the following to your `.env` file:
 
 ```env
 # Redis (required for BullMQ)
-REDIS_HOST=localhost
-REDIS_PORT=6379
+REDIS_URL=redis://localhost:6379
+
 
 # Mailjet
 MAILJET_API_KEY=your_mailjet_api_key
 MAILJET_API_SECRET=your_mailjet_api_secret
-MAILJET_FROM_EMAIL=noreply@bookingcrm.com
+MAILJET_FROM_EMAIL=noreply@paired-paths.pp.ua
 MAILJET_FROM_NAME=Booking CRM
 ```
 
