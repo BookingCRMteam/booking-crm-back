@@ -15,6 +15,7 @@ import { Tour } from '../tours/tours.types';
 import { User } from '../user/user.schema';
 import { bookings } from '../bookings/bookings.schema';
 import LiqPay from 'liqpayjs-sdk';
+import { EmailQueueService } from '../email-queue/email-queue.service';
 
 jest.mock('liqpayjs-sdk');
 
@@ -24,6 +25,7 @@ describe('PaymentsService', () => {
   let service: PaymentsService;
   let mockDb: DeepMockProxy<NodePgDatabase<typeof schema>>;
   let mockBookingGateway: DeepMockProxy<BookingGateway>;
+  let mockEmailQueueService: DeepMockProxy<EmailQueueService>;
   let mockLiqPay: jest.Mocked<LiqPay>;
 
   const mockUser: User = {
@@ -91,12 +93,14 @@ describe('PaymentsService', () => {
     process.env.STRIPE_SECRET_KEY = 'test_key';
     mockDb = mockDeep<NodePgDatabase<typeof schema>>();
     mockBookingGateway = mockDeep<BookingGateway>();
+    mockEmailQueueService = mockDeep<EmailQueueService>();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PaymentsService,
         { provide: 'DRIZZLE_CLIENT', useValue: mockDb },
         { provide: BookingGateway, useValue: mockBookingGateway },
+        { provide: EmailQueueService, useValue: mockEmailQueueService },
       ],
     }).compile();
 
@@ -170,6 +174,7 @@ describe('PaymentsService', () => {
     it('should confirm booking on success status', async () => {
       process.env.LIQPAY_PRIVATE_KEY = 'test_key';
       mockLiqPay.str_to_sign.mockReturnValue(validSignature);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       mockDb.query.bookings.findFirst.mockResolvedValue(mockBooking as any);
 
       (mockDb.transaction as jest.Mock).mockImplementation(async (callback) => {
@@ -199,6 +204,7 @@ describe('PaymentsService', () => {
       process.env.LIQPAY_PRIVATE_KEY = 'test_key';
       mockLiqPay.str_to_sign.mockReturnValue(validSignature);
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       mockDb.query.bookings.findFirst.mockResolvedValue({
         ...mockBooking,
         status: 'confirmed',
