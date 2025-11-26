@@ -12,4 +12,7 @@ export class AdminOperatorListDto {
 
   @ApiProperty()
   status: string;
+
+  @ApiProperty({ required: false })
+  rejectionReason?: string;
 }

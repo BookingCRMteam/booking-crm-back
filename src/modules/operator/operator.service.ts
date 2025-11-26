@@ -126,6 +126,28 @@ export class OperatorService {
       .limit(limit)
       .offset(offset);
   }
+  async rejectOperator(id: number, rejectionReason: string) {
+    const operator = await this.db
+      .select()
+      .from(operatorSchema.operators)
+      .where(eq(operatorSchema.operators.id, id));
+
+    if (!operator[0]) {
+      throw new NotFoundException(`Operator with id ${id} not found`);
+    }
+
+    const updatedOperator = await this.db
+      .update(operatorSchema.operators)
+      .set({
+        status: 'rejected',
+        rejectionReason,
+        updatedAt: new Date(),
+      })
+      .where(eq(operatorSchema.operators.id, id))
+      .returning();
+
+    return updatedOperator[0];
+  }
   async getOperatorsForVerification(limit = 50, offset = 0) {
     return await this.db
       .select({

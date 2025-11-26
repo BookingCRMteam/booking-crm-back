@@ -19,4 +19,5 @@ export const operators = pgTable('operators', {
   status: text('status').default('pending').notNull(),
   philosophy: text('philosophy'),
   photo: text('photo'),
+  rejectionReason: text('rejection_reason').default('').notNull(),
 });
