@@ -13,6 +13,7 @@ import { UpdateTourPhotoDto } from './dto/update-tour-photo.dto';
 
 import * as schema from '@app/db/schema/schema';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { AdminGetToursQueryDto } from './dto/admin-get-tours-query.dto';
 @Injectable()
 export class ToursService {
   constructor(
@@ -267,7 +268,121 @@ export class ToursService {
       throw new Error('Could not retrieve tours. Please try again later.');
     }
   }
+  async findAllAdmin(query: AdminGetToursQueryDto & { lang?: string }) {
+    const {
+      lang = 'en',
+      countryISO2Code,
+      cityId,
+      operatorId,
+      type,
+      minStartDate,
+      maxStartDate,
+      minEndDate,
+      maxEndDate,
+      minPrice,
+      maxPrice,
+      limit = 10,
+      offset = 0,
+      sortBy = 'id',
+      sortOrder = SortOrder.ASC,
+      search,
+    } = query;
 
+    // Типізуємо whereConditions для безпечного використання з Drizzle ORM
+    const whereConditions: Array<ReturnType<typeof eq>> = [];
+
+    // Фільтр по статусу
+    // if (status) {
+    //   whereConditions.push(eq(schema.tours.status, status));
+    // }
+
+    if (countryISO2Code)
+      whereConditions.push(eq(schema.tours.countryISO2Code, countryISO2Code));
+    if (cityId) whereConditions.push(eq(schema.tours.cityId, cityId));
+    if (operatorId)
+      whereConditions.push(eq(schema.tours.operatorId, operatorId));
+    if (type) whereConditions.push(eq(schema.tours.type, type));
+
+    if (minStartDate)
+      whereConditions.push(gte(schema.tours.startDate, minStartDate));
+    if (maxStartDate)
+      whereConditions.push(lte(schema.tours.startDate, maxStartDate));
+    if (minEndDate) whereConditions.push(gte(schema.tours.endDate, minEndDate));
+    if (maxEndDate) whereConditions.push(lte(schema.tours.endDate, maxEndDate));
+
+    if (minPrice !== undefined)
+      whereConditions.push(gte(schema.tours.price, minPrice.toString()));
+    if (maxPrice !== undefined)
+      whereConditions.push(lte(schema.tours.price, maxPrice.toString()));
+
+    // --- Пошук по назві ---
+    if (search) {
+      const pattern = `%${search.replace(/[%_]/g, '\\$&')}%`;
+      whereConditions.push(sql`${schema.tours.title} ILIKE ${pattern}`);
+    }
+
+    // --- Сортування ---
+    let orderByColumn:
+      | typeof schema.tours.id
+      | typeof schema.tours.price
+      | typeof schema.tours.startDate = schema.tours.id;
+    switch (sortBy) {
+      case 'price':
+        orderByColumn = schema.tours.price;
+        break;
+      case 'startDate':
+        orderByColumn = schema.tours.startDate;
+        break;
+    }
+
+    // --- Основний запит ---
+    const rows = await this.db.query.tours.findMany({
+      where: and(...whereConditions),
+      limit,
+      offset,
+      orderBy:
+        sortOrder === SortOrder.DESC ? desc(orderByColumn) : asc(orderByColumn),
+      with: {
+        photos: true,
+        operator: true,
+        country: {
+          with: {
+            translations: {
+              where: eq(schema.countryTranslations.languageCode, lang),
+            },
+          },
+        },
+        city: {
+          with: {
+            translations: {
+              where: eq(schema.cityTranslations.languageCode, lang),
+            },
+          },
+        },
+      },
+    });
+
+    // Сортуємо фото — головне перше
+    const tours = rows.map((tour) => ({
+      ...tour,
+      photos: tour.photos.sort((a, b) =>
+        a.isMain === b.isMain ? 0 : a.isMain ? -1 : 1,
+      ),
+    }));
+
+    // --- Total count ---
+    const totalCountResult = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.tours)
+      .where(and(...whereConditions));
+
+    return {
+      tours,
+      total: totalCountResult[0]?.count ?? 0,
+      limit,
+      offset,
+    };
+  }
   async findOne(id: number, lang = 'en') {
     const tour = await this.db.query.tours.findFirst({
       where: eq(schema.tours.id, id),
