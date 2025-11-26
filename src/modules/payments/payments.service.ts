@@ -13,6 +13,7 @@ import LiqPay from 'liqpayjs-sdk';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { Request } from 'express';
 import { BookingGateway } from '../bookings/booking.gateway';
+import { EmailQueueService } from '../email-queue/email-queue.service';
 
 const { bookings } = schema;
 @Injectable()
@@ -24,6 +25,7 @@ export class PaymentsService {
     @Inject('DRIZZLE_CLIENT')
     private db: NodePgDatabase<typeof schema>,
     private readonly bookingGateway: BookingGateway,
+    private readonly emailQueueService: EmailQueueService,
   ) {
     this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: '2025-10-29.clover',
@@ -58,6 +60,10 @@ export class PaymentsService {
 
       const booking = await this.db.query.bookings.findFirst({
         where: (bookings, { eq }) => eq(bookings.id, parseInt(bookingId)),
+        with: {
+          user: true,
+          tour: true,
+        },
       });
 
       if (booking && booking.status === 'pending_payment') {
@@ -80,6 +86,24 @@ export class PaymentsService {
           'confirmed',
           booking.userId.toString(),
         );
+
+        // Send booking confirmation email
+        if (booking.user && booking.tour) {
+          await this.emailQueueService.addBookingConfirmationEmail({
+            email: booking.user.email,
+            bookingDetails: {
+              id: booking.id,
+              tourName: booking.tour.title,
+              startDate: new Date(booking.tour.startDate),
+              endDate: new Date(booking.tour.endDate),
+              price: parseFloat(booking.totalPrice),
+              currency: booking.currency,
+              numberOfPeople: booking.numberOfPeople,
+              firstPersonName: booking.firstPersonName,
+              firstPersonSurname: booking.firstPersonSurname,
+            },
+          });
+        }
       }
     }
   }
@@ -119,6 +143,10 @@ export class PaymentsService {
 
       const booking = await this.db.query.bookings.findFirst({
         where: (bookings, { eq }) => eq(bookings.id, bookingId),
+        with: {
+          user: true,
+          tour: true,
+        },
       });
       if (booking && booking.status === 'pending_payment') {
         // Update booking status in a transaction
@@ -140,6 +168,24 @@ export class PaymentsService {
           'confirmed',
           booking.userId.toString(),
         );
+
+        // Send booking confirmation email
+        if (booking.user && booking.tour) {
+          await this.emailQueueService.addBookingConfirmationEmail({
+            email: booking.user.email,
+            bookingDetails: {
+              id: booking.id,
+              tourName: booking.tour.title,
+              startDate: new Date(booking.tour.startDate),
+              endDate: new Date(booking.tour.endDate),
+              price: parseFloat(booking.totalPrice),
+              currency: booking.currency,
+              numberOfPeople: booking.numberOfPeople,
+              firstPersonName: booking.firstPersonName,
+              firstPersonSurname: booking.firstPersonSurname,
+            },
+          });
+        }
       }
     }
   }

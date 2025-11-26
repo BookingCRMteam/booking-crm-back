@@ -170,6 +170,7 @@ describe('PaymentsService', () => {
     it('should confirm booking on success status', async () => {
       process.env.LIQPAY_PRIVATE_KEY = 'test_key';
       mockLiqPay.str_to_sign.mockReturnValue(validSignature);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       mockDb.query.bookings.findFirst.mockResolvedValue(mockBooking as any);
 
       (mockDb.transaction as jest.Mock).mockImplementation(async (callback) => {
@@ -199,6 +200,7 @@ describe('PaymentsService', () => {
       process.env.LIQPAY_PRIVATE_KEY = 'test_key';
       mockLiqPay.str_to_sign.mockReturnValue(validSignature);
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       mockDb.query.bookings.findFirst.mockResolvedValue({
         ...mockBooking,
         status: 'confirmed',
