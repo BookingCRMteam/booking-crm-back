@@ -16,6 +16,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { CacheHealthModule } from './modules/cache-health/cache-health.module';
 import { redisStore } from 'cache-manager-ioredis-yet';
 import { OperatorBookingsModule } from '@app/modules/operator-bookings/operator-bookings.module';
+import { AdminModule } from './modules/admin/admin.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -53,6 +54,7 @@ import { OperatorBookingsModule } from '@app/modules/operator-bookings/operator-
     PaymentsModule,
     CacheHealthModule,
     OperatorBookingsModule,
+    AdminModule,
   ],
   controllers: [],
   providers: [],

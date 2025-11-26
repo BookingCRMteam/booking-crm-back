@@ -126,7 +126,17 @@ export class OperatorService {
       .limit(limit)
       .offset(offset);
   }
-
+  async getOperatorsForVerification() {
+    return this.db
+      .select({
+        firstName: operatorSchema.operators.firstName,
+        lastName: operatorSchema.operators.lastName,
+        email: operatorSchema.operators.email,
+        status: operatorSchema.operators.status,
+      })
+      .from(operatorSchema.operators)
+      .where(eq(operatorSchema.operators.status, 'pending'));
+  }
   async deletePhoto(req: AuthenticatedRequest) {
     const operator = await this.db.query.operators.findFirst({
       where: eq(operatorSchema.operators.userId, req.user.id),
