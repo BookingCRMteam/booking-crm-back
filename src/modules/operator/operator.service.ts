@@ -129,6 +129,31 @@ export class OperatorService {
       .limit(limit)
       .offset(offset);
   }
+  async verifyOperator(id: number) {
+    const operator = await this.db
+      .select()
+      .from(operatorSchema.operators)
+      .where(eq(operatorSchema.operators.id, id))
+      .then((res) => res[0]);
+
+    if (!operator) {
+      throw new NotFoundException(`Operator with id ${id} not found`);
+    }
+
+    const status = operator.status as OperatorStatus;
+
+    if (status !== OperatorStatus.PENDING) {
+      throw new BadRequestException('Operator must be pending to be approved');
+    }
+
+    const updatedOperator = await this.db
+      .update(operatorSchema.operators)
+      .set({ status: OperatorStatus.APPROVED, updatedAt: new Date() })
+      .where(eq(operatorSchema.operators.id, id))
+      .returning();
+
+    return updatedOperator[0];
+  }
   async rejectOperator(id: number, rejectionReason: string) {
     const operator = await this.db
       .select()

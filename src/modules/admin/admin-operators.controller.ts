@@ -70,6 +70,32 @@ export class AdminOperatorsController {
     });
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id/verify')
+  @ApiOperation({ summary: 'Верифікувати (погодити) заявку оператора' })
+  @ApiResponse({
+    status: 200,
+    description: 'Оператор верифікований успішно',
+    type: AdminOperatorListDto,
+  })
+  async verifyOperator(
+    @Req() req: Request & { user: { role: string } },
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<AdminOperatorListDto> {
+    if (req.user?.role !== 'admin') {
+      throw new ForbiddenException('Доступ дозволено лише адміністраторам');
+    }
+
+    const approvedOperator = await this.operatorService.verifyOperator(id);
+
+    return {
+      firstName: approvedOperator.firstName,
+      lastName: approvedOperator.lastName,
+      email: approvedOperator.email,
+      status: approvedOperator.status as OperatorStatus,
+      rejectionReason: approvedOperator.rejectionReason ?? undefined,
+    };
+  }
   // ================= PATCH REJECT OPERATOR =================
   @UseGuards(JwtAuthGuard)
   @Patch(':id/reject')
