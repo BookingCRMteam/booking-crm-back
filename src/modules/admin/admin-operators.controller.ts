@@ -35,16 +35,23 @@ export class AdminOperatorsController {
   @Get()
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 50 })
   @ApiQuery({ name: 'offset', required: false, type: Number, example: 0 })
-  @ApiOperation({ summary: 'Список операторів зі статусом pending' })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: OperatorStatus,
+    description: 'pending | verified | rejected',
+  })
+  @ApiOperation({ summary: 'Список операторів з фільтрацією за статусом' })
   @ApiResponse({
     status: 200,
     description: 'Список операторів успішно отримано',
     type: [AdminOperatorListDto],
   })
-  async getPendingOperators(
+  async getOperators(
     @Req() req: Request & { user: { role: string } },
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
+    @Query('status') status?: OperatorStatus,
   ): Promise<AdminOperatorListDto[]> {
     if (req.user?.role !== 'admin') {
       throw new ForbiddenException('Доступ дозволено лише адміністраторам');
@@ -53,21 +60,19 @@ export class AdminOperatorsController {
     const limitNumber = limit ? Number(limit) : undefined;
     const offsetNumber = offset ? Number(offset) : undefined;
 
-    const operators = await this.operatorService.getOperatorsForVerification(
+    const operators = await this.operatorService.getAllOperators(
       limitNumber,
       offsetNumber,
+      status,
     );
 
-    return operators.map((op) => {
-      const dto: AdminOperatorListDto = {
-        firstName: op.firstName,
-        lastName: op.lastName,
-        email: op.email,
-        status: op.status as OperatorStatus,
-        rejectionReason: op.rejectionReason ?? undefined,
-      };
-      return dto;
-    });
+    return operators.map((op) => ({
+      firstName: op.firstName,
+      lastName: op.lastName,
+      email: op.email,
+      status: op.status as OperatorStatus,
+      rejectionReason: op.rejectionReason ?? undefined,
+    }));
   }
 
   // ================= PATCH REJECT OPERATOR =================
