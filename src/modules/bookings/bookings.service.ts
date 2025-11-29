@@ -1,3 +1,4 @@
+import { count, sum } from 'drizzle-orm';
 import {
   ConflictException,
   Inject,
@@ -226,5 +227,32 @@ export class BookingsService {
       throw new NotFoundException(`Booking with id ${id} not found`);
     }
     return booking;
+  }
+
+  // New method to get booking statistics for a tour
+  async getTourBookingStats(tourId: number) {
+    // Count total bookings and sum number of people for the given tour
+    const result = await this.db
+      .select({
+        totalBookings: count(),
+        totalPeople: sum(bookings.numberOfPeople),
+      })
+      .from(bookings)
+      .where(eq(bookings.tourId, tourId))
+      .execute();
+    // result is an array with one object
+    const stats = result[0] ?? { totalBookings: 0, totalPeople: 0 };
+
+    if (Number(stats.totalBookings) === 0) {
+      throw new NotFoundException(
+        `No bookings found for tour with id ${tourId}`,
+      );
+    }
+
+    // Ensure numbers (sum may return string for bigint)
+    return {
+      totalBookings: Number(stats.totalBookings),
+      totalPeople: Number(stats.totalPeople),
+    };
   }
 }

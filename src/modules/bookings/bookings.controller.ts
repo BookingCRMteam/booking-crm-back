@@ -1,4 +1,5 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param } from '@nestjs/common';
+import { BookingStatsDto } from './dto/booking-stats.dto';
 import { BookingsService } from './bookings.service';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateBookingDto } from './dto/create-booking.dto';
@@ -27,5 +28,17 @@ export class BookingsController {
       message: 'Booking created. Redirect to payment link to complete.',
       ...bookingDetails,
     };
+  }
+
+  @Get(':tourId')
+  @ApiOperation({ summary: 'Get booking statistics for a tour' })
+  @ApiResponse({
+    status: 200,
+    description: 'Booking stats',
+    type: BookingStatsDto,
+  })
+  async getStats(@Param('tourId') tourId: string) {
+    const id = Number(tourId);
+    return this.bookingsService.getTourBookingStats(id);
   }
 }
