@@ -14,6 +14,7 @@ yarn-error.log*
 lerna-debug.log*
 # pnpm store (якщо ще лишився)
 .pnpm-store/
+Dockerfile.dev
 
 # Docker
 docker-compose.override.yml
