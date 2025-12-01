@@ -174,8 +174,8 @@ export class BookingsService {
           },
         ],
         mode: 'payment',
-        success_url: `${process.env.FRONTEND_URL}/catalog/tour/${newBooking.id}?success=true`,
-        cancel_url: `${process.env.FRONTEND_URL}/catalog/tour/${newBooking.id}?cancelled=true`,
+        success_url: `${process.env.FRONTEND_URL}/catalog/tour/${newBooking.tourId}?success=true&bookingId=${newBooking.id}`,
+        cancel_url: `${process.env.FRONTEND_URL}/catalog/tour/${newBooking.tourId}?cancelled=true&bookingId=${newBooking.id}`,
         // Метадані для webhook
         metadata: {
           bookingId: newBooking.id.toString(),
@@ -192,7 +192,7 @@ export class BookingsService {
         description: `Booking for tour ${tour.title}`,
         order_id: orderId,
         server_url: `${process.env.API_URL}/payments/liqpay-webhook`,
-        result_url: `${process.env.FRONTEND_URL}/catalog/tour/${newBooking.id}?success=true`,
+        result_url: `${process.env.FRONTEND_URL}/catalog/tour/${newBooking.tourId}?success=true&bookingId=${newBooking.id}`,
         version: 3,
         language: 'en',
       };
