@@ -255,4 +255,22 @@ export class BookingsService {
       totalPeople: Number(stats.totalPeople),
     };
   }
+
+  async getBookingWithTour(bookingId: number, tourId: number) {
+    const booking = await this.db.query.bookings.findFirst({
+      where: (bookings, { eq, and }) =>
+        and(eq(bookings.id, bookingId), eq(bookings.tourId, tourId)),
+      with: {
+        tour: true,
+      },
+    });
+
+    if (!booking) {
+      throw new NotFoundException(
+        `Booking with id ${bookingId} for tour ${tourId} not found`,
+      );
+    }
+
+    return booking;
+  }
 }

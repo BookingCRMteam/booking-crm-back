@@ -41,4 +41,20 @@ export class BookingsController {
     const id = Number(tourId);
     return this.bookingsService.getTourBookingStats(id);
   }
+
+  @Get(':tourId/:bookingId')
+  @ApiOperation({ summary: 'Get booking details with tour information' })
+  @ApiResponse({
+    status: 200,
+    description: 'Booking and tour details',
+  })
+  async getBooking(
+    @Param('tourId') tourId: string,
+    @Param('bookingId') bookingId: string,
+  ) {
+    return this.bookingsService.getBookingWithTour(
+      Number(bookingId),
+      Number(tourId),
+    );
+  }
 }
