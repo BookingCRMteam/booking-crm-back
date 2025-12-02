@@ -9,7 +9,7 @@ import * as operatorSchema from '@app/modules/operator/operator.schema';
 import { CreateOperatorDto } from './dto/create-operator.dto';
 import { UserService } from '../user/user.service';
 import { UpdateOperatorDto } from './dto/update-operator.dto';
-import { eq, sql, asc, desc } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { CloudinaryService } from '@app/cloudinary/cloudinary.service';
 import { AuthenticatedRequest } from '@app/types/authenticated.request';
 import { OperatorStatus } from '@app/types/operator-status';
@@ -42,17 +42,11 @@ export class OperatorService {
     limit?: number,
     offset?: number,
     status?: OperatorStatus,
-    sort: 'asc' | 'desc' = 'asc',
   ) {
-    return this.db
+    return await this.db
       .select()
       .from(operatorSchema.operators)
       .where(status ? eq(operatorSchema.operators.status, status) : undefined)
-      .orderBy(
-        sort === 'asc'
-          ? asc(operatorSchema.operators.createdAt)
-          : desc(operatorSchema.operators.createdAt),
-      )
       .limit(limit)
       .offset(offset);
   }
