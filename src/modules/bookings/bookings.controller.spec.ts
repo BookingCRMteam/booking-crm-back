@@ -9,6 +9,7 @@ describe('BookingsController', () => {
   const mockBookingsService = {
     createBooking: jest.fn(),
     getTourBookingStats: jest.fn(),
+    getBookingWithTour: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -43,6 +44,21 @@ describe('BookingsController', () => {
 
       expect(result).toEqual(expectedStats);
       expect(mockBookingsService.getTourBookingStats).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe('getBooking', () => {
+    it('should return booking details', async () => {
+      const tourId = '1';
+      const bookingId = '1';
+      const mockBooking = { id: 1, tourId: 1, tour: { id: 1 } };
+
+      mockBookingsService.getBookingWithTour.mockResolvedValue(mockBooking);
+
+      const result = await controller.getBooking(tourId, bookingId);
+
+      expect(result).toEqual(mockBooking);
+      expect(mockBookingsService.getBookingWithTour).toHaveBeenCalledWith(1, 1);
     });
   });
 });
