@@ -110,4 +110,31 @@ describe('BookingsService', () => {
       );
     });
   });
+  describe('getBookingWithTour', () => {
+    it('should return booking with tour when found', async () => {
+      const bookingId = 1;
+      const tourId = 1;
+      const mockBooking = { id: bookingId, tourId, tour: { id: tourId } };
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      mockDb.query.bookings.findFirst.mockResolvedValue(mockBooking as any);
+
+      const result = await service.getBookingWithTour(bookingId, tourId);
+
+      expect(result).toEqual(mockBooking);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(mockDb.query.bookings.findFirst as jest.Mock).toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException when booking not found', async () => {
+      const bookingId = 1;
+      const tourId = 1;
+
+      mockDb.query.bookings.findFirst.mockResolvedValue(undefined);
+
+      await expect(
+        service.getBookingWithTour(bookingId, tourId),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
 });
