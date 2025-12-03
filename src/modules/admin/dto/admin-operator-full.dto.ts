@@ -18,3 +18,4 @@ export class AdminOperatorFullDto {
   @ApiProperty({ required: false }) photo?: string;
   @ApiProperty({ required: false }) rejectionReason?: string;
 }
+// dummy change for PR
