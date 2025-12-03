@@ -43,12 +43,28 @@ export class OperatorService {
     offset?: number,
     status?: OperatorStatus,
   ) {
-    return await this.db
+    const totalResult = await this.db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(operatorSchema.operators)
+      .where(status ? eq(operatorSchema.operators.status, status) : undefined);
+
+    const total = Number(totalResult[0].count);
+
+    const items = await this.db
       .select()
       .from(operatorSchema.operators)
       .where(status ? eq(operatorSchema.operators.status, status) : undefined)
       .limit(limit)
       .offset(offset);
+
+    return {
+      items,
+      meta: {
+        total,
+        limit,
+        offset,
+      },
+    };
   }
 
   async updateOperatorStatus(
