@@ -3,6 +3,7 @@
 /node_modules
 /build
 /my-admin-panel
+.pnpm-store
 # Logs
 logs
 *.log
@@ -11,6 +12,16 @@ pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
+# pnpm store (якщо ще лишився)
+.pnpm-store/
+Dockerfile.dev
+
+# Docker
+docker-compose.override.yml
+.docker/
+
+# Локальні build/temp файли
+*.tsbuildinfo
 
 # OS
 .DS_Store

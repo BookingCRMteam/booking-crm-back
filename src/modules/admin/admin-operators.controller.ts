@@ -19,8 +19,8 @@ import {
 } from '@nestjs/swagger';
 import { OperatorService } from '@app/modules/operator/operator.service';
 import { JwtAuthGuard } from '@app/common/guards/jwt-auth.guard';
-import { AdminOperatorListDto } from './dto/admin-operator-list.dto';
-import { RejectOperatorDto } from './dto/reject-operator.dto';
+import { AdminOperatorFullDto } from './dto/admin-operator-full.dto';
+import { UpdateOperatorStatusDto } from './dto/update-operator-status.dto';
 import { Request } from 'express';
 import { OperatorStatus } from '@app/types/operator-status';
 
@@ -30,7 +30,7 @@ import { OperatorStatus } from '@app/types/operator-status';
 export class AdminOperatorsController {
   constructor(private readonly operatorService: OperatorService) {}
 
-  // ================= GET PENDING OPERATORS =================
+  // ================= GET ALL WITH FILTERS =================
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 50 })
@@ -39,20 +39,20 @@ export class AdminOperatorsController {
     name: 'status',
     required: false,
     enum: OperatorStatus,
-    description: 'pending | verified | rejected',
+    description: 'pending | approved | rejected',
   })
-  @ApiOperation({ summary: 'Список операторів з фільтрацією за статусом' })
+  @ApiOperation({ summary: 'Отримати всіх операторів з фільтром і пагінацією' })
   @ApiResponse({
     status: 200,
-    description: 'Список операторів успішно отримано',
-    type: [AdminOperatorListDto],
+    description: 'Список операторів',
+    type: [AdminOperatorFullDto],
   })
   async getOperators(
     @Req() req: Request & { user: { role: string } },
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
     @Query('status') status?: OperatorStatus,
-  ): Promise<AdminOperatorListDto[]> {
+  ) {
     if (req.user?.role !== 'admin') {
       throw new ForbiddenException('Доступ дозволено лише адміністраторам');
     }
@@ -60,78 +60,54 @@ export class AdminOperatorsController {
     const limitNumber = limit ? Number(limit) : undefined;
     const offsetNumber = offset ? Number(offset) : undefined;
 
-    const operators = await this.operatorService.getAllOperators(
+    return await this.operatorService.getAllOperators(
       limitNumber,
       offsetNumber,
       status,
     );
-
-    return operators.map((op) => ({
-      firstName: op.firstName,
-      lastName: op.lastName,
-      email: op.email,
-      status: op.status as OperatorStatus,
-      rejectionReason: op.rejectionReason ?? undefined,
-    }));
   }
 
+  // ================= GET ONE =================
   @UseGuards(JwtAuthGuard)
-  @Patch(':id/verify')
-  @ApiOperation({ summary: 'Верифікувати (погодити) заявку оператора' })
+  @Get(':id')
+  @ApiOperation({ summary: 'Отримати одного оператора' })
   @ApiResponse({
     status: 200,
-    description: 'Оператор верифікований успішно',
-    type: AdminOperatorListDto,
+    description: 'Детальна інформація про оператора',
+    type: AdminOperatorFullDto,
   })
-  async verifyOperator(
+  async getOperatorById(
     @Req() req: Request & { user: { role: string } },
     @Param('id', ParseIntPipe) id: number,
-  ): Promise<AdminOperatorListDto> {
+  ) {
     if (req.user?.role !== 'admin') {
       throw new ForbiddenException('Доступ дозволено лише адміністраторам');
     }
 
-    const approvedOperator = await this.operatorService.verifyOperator(id);
-
-    return {
-      firstName: approvedOperator.firstName,
-      lastName: approvedOperator.lastName,
-      email: approvedOperator.email,
-      status: approvedOperator.status as OperatorStatus,
-      rejectionReason: approvedOperator.rejectionReason ?? undefined,
-    };
+    return await this.operatorService.getOperatorById(id);
   }
-  // ================= PATCH REJECT OPERATOR =================
+
   @UseGuards(JwtAuthGuard)
-  @Patch(':id/reject')
-  @ApiOperation({ summary: 'Відхилити заявку оператора з причиною' })
+  @Patch(':id')
+  @ApiOperation({ summary: 'Оновити статус оператора' })
   @ApiResponse({
     status: 200,
-    description: 'Оператор відхилений успішно',
-    type: AdminOperatorListDto,
+    description: 'Статус оператора оновлено',
+    type: AdminOperatorFullDto,
   })
-  async rejectOperator(
+  async updateStatus(
     @Req() req: Request & { user: { role: string } },
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: RejectOperatorDto,
-  ): Promise<AdminOperatorListDto> {
+    @Body() dto: UpdateOperatorStatusDto,
+  ) {
     if (req.user?.role !== 'admin') {
       throw new ForbiddenException('Доступ дозволено лише адміністраторам');
     }
 
-    const rejectedOperator = await this.operatorService.rejectOperator(
+    return await this.operatorService.updateOperatorStatus(
       id,
+      dto.status,
       dto.rejectionReason,
     );
-
-    const result: AdminOperatorListDto = {
-      firstName: rejectedOperator.firstName,
-      lastName: rejectedOperator.lastName,
-      email: rejectedOperator.email,
-      status: rejectedOperator.status as OperatorStatus,
-      rejectionReason: rejectedOperator.rejectionReason ?? undefined,
-    };
-
-    return result;
   }
 }

@@ -17,6 +17,7 @@ import * as schema from '@app/db/schema/schema';
 import { operators } from '@app/modules/operator/operator.schema';
 
 type OperatorSelect = typeof operators.$inferSelect;
+
 @Injectable()
 export class OperatorService {
   constructor(
@@ -25,19 +26,82 @@ export class OperatorService {
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
+  async getOperatorByIdForAdmin(id: number): Promise<OperatorSelect> {
+    const operator = await this.db.query.operators.findFirst({
+      where: eq(operators.id, id),
+    });
+
+    if (!operator) {
+      throw new NotFoundException(`Operator with id ${id} not found`);
+    }
+
+    return operator;
+  }
+
+  async getAllOperators(
+    limit?: number,
+    offset?: number,
+    status?: OperatorStatus,
+  ) {
+    return await this.db
+      .select()
+      .from(operatorSchema.operators)
+      .where(status ? eq(operatorSchema.operators.status, status) : undefined)
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async updateOperatorStatus(
+    id: number,
+    status: OperatorStatus,
+    rejectionReason?: string,
+  ) {
+    const operator = await this.db.query.operators.findFirst({
+      where: eq(operators.id, id),
+    });
+
+    if (!operator) {
+      throw new NotFoundException(`Operator with id ${id} not found`);
+    }
+
+    if (status === OperatorStatus.REJECTED) {
+      if (!rejectionReason || rejectionReason.length < 50) {
+        throw new BadRequestException(
+          'Rejection reason must be at least 50 characters long',
+        );
+      }
+    }
+
+    const updated = await this.db
+      .update(operators)
+      .set({
+        status,
+        rejectionReason:
+          status === OperatorStatus.REJECTED ? rejectionReason : null,
+        updatedAt: new Date(),
+      })
+      .where(eq(operators.id, id))
+      .returning();
+
+    return updated[0];
+  }
+
   async addOperator(dto: CreateOperatorDto, req: AuthenticatedRequest) {
     if (!req.user.email) {
       throw new BadRequestException(
         'Email is required to register as operator',
       );
     }
+
     const existingOperator = await this.db
       .select()
       .from(operatorSchema.operators)
       .where(eq(operatorSchema.operators.userId, req.user.id));
+
     if (existingOperator.length > 0) {
       throw new BadRequestException('User is already registered as operator');
     }
+
     const newOperator = await this.db
       .insert(operatorSchema.operators)
       .values({
@@ -51,6 +115,7 @@ export class OperatorService {
         email: req.user.email,
       })
       .returning();
+
     await this.userService.userToOperator(req.user.id, newOperator[0].id);
     return newOperator[0];
   }
@@ -62,6 +127,7 @@ export class OperatorService {
   ) {
     const updateData: Partial<typeof operatorSchema.operators.$inferInsert> =
       {};
+
     if (dto.companyName !== undefined) updateData.companyName = dto.companyName;
     if (dto.description !== undefined) updateData.description = dto.description;
     if (dto.firstName !== undefined) updateData.firstName = dto.firstName;
@@ -69,10 +135,12 @@ export class OperatorService {
     if (dto.phone !== undefined) updateData.phone = dto.phone;
     if (dto.website !== undefined) updateData.website = dto.website;
     if (dto.philosophy !== undefined) updateData.philosophy = dto.philosophy;
+
     if (file) {
       const photoUrl = (await this.cloudinaryService.uploadImage(file)).url;
       updateData.photo = photoUrl;
     }
+
     const operator = await this.db.query.operators.findFirst({
       where: eq(operatorSchema.operators.id, req.user.operatorId),
     });
@@ -94,6 +162,7 @@ export class OperatorService {
       .set(updateData)
       .where(eq(operatorSchema.operators.id, req.user.operatorId))
       .returning();
+
     return updatedOperator[0];
   }
 
@@ -102,8 +171,11 @@ export class OperatorService {
       .select()
       .from(operatorSchema.operators)
       .where(eq(operatorSchema.operators.id, id));
-    if (!operator[0])
+
+    if (!operator[0]) {
       throw new NotFoundException(`Operator with ${id} not found`);
+    }
+
     return operator[0];
   }
 
@@ -112,75 +184,14 @@ export class OperatorService {
       .select()
       .from(operatorSchema.operators)
       .where(eq(operatorSchema.operators.userId, req.user.id));
-    if (!operator[0])
+
+    if (!operator[0]) {
       throw new NotFoundException('You are not an operator yet.');
+    }
+
     return operator[0];
   }
 
-  async getAllOperators(
-    limit?: number,
-    offset?: number,
-    status?: OperatorStatus,
-  ) {
-    return await this.db
-      .select()
-      .from(operatorSchema.operators)
-      .where(status ? eq(operatorSchema.operators.status, status) : undefined)
-      .limit(limit)
-      .offset(offset);
-  }
-  async verifyOperator(id: number) {
-    const operator = await this.db
-      .select()
-      .from(operatorSchema.operators)
-      .where(eq(operatorSchema.operators.id, id))
-      .then((res) => res[0]);
-
-    if (!operator) {
-      throw new NotFoundException(`Operator with id ${id} not found`);
-    }
-
-    const status = operator.status as OperatorStatus;
-
-    if (status !== OperatorStatus.PENDING) {
-      throw new BadRequestException('Operator must be pending to be approved');
-    }
-
-    const updatedOperator = await this.db
-      .update(operatorSchema.operators)
-      .set({ status: OperatorStatus.APPROVED, updatedAt: new Date() })
-      .where(eq(operatorSchema.operators.id, id))
-      .returning();
-
-    return updatedOperator[0];
-  }
-  async rejectOperator(id: number, rejectionReason: string) {
-    const operator = await this.db
-      .select()
-      .from(operatorSchema.operators)
-      .where(eq(operatorSchema.operators.id, id))
-      .then((res) => res[0]);
-
-    if (!operator) {
-      throw new NotFoundException(`Operator with id ${id} not found`);
-    }
-
-    if (operator.status !== OperatorStatus.PENDING.toString()) {
-      throw new BadRequestException('Operator must be pending to be rejected');
-    }
-
-    const updatedOperator = await this.db
-      .update(operatorSchema.operators)
-      .set({
-        status: OperatorStatus.REJECTED,
-        rejectionReason,
-        updatedAt: new Date(),
-      })
-      .where(eq(operatorSchema.operators.id, id))
-      .returning();
-
-    return updatedOperator[0];
-  }
   async getOperatorsForVerification(
     limit = 50,
     offset = 0,
@@ -192,23 +203,29 @@ export class OperatorService {
       .limit(limit)
       .offset(offset);
   }
+
   async deletePhoto(req: AuthenticatedRequest) {
     const operator = await this.db.query.operators.findFirst({
       where: eq(operatorSchema.operators.userId, req.user.id),
     });
+
     if (!operator) {
       throw new NotFoundException('Operator not found');
     }
+
     if (!operator.photo) {
       throw new BadRequestException('No photo to delete');
     }
+
     const updatedOperator = await this.db
       .update(operatorSchema.operators)
       .set({ photo: null, updatedAt: new Date() })
       .where(eq(operatorSchema.operators.userId, req.user.id))
       .returning();
+
     return updatedOperator[0];
   }
+
   async getPopularOperators(limit = 6) {
     const operators = await this.db
       .select({
