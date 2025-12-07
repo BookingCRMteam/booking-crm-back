@@ -260,7 +260,9 @@ export class OperatorService {
         philosophy: operatorSchema.operators.philosophy,
         photo: operatorSchema.operators.photo,
         bookingsCount: sql<number>`COUNT(DISTINCT ${schema.bookings.id})`,
-        toursCount: sql<number>`COUNT(DISTINCT ${schema.tours.id})`,
+        activeToursCount: sql<number>`
+          COUNT(DISTINCT CASE WHEN ${schema.tours.isActive} = true THEN ${schema.tours.id} END)
+        `,
       })
       .from(operatorSchema.operators)
       .leftJoin(
@@ -269,13 +271,16 @@ export class OperatorService {
       )
       .leftJoin(schema.bookings, eq(schema.bookings.tourId, schema.tours.id))
       .groupBy(operatorSchema.operators.id)
+      .having(
+        sql`COUNT(DISTINCT CASE WHEN ${schema.tours.isActive} = true THEN ${schema.tours.id} END) > 0`,
+      )
       .orderBy(sql`COUNT(DISTINCT ${schema.bookings.id}) DESC`)
       .limit(limit);
 
     return operators.map((op) => ({
       ...op,
       bookingsCount: Number(op.bookingsCount),
-      toursCount: Number(op.toursCount),
+      activeToursCount: Number(op.activeToursCount),
     }));
   }
 }
