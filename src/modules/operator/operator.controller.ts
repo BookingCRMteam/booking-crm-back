@@ -91,18 +91,61 @@ export class OperatorController {
     FileInterceptor('photo', { storage: multer.memoryStorage() }),
   )
   @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: 'Update operator profile',
+    description: `
+  Rules:
+  - companyName, description, philosophy, photo can be updated anytime
+  - firstName, lastName, phone, website:
+    • can be updated ONLY when operator status is "rejected"
+    • after changing any of these fields, status is automatically set to "pending"
+    • cannot be updated when status is "pending" or "approved"
+  `,
+  })
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
-        companyName: { type: 'string' },
-        description: { type: 'string' },
-        phone: { type: 'string' },
-        firstName: { type: 'string' },
-        lastName: { type: 'string' },
-        website: { type: 'string' },
-        philosophy: { type: 'string' },
-        photo: { type: 'string', format: 'binary', nullable: true },
+        companyName: {
+          type: 'string',
+          example: 'Travel Dreams LLC',
+        },
+        description: {
+          type: 'string',
+          example: 'We organize unforgettable tours across Europe',
+        },
+        philosophy: {
+          type: 'string',
+          example: 'Honesty, comfort and unforgettable memories',
+        },
+
+        firstName: {
+          type: 'string',
+          example: 'Ivan',
+          description: 'Allowed only when status is "rejected"',
+        },
+        lastName: {
+          type: 'string',
+          example: 'Ivanov',
+          description: 'Allowed only when status is "rejected"',
+        },
+        phone: {
+          type: 'string',
+          example: '+380501234567',
+          description: 'Allowed only when status is "rejected"',
+        },
+        website: {
+          type: 'string',
+          example: 'https://example.com',
+          description: 'Allowed only when status is "rejected"',
+        },
+
+        photo: {
+          type: 'string',
+          format: 'binary',
+          nullable: true,
+          description: 'Operator photo (JPEG/PNG/WEBP, max 5MB)',
+        },
       },
     },
   })
