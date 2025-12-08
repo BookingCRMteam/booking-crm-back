@@ -141,22 +141,6 @@ export class OperatorService {
     req: AuthenticatedRequest,
     file?: Buffer,
   ) {
-    const updateData: Partial<typeof operatorSchema.operators.$inferInsert> =
-      {};
-
-    if (dto.companyName !== undefined) updateData.companyName = dto.companyName;
-    if (dto.description !== undefined) updateData.description = dto.description;
-    if (dto.firstName !== undefined) updateData.firstName = dto.firstName;
-    if (dto.lastName !== undefined) updateData.lastName = dto.lastName;
-    if (dto.phone !== undefined) updateData.phone = dto.phone;
-    if (dto.website !== undefined) updateData.website = dto.website;
-    if (dto.philosophy !== undefined) updateData.philosophy = dto.philosophy;
-
-    if (file) {
-      const photoUrl = (await this.cloudinaryService.uploadImage(file)).url;
-      updateData.photo = photoUrl;
-    }
-
     const operator = await this.db.query.operators.findFirst({
       where: eq(operatorSchema.operators.id, req.user.operatorId),
     });
@@ -165,13 +149,55 @@ export class OperatorService {
       throw new NotFoundException('Operator not found');
     }
 
+    const CRITICAL_FIELDS = [
+      'firstName',
+      'lastName',
+      'phone',
+      'website',
+    ] as const;
+
+    const criticalFieldsChanged = CRITICAL_FIELDS.some(
+      (field) => dto[field] !== undefined,
+    );
+
+    const operatorStatus = operator.status as OperatorStatus;
+
+    if (criticalFieldsChanged && operatorStatus !== OperatorStatus.REJECTED) {
+      throw new BadRequestException(
+        'firstName, lastName, phone, website can be changed only when operator status is rejected',
+      );
+    }
+
+    const updateData: Partial<typeof operatorSchema.operators.$inferInsert> =
+      {};
+
+    if (dto.companyName !== undefined) updateData.companyName = dto.companyName;
+    if (dto.description !== undefined) updateData.description = dto.description;
+    if (dto.philosophy !== undefined) updateData.philosophy = dto.philosophy;
+    if (dto.firstName !== undefined) updateData.firstName = dto.firstName;
+    if (dto.lastName !== undefined) updateData.lastName = dto.lastName;
+    if (dto.phone !== undefined) updateData.phone = dto.phone;
+    if (dto.website !== undefined) updateData.website = dto.website;
+
+    if (file) {
+      const photoUrl = (await this.cloudinaryService.uploadImage(file)).url;
+      updateData.photo = photoUrl;
+    }
+
+    if (criticalFieldsChanged) {
+      updateData.status = OperatorStatus.PENDING;
+      updateData.rejectionReason = null;
+    }
+
     if (!operator.email && req.user.email) {
       updateData.email = req.user.email;
     }
 
-    if (Object.keys(updateData).length > 0) {
-      updateData.updatedAt = new Date();
+    if (Object.keys(updateData).length === 0) {
+      return operator;
     }
+
+    updateData.updatedAt = new Date();
 
     const updatedOperator = await this.db
       .update(operatorSchema.operators)

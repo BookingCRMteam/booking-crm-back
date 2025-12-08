@@ -66,6 +66,7 @@ export class UpdateOperatorDto {
   @ValidateIf(
     (o: UpdateOperatorDto) => o.firstName !== undefined && o.firstName !== '',
   )
+  @IsOptional()
   @IsString()
   @Length(2, 50, {
     message: 'First name must be between 2 and 50 characters',
@@ -75,6 +76,7 @@ export class UpdateOperatorDto {
   })
   firstName?: string;
 
+  @IsOptional()
   @ValidateIf(
     (o: UpdateOperatorDto) => o.lastName !== undefined && o.lastName !== '',
   )
