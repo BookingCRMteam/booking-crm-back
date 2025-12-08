@@ -51,6 +51,7 @@ export interface Tour {
   availableSpots: number;
   conditions?: string | null;
   isActive?: boolean;
+  isFeatured?: boolean | null;
   createdAt?: Date;
   updatedAt?: Date;
   adults?: number;

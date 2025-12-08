@@ -146,6 +146,19 @@ export class GetToursQueryDto {
   maxPrice?: number;
 
   @ApiPropertyOptional({
+    example: false,
+    description: 'Filter by featured tours',
+    required: false,
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return value as boolean;
+  })
+  isFeatured?: boolean;
+
+  @ApiPropertyOptional({
     example: null,
     description: 'Limit for pagination',
     required: false,

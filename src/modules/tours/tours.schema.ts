@@ -45,6 +45,7 @@ export const tours = pgTable(
     availableSpots: integer('available_spots').notNull(),
     conditions: text('conditions'),
     isActive: boolean('is_active').default(true),
+    isFeatured: boolean('is_featured').default(false),
     createdAt: timestamp('created_at').defaultNow(),
     updatedAt: timestamp('updated_at').defaultNow(),
   },
