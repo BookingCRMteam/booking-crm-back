@@ -174,10 +174,48 @@ export class OperatorController {
     return this.operatorService.getAllOperators(limit, offset, validStatus);
   }
   @Get('popular')
-  @ApiOperation({ summary: 'Отримати список популярних операторів' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, example: 4 })
+  @ApiOperation({ summary: 'Get list of popular operators with active tours' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    example: 6,
+    description: 'Maximum number of operators to return',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of popular operators with at least one active tour',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'number' },
+          email: { type: 'string' },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
+          userId: { type: 'number' },
+          companyName: { type: 'string' },
+          description: { type: 'string' },
+          firstName: { type: 'string' },
+          lastName: { type: 'string' },
+          website: { type: 'string' },
+          phone: { type: 'string' },
+          status: { type: 'string' },
+          philosophy: { type: 'string', nullable: true },
+          photo: { type: 'string', nullable: true },
+          bookingsCount: { type: 'number' },
+          activeToursCount: {
+            type: 'number',
+            description: 'Number of active tours for the operator',
+          },
+        },
+      },
+    },
+  })
   async getPopular(@Query() query: GetPopularOperatorsDto) {
-    return this.operatorService.getPopularOperators(query.limit);
+    const limit = query.limit ?? 6; // дефолтне значення
+    return this.operatorService.getPopularOperators(limit);
   }
   @Get(':id')
   getById(@Param('id', ParseIntPipe) id: number) {
