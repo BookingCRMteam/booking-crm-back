@@ -162,6 +162,13 @@
       "when": 1764579680495,
       "tag": "0023_sour_callisto",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1765174965791,
+      "tag": "0024_purple_paladin",
+      "breakpoints": true
     }
   ]
 }

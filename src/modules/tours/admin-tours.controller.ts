@@ -1,4 +1,16 @@
-import { Controller, Get, Query, UseGuards, Logger } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  UseGuards,
+  Logger,
+  Patch,
+  Param,
+  Body,
+  ParseIntPipe,
+} from '@nestjs/common';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { UpdateTourFeatureDto } from './dto/update-tour-feature.dto';
 
 import { ToursService } from './tours.service';
 import { AdminGetToursQueryDto } from './dto/admin-get-tours-query.dto';
@@ -30,5 +42,17 @@ export class AdminToursController {
       this.logger.error('Error loading admin tours', error);
       throw error;
     }
+  }
+
+  @Patch(':id/feature')
+  @UseGuards(JwtAuthGuard, new RolesGuard('admin'))
+  async updateFeatureStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateTourFeatureDto: UpdateTourFeatureDto,
+  ) {
+    return this.toursService.updateFeatureStatus(
+      id,
+      updateTourFeatureDto.isFeatured,
+    );
   }
 }

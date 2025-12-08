@@ -159,6 +159,7 @@ export class ToursService {
       maxEndDate,
       minPrice,
       maxPrice,
+      isFeatured,
       limit = 10,
       offset = 0,
       sortBy = 'id',
@@ -194,6 +195,9 @@ export class ToursService {
     }
     if (maxPrice !== undefined) {
       whereConditions.push(lte(schema.tours.price, maxPrice.toString()));
+    }
+    if (isFeatured !== undefined) {
+      whereConditions.push(eq(schema.tours.isFeatured, isFeatured));
     }
 
     // Типізуємо orderByColumn коректно, використовуючи columns з schema.tours
@@ -606,6 +610,24 @@ export class ToursService {
         throw error;
       }
     });
+  }
+
+  async updateFeatureStatus(id: number, isFeatured: boolean) {
+    const existingTour = await this.db.query.tours.findFirst({
+      where: eq(schema.tours.id, id),
+    });
+
+    if (!existingTour) {
+      throw new NotFoundException(`Tour with ID ${id} not found.`);
+    }
+
+    const [updatedTour] = await this.db
+      .update(schema.tours)
+      .set({ isFeatured, updatedAt: new Date() })
+      .where(eq(schema.tours.id, id))
+      .returning();
+
+    return updatedTour;
   }
 
   async remove(id: number, operatorId: number) {
