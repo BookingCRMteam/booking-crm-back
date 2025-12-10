@@ -273,4 +273,82 @@ export class BookingsService {
 
     return booking;
   }
+
+  async repayBooking(bookingId: number) {
+    const booking = await this.db.query.bookings.findFirst({
+      where: (bookings, { eq }) => eq(bookings.id, bookingId),
+      with: { tour: true },
+    });
+
+    if (!booking) {
+      throw new NotFoundException(`Booking with id ${bookingId} not found`);
+    }
+
+    if (booking.status !== 'pending_payment') {
+      throw new ConflictException(
+        `Booking with id ${bookingId} is not in pending_payment status`,
+      );
+    }
+
+    let paymentLink: string | undefined;
+    let paymentSessionId: string | undefined;
+
+    if (booking.paymentProvider === 'stripe') {
+      const session = await this.stripe.checkout.sessions.create({
+        line_items: [
+          {
+            price_data: {
+              currency: booking.currency,
+              product_data: {
+                name: `Booking for tour ${booking.tour.title}`,
+              },
+              unit_amount: Math.round(Number(booking.totalPrice) * 100),
+            },
+            quantity: 1,
+          },
+        ],
+        mode: 'payment',
+        success_url: `${process.env.FRONTEND_URL}/catalog/tour/${booking.tourId}?success=true&bookingId=${booking.id}`,
+        cancel_url: `${process.env.FRONTEND_URL}/catalog/tour/${booking.tourId}?cancelled=true&bookingId=${booking.id}`,
+        metadata: {
+          bookingId: booking.id.toString(),
+        },
+      });
+      paymentLink = session.url;
+      paymentSessionId = session.id;
+    } else if (booking.paymentProvider === 'liqpay') {
+      const orderId = `booking_${booking.id}_${Date.now()}`;
+      const liqpayParams = {
+        action: 'pay',
+        amount: Number(booking.totalPrice).toFixed(2),
+        currency: booking.currency,
+        description: `Booking for tour ${booking.tour.title}`,
+        order_id: orderId,
+        server_url: `${process.env.API_URL}/payments/liqpay-webhook`,
+        result_url: `${process.env.FRONTEND_URL}/catalog/tour/${booking.tourId}?success=true&bookingId=${booking.id}`,
+        version: 3,
+        language: 'en',
+      };
+      let liqpayPayment: string | undefined;
+      try {
+        liqpayPayment = this.liqpay.cnb_form(liqpayParams) ?? '';
+      } catch (error) {
+        console.error(error);
+        throw new Error('Error generating LiqPay payment');
+      }
+      paymentLink = liqpayPayment;
+      paymentSessionId = liqpayParams.order_id;
+    }
+
+    if (paymentSessionId) {
+      await this.db
+        .update(bookings)
+        .set({ paymentSessionId })
+        .where(eq(bookings.id, bookingId));
+    }
+
+    return {
+      paymentLink,
+    };
+  }
 }

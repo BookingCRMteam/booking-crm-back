@@ -57,4 +57,14 @@ export class BookingsController {
       Number(tourId),
     );
   }
+
+  @Post(':id/repay')
+  @ApiOperation({ summary: 'Repay a booking that is pending payment' })
+  @ApiResponse({
+    status: 200,
+    description: 'Payment link generated.',
+  })
+  async repay(@Param('id') id: string) {
+    return this.bookingsService.repayBooking(Number(id));
+  }
 }
