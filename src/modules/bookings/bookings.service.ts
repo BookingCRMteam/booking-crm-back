@@ -1,4 +1,5 @@
-import { count, sum } from 'drizzle-orm';
+import { count, sum, lt, and, isNotNull } from 'drizzle-orm';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import {
   ConflictException,
   Inject,
@@ -343,12 +344,32 @@ export class BookingsService {
     if (paymentSessionId) {
       await this.db
         .update(bookings)
-        .set({ paymentSessionId })
+        .set({ paymentSessionId, updatedAt: new Date() })
         .where(eq(bookings.id, bookingId));
     }
 
     return {
       paymentLink,
     };
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async handleCron() {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const expiredBookings = await this.db
+      .update(bookings)
+      .set({ status: 'expired' })
+      .where(
+        and(
+          eq(bookings.status, 'pending_payment'),
+          isNotNull(bookings.paymentSessionId),
+          lt(bookings.updatedAt, oneHourAgo),
+        ),
+      )
+      .returning();
+
+    if (expiredBookings.length > 0) {
+      console.log(`Expired ${expiredBookings.length} bookings.`);
+    }
   }
 }

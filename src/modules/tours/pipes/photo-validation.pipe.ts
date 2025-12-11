@@ -6,9 +6,9 @@ interface PhotoValidationOptions {
 }
 
 @Injectable()
-export class PhotoValidationPipe
-  implements PipeTransform<Express.Multer.File | Express.Multer.File[]>
-{
+export class PhotoValidationPipe implements PipeTransform<
+  Express.Multer.File | Express.Multer.File[]
+> {
   constructor(private readonly options: PhotoValidationOptions = {}) {}
 
   transform(value: Express.Multer.File | Express.Multer.File[]) {
