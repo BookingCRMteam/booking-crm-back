@@ -253,23 +253,32 @@ describe('OperatorService', () => {
   });
 
   describe('getPopularOperators', () => {
-    it('should get popular operators with active tours', async () => {
+    it('should get popular approved operators ranked by active tours and bookings', async () => {
       const popularOperators = [
-        { ...mockOperator, bookingsCount: 10, activeToursCount: 5 },
+        {
+          ...mockOperator,
+          status: 'approved',
+          bookingsCount: 12,
+          activeToursCount: 6,
+        },
       ];
 
       (mockDb.select as jest.Mock).mockReturnValue({
         from: jest.fn().mockReturnThis(),
         leftJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
         groupBy: jest.fn().mockReturnThis(),
-        having: jest.fn().mockReturnThis(), // Додаємо having
+        having: jest.fn().mockReturnThis(),
         orderBy: jest.fn().mockReturnThis(),
         limit: jest.fn().mockResolvedValue(popularOperators),
       });
 
-      const result = await service.getPopularOperators(1);
-      expect(result[0].bookingsCount).toBe(10);
-      expect(result[0].activeToursCount).toBe(5); // Перевіряємо нове поле
+      const result = await service.getPopularOperators(4);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].status).toBe('approved');
+      expect(result[0].activeToursCount).toBe(6);
+      expect(result[0].bookingsCount).toBe(12);
     });
   });
 });

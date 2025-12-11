@@ -268,7 +268,7 @@ export class OperatorService {
     return updatedOperator[0];
   }
 
-  async getPopularOperators(limit = 6) {
+  async getPopularOperators(limit = 4) {
     const operatorsWithActiveTours = await this.db
       .select({
         id: operatorSchema.operators.id,
@@ -285,20 +285,55 @@ export class OperatorService {
         status: operatorSchema.operators.status,
         philosophy: operatorSchema.operators.philosophy,
         photo: operatorSchema.operators.photo,
-        bookingsCount: sql<number>`COUNT(DISTINCT ${schema.bookings.id})`,
-        activeToursCount: sql<number>`COUNT(DISTINCT CASE WHEN ${schema.tours.isActive} = true THEN ${schema.tours.id} END)`,
+
+        bookingsCount: sql<number>`
+          COUNT(DISTINCT ${schema.bookings.id})
+        `,
+
+        activeToursCount: sql<number>`
+          COUNT(
+            DISTINCT CASE 
+            WHEN ${schema.tours.isActive} = true 
+            THEN ${schema.tours.id} 
+            END
+          )
+        `,
       })
       .from(operatorSchema.operators)
+
+      .where(eq(operatorSchema.operators.status, 'approved'))
+
       .leftJoin(
         schema.tours,
         eq(schema.tours.operatorId, operatorSchema.operators.id),
       )
       .leftJoin(schema.bookings, eq(schema.bookings.tourId, schema.tours.id))
+
       .groupBy(operatorSchema.operators.id)
+
       .having(
-        sql`COUNT(DISTINCT CASE WHEN ${schema.tours.isActive} = true THEN ${schema.tours.id} END) > 0`,
+        sql`
+          COUNT(
+            DISTINCT CASE 
+            WHEN ${schema.tours.isActive} = true 
+            THEN ${schema.tours.id} 
+            END
+          ) > 0
+        `,
       )
-      .orderBy(sql`COUNT(DISTINCT ${schema.bookings.id}) DESC`)
+
+      .orderBy(
+        sql`
+          COUNT(
+            DISTINCT CASE 
+            WHEN ${schema.tours.isActive} = true 
+            THEN ${schema.tours.id} 
+            END
+          ) DESC,
+          COUNT(DISTINCT ${schema.bookings.id}) DESC
+        `,
+      )
+
       .limit(limit);
 
     return operatorsWithActiveTours.map((op) => ({
