@@ -4,7 +4,7 @@ FROM node:22-alpine AS builder
 
 
 # Встановлюємо pnpm
-RUN npm install -g pnpm
+RUN npm install -g pnpm@8.8.0
 
 WORKDIR /usr/src/app
 
@@ -35,7 +35,7 @@ FROM node:22-alpine AS runner
 WORKDIR /usr/src/app
 
 # Встановлюємо pnpm
-RUN npm install -g pnpm
+RUN npm install -g pnpm@8.8.0
 
 # Копіюємо необхідне з builder
 COPY --from=builder /usr/src/app/node_modules ./node_modules
