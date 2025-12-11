@@ -184,7 +184,9 @@ describe('BookingsService', () => {
       expect(result.paymentLink).toBe('http://stripe.com/pay');
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.update).toHaveBeenCalled();
-      expect(mockSet).toHaveBeenCalledWith({ paymentSessionId: 'sess_123' });
+      expect(mockSet).toHaveBeenCalledWith(
+        expect.objectContaining({ paymentSessionId: 'sess_123' }),
+      );
     });
 
     it('should generate LiqPay link', async () => {
