@@ -10,6 +10,7 @@ describe('BookingsController', () => {
     createBooking: jest.fn(),
     getTourBookingStats: jest.fn(),
     getBookingWithTour: jest.fn(),
+    repayBooking: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -59,6 +60,20 @@ describe('BookingsController', () => {
 
       expect(result).toEqual(mockBooking);
       expect(mockBookingsService.getBookingWithTour).toHaveBeenCalledWith(1, 1);
+    });
+  });
+
+  describe('repay', () => {
+    it('should return payment link', async () => {
+      const bookingId = '1';
+      const mockResponse = { paymentLink: 'http://test.com/pay' };
+
+      mockBookingsService.repayBooking.mockResolvedValue(mockResponse);
+
+      const result = await controller.repay(bookingId);
+
+      expect(result).toEqual(mockResponse);
+      expect(mockBookingsService.repayBooking).toHaveBeenCalledWith(1);
     });
   });
 });

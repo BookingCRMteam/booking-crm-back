@@ -1,9 +1,11 @@
-import { count, sum } from 'drizzle-orm';
+import { count, sum, lt, and, isNotNull } from 'drizzle-orm';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import {
   ConflictException,
   Inject,
   Injectable,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import * as schema from '@app/db/schema/schema';
 import { bookings } from './bookings.schema';
@@ -37,6 +39,9 @@ export class BookingsService {
     @Inject('DRIZZLE_CLIENT')
     private db: NodePgDatabase<typeof schema>,
   ) {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error('STRIPE_SECRET_KEY is not set');
+    }
     this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: '2025-10-29.clover',
     });
@@ -156,56 +161,10 @@ export class BookingsService {
     });
 
     // 3. Згенерувати посилання для оплати залежно від провайдера
-    let paymentLink: string | undefined;
-    let paymentSessionId: string | undefined;
-
-    if (data.paymentProvider === 'stripe') {
-      const session = await this.stripe.checkout.sessions.create({
-        line_items: [
-          {
-            price_data: {
-              currency: newBooking.currency,
-              product_data: {
-                name: `Booking for tour ${tour.title}`,
-              },
-              unit_amount: Math.round(Number(newBooking.totalPrice) * 100),
-            },
-            quantity: 1,
-          },
-        ],
-        mode: 'payment',
-        success_url: `${process.env.FRONTEND_URL}/catalog/tour/${newBooking.tourId}?success=true&bookingId=${newBooking.id}`,
-        cancel_url: `${process.env.FRONTEND_URL}/catalog/tour/${newBooking.tourId}?cancelled=true&bookingId=${newBooking.id}`,
-        // Метадані для webhook
-        metadata: {
-          bookingId: newBooking.id.toString(),
-        },
-      });
-      paymentLink = session.url;
-      paymentSessionId = session.id;
-    } else if (data.paymentProvider === 'liqpay') {
-      const orderId = `booking_${newBooking.id}_${Date.now()}`;
-      const liqpayParams = {
-        action: 'pay',
-        amount: Number(newBooking.totalPrice).toFixed(2),
-        currency: newBooking.currency,
-        description: `Booking for tour ${tour.title}`,
-        order_id: orderId,
-        server_url: `${process.env.API_URL}/payments/liqpay-webhook`,
-        result_url: `${process.env.FRONTEND_URL}/catalog/tour/${newBooking.tourId}?success=true&bookingId=${newBooking.id}`,
-        version: 3,
-        language: 'en',
-      };
-      let liqpayPayment: string | undefined;
-      try {
-        liqpayPayment = this.liqpay.cnb_form(liqpayParams) ?? '';
-      } catch (error) {
-        console.error(error);
-        throw new Error('Error generating LiqPay payment');
-      }
-      paymentLink = liqpayPayment;
-      paymentSessionId = liqpayParams.order_id;
-    }
+    const { paymentLink, paymentSessionId } = await this.generatePaymentLink(
+      newBooking,
+      tour.title,
+    );
 
     // 4. Оновити бронювання з ідентифікатором сесії оплати
     await this.db
@@ -272,5 +231,151 @@ export class BookingsService {
     }
 
     return booking;
+  }
+
+  async repayBooking(bookingId: number) {
+    const booking = await this.db.query.bookings.findFirst({
+      where: (bookings, { eq }) => eq(bookings.id, bookingId),
+      with: { tour: true },
+    });
+
+    if (!booking) {
+      throw new NotFoundException(`Booking with id ${bookingId} not found`);
+    }
+
+    if (booking.status !== 'pending_payment') {
+      throw new ConflictException(
+        `Booking with id ${bookingId} is not in pending_payment status`,
+      );
+    }
+
+    if (
+      !booking.paymentProvider ||
+      !['stripe', 'liqpay'].includes(booking.paymentProvider)
+    ) {
+      throw new BadRequestException(
+        `Unsupported or missing payment provider: ${booking.paymentProvider}`,
+      );
+    }
+
+    const { paymentLink, paymentSessionId } = await this.generatePaymentLink(
+      booking,
+      booking.tour.title,
+    );
+
+    if (paymentSessionId) {
+      await this.db
+        .update(bookings)
+        .set({ paymentSessionId, updatedAt: new Date() })
+        .where(eq(bookings.id, bookingId));
+    }
+
+    return {
+      paymentLink,
+    };
+  }
+
+  private async generatePaymentLink(
+    booking: typeof bookings.$inferSelect,
+    tourTitle: string,
+  ): Promise<{ paymentLink: string; paymentSessionId: string }> {
+    let paymentLink: string | undefined;
+    let paymentSessionId: string | undefined;
+
+    if (booking.paymentProvider === 'stripe') {
+      try {
+        const session = await this.stripe.checkout.sessions.create({
+          line_items: [
+            {
+              price_data: {
+                currency: booking.currency.toLowerCase(),
+                product_data: {
+                  name: `Booking for tour ${tourTitle}`,
+                },
+                unit_amount: Math.round(Number(booking.totalPrice) * 100),
+              },
+              quantity: 1,
+            },
+          ],
+          mode: 'payment',
+          success_url: `${process.env.FRONTEND_URL}/catalog/tour/${booking.tourId}?success=true&bookingId=${booking.id}`,
+          cancel_url: `${process.env.FRONTEND_URL}/catalog/tour/${booking.tourId}?cancelled=true&bookingId=${booking.id}`,
+          metadata: {
+            bookingId: booking.id.toString(),
+          },
+        });
+        if (!session.url) {
+          throw new Error('Stripe returned null session.url');
+        }
+        paymentLink = session.url;
+        paymentSessionId = session.id;
+      } catch (error) {
+        console.error('Stripe error:', error);
+        throw new BadRequestException(
+          'Failed to generate Stripe payment link. Please check configuration.',
+        );
+      }
+    } else if (booking.paymentProvider === 'liqpay') {
+      const orderId = `booking_${booking.id}_${Date.now()}`;
+      const liqpayParams = {
+        action: 'pay',
+        amount: Number(booking.totalPrice).toFixed(2),
+        currency: booking.currency,
+        description: `Booking for tour ${tourTitle}`,
+        order_id: orderId,
+        server_url: `${process.env.API_URL}/payments/liqpay-webhook`,
+        result_url: `${process.env.FRONTEND_URL}/catalog/tour/${booking.tourId}?success=true&bookingId=${booking.id}`,
+        version: 3,
+        language: 'en',
+      };
+      try {
+        const liqpayPayment = this.liqpay.cnb_form(liqpayParams);
+        if (!liqpayPayment) {
+          throw new Error('LiqPay returned empty payment form');
+        }
+        paymentLink = liqpayPayment;
+        paymentSessionId = liqpayParams.order_id;
+      } catch (error) {
+        console.error('LiqPay error:', error);
+        throw new BadRequestException(
+          'Failed to generate LiqPay payment link.',
+        );
+      }
+    } else {
+      // Should act as a fallback if the caller didn't check,
+      // though calls from repayBooking are guarded.
+      throw new BadRequestException(
+        `Unsupported payment provider: ${booking.paymentProvider}`,
+      );
+    }
+
+    if (!paymentLink) {
+      throw new BadRequestException('Could not generate a valid payment link.');
+    }
+
+    if (!paymentSessionId) {
+      throw new BadRequestException('Could not determine payment session id.');
+    }
+    return { paymentLink, paymentSessionId };
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async handleCron() {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const expiredBookings = await this.db
+      .update(bookings)
+      .set({ status: 'expired' })
+      .where(
+        and(
+          eq(bookings.status, 'pending_payment'),
+          isNotNull(bookings.paymentSessionId),
+          lt(bookings.updatedAt, oneHourAgo),
+        ),
+      )
+      .returning();
+
+    if (expiredBookings.length > 0) {
+      console.log(`Expired ${expiredBookings.length} bookings.`);
+    }
   }
 }
