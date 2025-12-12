@@ -288,7 +288,7 @@ export class BookingsService {
           line_items: [
             {
               price_data: {
-                currency: booking.currency,
+                currency: booking.currency.toLowerCase(),
                 product_data: {
                   name: `Booking for tour ${tourTitle}`,
                 },
@@ -304,6 +304,9 @@ export class BookingsService {
             bookingId: booking.id.toString(),
           },
         });
+        if (!session.url) {
+          throw new Error('Stripe returned null session.url');
+        }
         paymentLink = session.url;
         paymentSessionId = session.id;
       } catch (error) {
@@ -350,7 +353,10 @@ export class BookingsService {
       throw new BadRequestException('Could not generate a valid payment link.');
     }
 
-    return { paymentLink, paymentSessionId: paymentSessionId || '' };
+    if (!paymentSessionId) {
+      throw new BadRequestException('Could not determine payment session id.');
+    }
+    return { paymentLink, paymentSessionId };
   }
 
   @Cron(CronExpression.EVERY_MINUTE)
