@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Install pnpm
-        run: npm install -g pnpm@8.8.0
+        run: npm install -g pnpm@latest-10
 
       - name: Checkout repository
         uses: actions/checkout@v4
