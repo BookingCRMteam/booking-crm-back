@@ -8,6 +8,6 @@ import { UserModule } from '../user/user.module';
   imports: [forwardRef(() => UserModule)],
   controllers: [BookingsController],
   providers: [BookingsService, BookingGateway],
-  exports: [BookingGateway],
+  exports: [BookingsService, BookingGateway],
 })
 export class BookingsModule {}

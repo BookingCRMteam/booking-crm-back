@@ -7,7 +7,7 @@ import {
   UseGuards,
   Param,
   Post,
-  BadRequestException,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiConsumes,
@@ -85,39 +85,30 @@ export class UserController {
     description: 'User booking details',
     type: UserBookingResponseDto,
   })
-  getUserBooking(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
-    console.log('REQ.USER', req.user); // перевірка, чи є user
-    const bookingId = Number(id);
-    if (isNaN(bookingId)) throw new BadRequestException('Invalid booking ID');
+  getUserBooking(
+    @Param('id', ParseIntPipe) bookingId: number,
+    @Req() req: AuthenticatedRequest,
+  ) {
     return this.bookingsService.getBookingByUser(req.user.id, bookingId);
   }
-  @UseGuards(JwtAuthGuard)
+
   @Post('bookings/:id/retry-payment')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Retry payment for pending booking' })
   @ApiResponse({
     status: 200,
     description: 'Returns payment link for retry',
-    schema: {
-      example: {
-        paymentLink: 'https://checkout.stripe.com/...',
-      },
-    },
+    schema: { example: { paymentLink: 'https://checkout.stripe.com/...' } },
   })
   @ApiResponse({
     status: 400,
     description: 'Booking is not in pending_payment status',
   })
-  @ApiResponse({
-    status: 404,
-    description: 'Booking not found',
-  })
+  @ApiResponse({ status: 404, description: 'Booking not found' })
   async retryBookingPayment(
-    @Param('id') bookingId: string,
+    @Param('id', ParseIntPipe) bookingId: number,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.paymentsService.createPaymentForBooking(
-      req.user.id,
-      Number(bookingId),
-    );
+    return this.paymentsService.createPaymentForBooking(req.user.id, bookingId);
   }
 }

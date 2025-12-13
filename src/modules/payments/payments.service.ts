@@ -48,7 +48,24 @@ export class PaymentsService {
       throw new BadRequestException('Booking is not in pending_payment status');
     }
 
-    const paymentLink = `https://checkout.stripe.com/pay/${booking.id}`;
+    const session = await this.stripe.checkout.sessions.create({
+      line_items: [
+        {
+          price_data: {
+            currency: booking.currency,
+            product_data: { name: `Retry payment for booking #${booking.id}` },
+            unit_amount: Math.round(Number(booking.totalPrice) * 100),
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      success_url: `${process.env.FRONTEND_URL}/catalog/tour/${booking.tourId}?success=true&bookingId=${booking.id}`,
+      cancel_url: `${process.env.FRONTEND_URL}/catalog/tour/${booking.tourId}?cancelled=true&bookingId=${booking.id}`,
+      metadata: { bookingId: booking.id.toString() },
+    });
+
+    const paymentLink = session.url ?? null;
 
     return { paymentLink };
   }

@@ -8,5 +8,6 @@ import { EmailQueueModule } from '../email-queue/email-queue.module';
   imports: [forwardRef(() => BookingsModule), EmailQueueModule],
   controllers: [PaymentsController],
   providers: [PaymentsService],
+  exports: [PaymentsService],
 })
 export class PaymentsModule {}
