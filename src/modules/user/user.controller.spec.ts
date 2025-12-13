@@ -2,6 +2,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
+import { BookingsService } from '@app/modules/bookings/bookings.service';
+import { PaymentsService } from '@app/modules/payments/payments.service';
 import { JwtAuthGuard } from '@app/common/guards/jwt-auth.guard';
 import { AuthenticatedRequest } from '@app/types/authenticated.request';
 import { UpdateUserInfoDto } from './dto/updateUserInfo.dto';
@@ -9,7 +11,7 @@ import { User } from './user.schema';
 
 describe('UserController', () => {
   let controller: UserController;
-  let service: UserService;
+  let userService: UserService;
 
   const mockUser: User = {
     id: 1,
@@ -31,6 +33,15 @@ describe('UserController', () => {
     getById: jest.fn(),
   };
 
+  const mockBookingsService = {
+    getBookingsByUser: jest.fn(),
+    getBookingByUser: jest.fn(),
+  };
+
+  const mockPaymentsService = {
+    createPaymentForBooking: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UserController],
@@ -39,6 +50,14 @@ describe('UserController', () => {
           provide: UserService,
           useValue: mockUserService,
         },
+        {
+          provide: BookingsService,
+          useValue: mockBookingsService,
+        },
+        {
+          provide: PaymentsService,
+          useValue: mockPaymentsService,
+        },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -46,7 +65,7 @@ describe('UserController', () => {
       .compile();
 
     controller = module.get<UserController>(UserController);
-    service = module.get<UserService>(UserService);
+    userService = module.get<UserService>(UserService);
   });
 
   it('should be defined', () => {
@@ -61,7 +80,7 @@ describe('UserController', () => {
       mockUserService.updateUser.mockResolvedValue(updatedUser);
 
       const result = await controller.updateUser(updateUserDto, req);
-      expect(service.updateUser).toHaveBeenCalledWith(1, updateUserDto);
+      expect(userService.updateUser).toHaveBeenCalledWith(1, updateUserDto);
       expect(result).toEqual(updatedUser);
     });
   });
@@ -72,7 +91,7 @@ describe('UserController', () => {
       mockUserService.getById.mockResolvedValue(mockUser);
 
       const result = await controller.getMe(req);
-      expect(service.getById).toHaveBeenCalledWith(1);
+      expect(userService.getById).toHaveBeenCalledWith(1);
       expect(result).toEqual(mockUser);
     });
   });

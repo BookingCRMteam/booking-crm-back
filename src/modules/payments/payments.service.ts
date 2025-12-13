@@ -35,7 +35,23 @@ export class PaymentsService {
       process.env.LIQPAY_PRIVATE_KEY,
     );
   }
+  async createPaymentForBooking(userId: number, bookingId: number) {
+    const booking = await this.db.query.bookings.findFirst({
+      where: (bookings, { eq }) => eq(bookings.id, bookingId),
+    });
 
+    if (!booking || booking.userId !== userId) {
+      throw new BadRequestException('Booking not found or access denied');
+    }
+
+    if (booking.status !== 'pending_payment') {
+      throw new BadRequestException('Booking is not in pending_payment status');
+    }
+
+    const paymentLink = `https://checkout.stripe.com/pay/${booking.id}`;
+
+    return { paymentLink };
+  }
   async handleStripeWebhook(req: RawBodyRequest<Request>, signature: string) {
     if (!process.env.STRIPE_WEBHOOK_SECRET) {
       throw new InternalServerErrorException(
