@@ -255,6 +255,28 @@ describe('ToursService', () => {
 
       expect(mockDb.query.tours.findMany).toHaveBeenCalled();
     });
+
+    it('should filter tours by operatorId', async () => {
+      const query: GetToursQueryDto = {
+        operatorId: 1,
+        limit: 10,
+        offset: 0,
+      };
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      mockDb.query.tours.findMany.mockResolvedValue([
+        { ...mockTour, photos: [] },
+      ] as any);
+      const mockCount = [{ count: 1 }];
+      const mockSelect = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockResolvedValue(mockCount),
+      };
+      (mockDb.select as jest.Mock).mockReturnValue(mockSelect);
+
+      await service.findAll(query);
+
+      expect(mockDb.query.tours.findMany).toHaveBeenCalled();
+    });
   });
 
   describe('remove', () => {

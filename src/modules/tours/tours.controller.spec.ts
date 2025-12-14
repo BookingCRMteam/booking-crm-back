@@ -302,6 +302,26 @@ describe('ToursController', () => {
 
       expect(toursService.findAll).toHaveBeenCalledWith(query);
     });
+
+    it('should filter tours by operatorId', async () => {
+      const query: GetToursQueryDto = {
+        operatorId: 1,
+        limit: 10,
+        offset: 0,
+      };
+      const expectedResult = {
+        tours: [mockTour],
+        total: 1,
+        limit: 10,
+        offset: 0,
+      };
+
+      mockToursService.findAll.mockResolvedValue(expectedResult);
+
+      await controller.findAll(query);
+
+      expect(toursService.findAll).toHaveBeenCalledWith(query);
+    });
   });
 
   describe('findOne', () => {
