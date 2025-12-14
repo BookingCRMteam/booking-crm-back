@@ -221,18 +221,17 @@ export class BookingsService {
   async getBookingsByUser(userId: number) {
     const bookings = await this.db.query.bookings.findMany({
       where: (b, { eq }) => eq(b.userId, userId),
-      with: { tour: true },
+      with: { tour: { with: { photos: true } } },
       orderBy: (b, { desc }) => desc(b.createdAt),
     });
 
-    // Для масиву викликаємо мапер напряму
     return bookings.map((booking) => UserBookingMapper.toResponse(booking));
   }
 
   async getBookingByUser(userId: number, bookingId: number) {
     const booking = await this.db.query.bookings.findFirst({
       where: (b, { eq, and }) => and(eq(b.id, bookingId), eq(b.userId, userId)),
-      with: { tour: true },
+      with: { tour: { with: { photos: true } } },
     });
 
     if (!booking) {
@@ -277,7 +276,6 @@ export class BookingsService {
       }
     }
 
-    // Один об’єкт — викликаємо мапер напряму
     return UserBookingMapper.toResponse(booking, paymentLink);
   }
   async getBookingWithTour(bookingId: number, tourId: number) {
@@ -288,9 +286,7 @@ export class BookingsService {
           eq(bookings.tourId, tourId),
           inArray(bookings.status, ['confirmed', 'pending_payment']),
         ),
-      with: {
-        tour: true,
-      },
+      with: { tour: { with: { photos: true } } },
     });
 
     if (!booking) {
@@ -305,7 +301,7 @@ export class BookingsService {
   async repayBooking(bookingId: number) {
     const booking = await this.db.query.bookings.findFirst({
       where: (bookings, { eq }) => eq(bookings.id, bookingId),
-      with: { tour: true },
+      with: { tour: { with: { photos: true } } },
     });
 
     if (!booking) {
@@ -427,7 +423,7 @@ export class BookingsService {
     }
     return { paymentLink, paymentSessionId };
   }
-
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
   @Cron(CronExpression.EVERY_MINUTE)
   async handleCron() {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
