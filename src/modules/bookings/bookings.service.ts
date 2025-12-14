@@ -277,8 +277,12 @@ export class BookingsService {
   }
   async getBookingWithTour(bookingId: number, tourId: number) {
     const booking = await this.db.query.bookings.findFirst({
-      where: (bookings, { eq, and }) =>
-        and(eq(bookings.id, bookingId), eq(bookings.tourId, tourId)),
+      where: (bookings, { eq, and, inArray }) =>
+        and(
+          eq(bookings.id, bookingId),
+          eq(bookings.tourId, tourId),
+          inArray(bookings.status, ['confirmed', 'pending_payment']),
+        ),
       with: {
         tour: true,
       },
