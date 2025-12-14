@@ -1,4 +1,4 @@
-import { count, sum, lt, and, isNotNull } from 'drizzle-orm';
+import { count, sum, lt, and, isNotNull, inArray } from 'drizzle-orm';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import {
   ConflictException,
@@ -198,7 +198,12 @@ export class BookingsService {
         totalPeople: sum(bookings.numberOfPeople),
       })
       .from(bookings)
-      .where(eq(bookings.tourId, tourId))
+      .where(
+        and(
+          eq(bookings.tourId, tourId),
+          inArray(bookings.status, ['confirmed', 'pending_payment']),
+        ),
+      )
       .execute();
     const stats = result[0] ?? { totalBookings: 0, totalPeople: 0 };
 
