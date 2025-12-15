@@ -221,17 +221,71 @@ export class BookingsService {
   async getBookingsByUser(userId: number) {
     const bookings = await this.db.query.bookings.findMany({
       where: (b, { eq }) => eq(b.userId, userId),
-      with: { tour: { with: { photos: true } } },
-      orderBy: (b, { desc }) => desc(b.createdAt),
+
+      with: {
+        tour: {
+          with: {
+            photos: true,
+            operator: {
+              columns: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                photo: true,
+              },
+            },
+            city: {
+              with: {
+                translations: true,
+              },
+            },
+            country: {
+              with: {
+                translations: true,
+              },
+            },
+          },
+        },
+      },
+
+      orderBy: (b, { desc, sql }) => [
+        // pending_payment — першими
+        sql`CASE WHEN ${b.status} = 'pending_payment' THEN 0 ELSE 1 END`,
+        desc(b.createdAt),
+      ],
     });
 
     return bookings.map((booking) => UserBookingMapper.toResponse(booking));
   }
-
   async getBookingByUser(userId: number, bookingId: number) {
     const booking = await this.db.query.bookings.findFirst({
       where: (b, { eq, and }) => and(eq(b.id, bookingId), eq(b.userId, userId)),
-      with: { tour: { with: { photos: true } } },
+
+      with: {
+        tour: {
+          with: {
+            photos: true,
+            operator: {
+              columns: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                photo: true,
+              },
+            },
+            city: {
+              with: {
+                translations: true,
+              },
+            },
+            country: {
+              with: {
+                translations: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!booking) {
@@ -258,26 +312,29 @@ export class BookingsService {
           cancel_url: `${process.env.FRONTEND_URL}/catalog/tour/${booking.tourId}?cancelled=true&bookingId=${booking.id}`,
           metadata: { bookingId: booking.id.toString() },
         });
+
         paymentLink = session.url;
       } else if (booking.paymentProvider === 'liqpay') {
         const orderId = `booking_${booking.id}_${Date.now()}`;
-        const liqpayParams = {
-          action: 'pay',
-          amount: Number(booking.totalPrice).toFixed(2),
-          currency: booking.currency,
-          description: `Booking for tour ${booking.tour.title}`,
-          order_id: orderId,
-          server_url: `${process.env.API_URL}/payments/liqpay-webhook`,
-          result_url: `${process.env.FRONTEND_URL}/catalog/tour/${booking.tourId}?bookingId=${booking.id}`,
-          version: 3,
-          language: 'en',
-        };
-        paymentLink = this.liqpay.cnb_form(liqpayParams) ?? '';
+
+        paymentLink =
+          this.liqpay.cnb_form({
+            action: 'pay',
+            amount: Number(booking.totalPrice).toFixed(2),
+            currency: booking.currency,
+            description: `Booking for tour ${booking.tour.title}`,
+            order_id: orderId,
+            server_url: `${process.env.API_URL}/payments/liqpay-webhook`,
+            result_url: `${process.env.FRONTEND_URL}/catalog/tour/${booking.tourId}?bookingId=${booking.id}`,
+            version: 3,
+            language: 'en',
+          }) ?? null;
       }
     }
 
     return UserBookingMapper.toResponse(booking, paymentLink);
   }
+
   async getBookingWithTour(bookingId: number, tourId: number) {
     const booking = await this.db.query.bookings.findFirst({
       where: (bookings, { eq, and, inArray }) =>
