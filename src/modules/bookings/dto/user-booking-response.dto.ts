@@ -14,6 +14,39 @@ class TourPhotoDto {
   description?: string;
 }
 
+/* 🔹 НОВЕ */
+class OperatorShortDto {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty()
+  firstName: string;
+
+  @ApiProperty()
+  lastName: string;
+
+  @ApiProperty({ nullable: true })
+  photo: string | null;
+}
+
+/* 🔹 НОВЕ */
+class CityShortDto {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty()
+  name: string;
+}
+
+/* 🔹 НОВЕ */
+class CountryShortDto {
+  @ApiProperty()
+  iso2: string;
+
+  @ApiProperty()
+  name: string;
+}
+
 class TourShortDto {
   @ApiProperty()
   id: number;
@@ -41,8 +74,10 @@ class TourShortDto {
 
   @ApiProperty()
   currency: string;
+
   @ApiProperty()
   startDate: string;
+
   @ApiProperty()
   endDate: string;
 
@@ -66,6 +101,16 @@ class TourShortDto {
 
   @ApiProperty({ type: [TourPhotoDto], required: false })
   photos?: TourPhotoDto[];
+
+  /* 🔥 ДОДАЛИ */
+  @ApiProperty({ nullable: true })
+  operator?: OperatorShortDto | null;
+
+  @ApiProperty({ nullable: true })
+  city?: CityShortDto | null;
+
+  @ApiProperty({ nullable: true })
+  country?: CountryShortDto | null;
 }
 
 export class UserBookingResponseDto {
