@@ -15,7 +15,9 @@ lerna-debug.log*
 # pnpm store (якщо ще лишився)
 .pnpm-store/
 Dockerfile.dev
-
+# Node lock files
+package-lock.json
+pnpm-lock.yaml
 # Docker
 docker-compose.override.yml
 .docker/
