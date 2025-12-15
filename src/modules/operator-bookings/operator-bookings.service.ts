@@ -62,7 +62,10 @@ export class OperatorBookingsService {
       .from(bookings)
       .innerJoin(tours, eq(bookings.tourId, tours.id))
       .where(
-        and(inArray(bookings.tourId, tourIds), eq(bookings.status, 'paid')),
+        and(
+          inArray(bookings.tourId, tourIds),
+          eq(bookings.status, 'confirmed'),
+        ),
       );
 
     return result.map((b) => ({
