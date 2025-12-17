@@ -95,8 +95,9 @@ export class BookingsService {
       );
     }
 
-    const totalPrice = (Number(tour.price) * data.numberOfPeople) / 2;
-
+    // Price is per couple (2 people), so divide numberOfPeople by 2 to get number of couples
+    const numberOfCouples = data.numberOfPeople / 2;
+    const totalPrice = Number(tour.price) * numberOfCouples;
     const newBooking = await this.db.transaction(async (tx) => {
       const [tourForUpdate] = await tx
         .select()
