@@ -1,4 +1,4 @@
-import { count, sum, lt, and, isNotNull, inArray } from 'drizzle-orm';
+import { count, sum, lt, and, isNotNull, inArray, eq } from 'drizzle-orm';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import {
   ConflictException,
@@ -12,7 +12,6 @@ import { bookings } from './bookings.schema';
 import LiqPay from 'liqpayjs-sdk'; // <-- Змінено тут
 import Stripe from 'stripe';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { eq } from 'drizzle-orm';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UserBookingMapper } from './mappers/user-booking.mapper';
 
@@ -218,10 +217,26 @@ export class BookingsService {
       totalPeople: Number(stats.totalPeople),
     };
   }
-  async getBookingsByUser(userId: number) {
-    const bookings = await this.db.query.bookings.findMany({
-      where: (b, { eq }) => eq(b.userId, userId),
 
+  async getBookingsByUser(
+    userId: number,
+    query?: {
+      status?: string;
+      limit?: number;
+      offset?: number;
+    },
+  ) {
+    const limit = query?.limit;
+    const offset = query?.offset ?? 0;
+
+    const whereConditions = [eq(bookings.userId, userId)];
+
+    if (query?.status) {
+      whereConditions.push(eq(bookings.status, query.status));
+    }
+
+    const data = await this.db.query.bookings.findMany({
+      where: and(...whereConditions),
       with: {
         tour: {
           with: {
@@ -234,29 +249,22 @@ export class BookingsService {
                 photo: true,
               },
             },
-            city: {
-              with: {
-                translations: true,
-              },
-            },
-            country: {
-              with: {
-                translations: true,
-              },
-            },
+            city: { with: { translations: true } },
+            country: { with: { translations: true } },
           },
         },
       },
-
       orderBy: (b, { desc, sql }) => [
-        // pending_payment — першими
         sql`CASE WHEN ${b.status} = 'pending_payment' THEN 0 ELSE 1 END`,
         desc(b.createdAt),
       ],
+      limit: limit,
+      offset: offset || 0,
     });
 
-    return bookings.map((booking) => UserBookingMapper.toResponse(booking));
+    return data.map((booking) => UserBookingMapper.toResponse(booking));
   }
+
   async getBookingByUser(userId: number, bookingId: number) {
     const booking = await this.db.query.bookings.findFirst({
       where: (b, { eq, and }) => and(eq(b.id, bookingId), eq(b.userId, userId)),
@@ -480,7 +488,7 @@ export class BookingsService {
     }
     return { paymentLink, paymentSessionId };
   }
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+
   @Cron(CronExpression.EVERY_MINUTE)
   async handleCron() {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);

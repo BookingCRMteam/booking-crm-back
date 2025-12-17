@@ -8,6 +8,7 @@ import {
   Param,
   Post,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import {
   ApiConsumes,
@@ -23,6 +24,8 @@ import { UpdateUserInfoDto } from './dto/updateUserInfo.dto';
 import { BookingsService } from '@app/modules/bookings/bookings.service';
 import { UserBookingResponseDto } from '@app/modules/bookings/dto/user-booking-response.dto';
 import { PaymentsService } from '@app/modules/payments/payments.service';
+import { GetUserBookingsQueryDto } from '@app/modules/bookings/dto/get-user-bookings.query.dto';
+
 @ApiTags('User')
 @Controller('user')
 export class UserController {
@@ -69,15 +72,14 @@ export class UserController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @ApiResponse({
-    status: 200,
-    description: 'List of user bookings',
-    type: [UserBookingResponseDto],
-  })
   @Get('bookings')
-  getUserBookings(@Req() req: AuthenticatedRequest) {
-    return this.bookingsService.getBookingsByUser(req.user.id);
+  getUserBookings(
+    @Req() req: AuthenticatedRequest,
+    @Query() query: GetUserBookingsQueryDto,
+  ) {
+    return this.bookingsService.getBookingsByUser(req.user.id, query);
   }
+
   @Get('bookings/:id')
   @UseGuards(JwtAuthGuard)
   @ApiResponse({
