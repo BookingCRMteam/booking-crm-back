@@ -1,0 +1,1 @@
+ALTER TABLE "tours" ADD COLUMN "booked_spots" integer DEFAULT 0 NOT NULL;

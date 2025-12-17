@@ -95,8 +95,9 @@ export class BookingsService {
       );
     }
 
-    const totalPrice = Number(tour.price) * data.numberOfPeople;
-
+    // Price is per couple (2 people), so divide numberOfPeople by 2 to get number of couples
+    const numberOfCouples = data.numberOfPeople / 2;
+    const totalPrice = Number(tour.price) * numberOfCouples;
     const newBooking = await this.db.transaction(async (tx) => {
       const [tourForUpdate] = await tx
         .select()
@@ -480,7 +481,7 @@ export class BookingsService {
     }
     return { paymentLink, paymentSessionId };
   }
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+
   @Cron(CronExpression.EVERY_MINUTE)
   async handleCron() {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
