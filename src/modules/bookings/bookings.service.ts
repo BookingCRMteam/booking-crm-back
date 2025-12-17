@@ -95,7 +95,7 @@ export class BookingsService {
       );
     }
 
-    const totalPrice = Number(tour.price) * data.numberOfPeople;
+    const totalPrice = (Number(tour.price) * data.numberOfPeople) / 2;
 
     const newBooking = await this.db.transaction(async (tx) => {
       const [tourForUpdate] = await tx
@@ -480,7 +480,7 @@ export class BookingsService {
     }
     return { paymentLink, paymentSessionId };
   }
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+
   @Cron(CronExpression.EVERY_MINUTE)
   async handleCron() {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
