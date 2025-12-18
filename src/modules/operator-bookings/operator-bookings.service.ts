@@ -53,9 +53,7 @@ export class OperatorBookingsService {
         startDate: tours.startDate,
         endDate: tours.endDate,
         customerName: sql`
-        ${bookings.firstPersonName} || ' ' || ${bookings.firstPersonSurname} ||
-         ' та ' ||
-        ${bookings.secondPersonName} || ' ' || ${bookings.secondPersonSurname}
+        ${bookings.firstPersonName} || ' та ' || ${bookings.secondPersonName}
         `.as('customer_name'),
         customerPhone: bookings.phone,
       })
