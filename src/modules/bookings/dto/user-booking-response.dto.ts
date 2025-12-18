@@ -14,7 +14,6 @@ class TourPhotoDto {
   description?: string;
 }
 
-/* 🔹 НОВЕ */
 class OperatorShortDto {
   @ApiProperty()
   id: number;
@@ -29,7 +28,6 @@ class OperatorShortDto {
   photo: string | null;
 }
 
-/* 🔹 НОВЕ */
 class CityShortDto {
   @ApiProperty()
   id: number;
@@ -38,7 +36,6 @@ class CityShortDto {
   name: string;
 }
 
-/* 🔹 НОВЕ */
 class CountryShortDto {
   @ApiProperty()
   iso2: string;
