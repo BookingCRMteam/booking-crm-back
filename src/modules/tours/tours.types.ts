@@ -49,6 +49,8 @@ export interface Tour {
   startDate: string;
   endDate: string;
   availableSpots: number;
+  bookedSpots?: number | null;
+  totalSpots?: number | null;
   conditions?: string | null;
   isActive?: boolean;
   isFeatured?: boolean | null;

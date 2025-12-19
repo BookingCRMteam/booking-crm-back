@@ -44,6 +44,9 @@ export const tours = pgTable(
     endDate: date('end_date').notNull(),
     availableSpots: integer('available_spots').notNull(),
     bookedSpots: integer('booked_spots').default(0),
+    totalSpots: integer('total_spots').generatedAlwaysAs(
+      sql`"available_spots" + COALESCE("booked_spots", 0)`,
+    ),
     conditions: text('conditions'),
     isActive: boolean('is_active').default(true),
     isFeatured: boolean('is_featured').default(false),

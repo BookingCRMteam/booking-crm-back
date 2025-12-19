@@ -1,0 +1,2 @@
+ALTER TABLE "tours" ALTER COLUMN "booked_spots" DROP NOT NULL;--> statement-breakpoint
+ALTER TABLE "tours" ADD COLUMN "total_spots" integer GENERATED ALWAYS AS ("available_spots" + COALESCE("booked_spots", 0)) STORED;
