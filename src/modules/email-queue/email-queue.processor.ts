@@ -2,7 +2,10 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import Mailjet from 'node-mailjet';
-import { BookingConfirmationEmailData } from './email-queue.service';
+import {
+  BookingConfirmationEmailData,
+  OperatorEmailData,
+} from './email-queue.service';
 
 @Processor('email')
 export class EmailQueueProcessor extends WorkerHost {
@@ -17,12 +20,208 @@ export class EmailQueueProcessor extends WorkerHost {
     });
   }
 
-  async process(job: Job<BookingConfirmationEmailData>): Promise<void> {
+  async process(
+    job: Job<BookingConfirmationEmailData | OperatorEmailData>,
+  ): Promise<void> {
     this.logger.log(`Processing job ${job.id} of type ${job.name}`);
 
     if (job.name === 'booking-confirmation') {
-      await this.sendBookingConfirmationEmail(job.data);
+      await this.sendBookingConfirmationEmail(
+        job.data as BookingConfirmationEmailData,
+      );
+    } else if (job.name === 'operator-new-booking') {
+      await this.sendOperatorNewBookingEmail(job.data as OperatorEmailData);
+    } else if (job.name === 'operator-booking-paid') {
+      await this.sendOperatorBookingPaidEmail(job.data as OperatorEmailData);
     }
+  }
+
+  private async sendOperatorNewBookingEmail(
+    data: OperatorEmailData,
+  ): Promise<void> {
+    const { email, operatorName, bookingDetails } = data;
+
+    try {
+      const request = this.mailjet.post('send', { version: 'v3.1' }).request({
+        Messages: [
+          {
+            From: {
+              Email: process.env.MAILJET_FROM_EMAIL || 'noreply@bookingcrm.com',
+              Name: process.env.MAILJET_FROM_NAME || 'Booking CRM',
+            },
+            To: [
+              {
+                Email: email,
+                Name: operatorName,
+              },
+            ],
+            Subject: `New Booking Request - #${bookingDetails.id}`,
+            TextPart: this.generateOperatorNewBookingText(data),
+            HTMLPart: this.generateOperatorNewBookingHtml(data),
+          },
+        ],
+      });
+
+      await request;
+      this.logger.log(`Operator new booking email sent to ${email}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to send operator new booking email to ${email}`,
+        error instanceof Error ? error.stack : JSON.stringify(error),
+      );
+      throw error;
+    }
+  }
+
+  private async sendOperatorBookingPaidEmail(
+    data: OperatorEmailData,
+  ): Promise<void> {
+    const { email, operatorName, bookingDetails } = data;
+
+    try {
+      const request = this.mailjet.post('send', { version: 'v3.1' }).request({
+        Messages: [
+          {
+            From: {
+              Email: process.env.MAILJET_FROM_EMAIL || 'noreply@bookingcrm.com',
+              Name: process.env.MAILJET_FROM_NAME || 'Booking CRM',
+            },
+            To: [
+              {
+                Email: email,
+                Name: operatorName,
+              },
+            ],
+            Subject: `Booking Paid - #${bookingDetails.id}`,
+            TextPart: this.generateOperatorBookingPaidText(data),
+            HTMLPart: this.generateOperatorBookingPaidHtml(data),
+          },
+        ],
+      });
+
+      await request;
+      this.logger.log(`Operator booking paid email sent to ${email}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to send operator booking paid email to ${email}`,
+        error instanceof Error ? error.stack : JSON.stringify(error),
+      );
+      throw error;
+    }
+  }
+
+  private generateOperatorNewBookingText(data: OperatorEmailData): string {
+    const { operatorName, bookingDetails } = data;
+    return `
+Dear ${operatorName},
+
+You have a new booking request!
+
+Booking Details:
+- Booking ID: ${bookingDetails.id}
+- Tour: ${bookingDetails.tourName}
+- Customer: ${bookingDetails.customerName} (${bookingDetails.customerEmail})
+- Start Date: ${new Date(bookingDetails.startDate).toLocaleDateString()}
+- End Date: ${new Date(bookingDetails.endDate).toLocaleDateString()}
+- Number of People: ${bookingDetails.numberOfPeople}
+- Total Price: ${bookingDetails.totalPrice} ${bookingDetails.currency}
+
+Please check your dashboard for more details.
+
+Best regards,
+Booking CRM Team
+    `.trim();
+  }
+
+  private generateOperatorNewBookingHtml(data: OperatorEmailData): string {
+    const { operatorName, bookingDetails } = data;
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>New Booking Request</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h2 style="color: #4CAF50;">New Booking Request</h2>
+    <p>Dear ${operatorName},</p>
+    <p>You have a new booking request!</p>
+    
+    <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 15px 0;">
+      <h3>Booking Details:</h3>
+      <p><strong>Booking ID:</strong> ${bookingDetails.id}</p>
+      <p><strong>Tour:</strong> ${bookingDetails.tourName}</p>
+      <p><strong>Customer:</strong> ${bookingDetails.customerName} (<a href="mailto:${bookingDetails.customerEmail}">${bookingDetails.customerEmail}</a>)</p>
+      <p><strong>Start Date:</strong> ${new Date(bookingDetails.startDate).toLocaleDateString()}</p>
+      <p><strong>End Date:</strong> ${new Date(bookingDetails.endDate).toLocaleDateString()}</p>
+      <p><strong>Number of People:</strong> ${bookingDetails.numberOfPeople}</p>
+      <p><strong>Total Price:</strong> ${bookingDetails.totalPrice} ${bookingDetails.currency}</p>
+    </div>
+    
+    <p>Please check your dashboard for more details.</p>
+    <p>Best regards,<br>Booking CRM Team</p>
+  </div>
+</body>
+</html>
+    `.trim();
+  }
+
+  private generateOperatorBookingPaidText(data: OperatorEmailData): string {
+    const { operatorName, bookingDetails } = data;
+    return `
+Dear ${operatorName},
+
+A booking for your tour has been successfully paid!
+
+Booking Details:
+- Booking ID: ${bookingDetails.id}
+- Tour: ${bookingDetails.tourName}
+- Customer: ${bookingDetails.customerName} (${bookingDetails.customerEmail})
+- Start Date: ${new Date(bookingDetails.startDate).toLocaleDateString()}
+- End Date: ${new Date(bookingDetails.endDate).toLocaleDateString()}
+- Number of People: ${bookingDetails.numberOfPeople}
+- Total Price: ${bookingDetails.totalPrice} ${bookingDetails.currency}
+
+The payment has been processed.
+
+Best regards,
+Booking CRM Team
+    `.trim();
+  }
+
+  private generateOperatorBookingPaidHtml(data: OperatorEmailData): string {
+    const { operatorName, bookingDetails } = data;
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Booking Paid</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h2 style="color: #4CAF50;">Booking Paid Successfully</h2>
+    <p>Dear ${operatorName},</p>
+    <p>A booking for your tour has been successfully paid!</p>
+    
+    <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 15px 0;">
+      <h3>Booking Details:</h3>
+      <p><strong>Booking ID:</strong> ${bookingDetails.id}</p>
+      <p><strong>Tour:</strong> ${bookingDetails.tourName}</p>
+      <p><strong>Customer:</strong> ${bookingDetails.customerName} (<a href="mailto:${bookingDetails.customerEmail}">${bookingDetails.customerEmail}</a>)</p>
+      <p><strong>Start Date:</strong> ${new Date(bookingDetails.startDate).toLocaleDateString()}</p>
+      <p><strong>End Date:</strong> ${new Date(bookingDetails.endDate).toLocaleDateString()}</p>
+      <p><strong>Number of People:</strong> ${bookingDetails.numberOfPeople}</p>
+      <p><strong>Total Price:</strong> ${bookingDetails.totalPrice} ${bookingDetails.currency}</p>
+    </div>
+    
+    <p>The payment has been processed.</p>
+    <p>Best regards,<br>Booking CRM Team</p>
+  </div>
+</body>
+</html>
+    `.trim();
   }
 
   private async sendBookingConfirmationEmail(
