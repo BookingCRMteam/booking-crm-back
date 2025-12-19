@@ -1,4 +1,4 @@
-import { count, sum, lt, and, isNotNull, inArray, eq } from 'drizzle-orm';
+import { count, sum, lt, and, isNotNull, inArray, eq, sql } from 'drizzle-orm';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import {
   ConflictException,
@@ -511,5 +511,17 @@ export class BookingsService {
     if (expiredBookings.length > 0) {
       console.log(`Expired ${expiredBookings.length} bookings.`);
     }
+  }
+  @Cron(CronExpression.EVERY_MINUTE)
+  async updateBookedSpots() {
+    await this.db.execute(sql`
+      UPDATE tours
+      SET booked_spots = COALESCE((
+        SELECT SUM(number_of_people)
+        FROM bookings
+        WHERE bookings.tour_id = tours.id
+          AND bookings.status IN ('pending_payment', 'confirmed')
+      ), 0)
+    `);
   }
 }
