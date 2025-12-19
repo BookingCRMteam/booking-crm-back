@@ -4,6 +4,7 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '@app/db/schema/schema';
 import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
 import { NotFoundException, ConflictException } from '@nestjs/common';
+import { EmailQueueService } from '../email-queue/email-queue.service';
 
 // Mock Stripe and LiqPay
 jest.mock('stripe', () => {
@@ -39,6 +40,10 @@ describe('BookingsService', () => {
         {
           provide: 'DRIZZLE_CLIENT',
           useValue: mockDb,
+        },
+        {
+          provide: EmailQueueService,
+          useValue: mockDeep<EmailQueueService>(),
         },
       ],
     }).compile();
