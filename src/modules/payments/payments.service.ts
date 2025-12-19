@@ -124,37 +124,44 @@ export class PaymentsService {
         );
         // Send booking confirmation email
         if (booking.user && booking.tour) {
-          await this.emailQueueService.addBookingConfirmationEmail({
-            email: booking.user.email,
-            bookingDetails: {
-              id: booking.id,
-              tourName: booking.tour.title,
-              startDate: new Date(booking.tour.startDate),
-              endDate: new Date(booking.tour.endDate),
-              price: parseFloat(booking.totalPrice),
-              currency: booking.currency,
-              numberOfPeople: booking.numberOfPeople,
-              firstPersonName: booking.firstPersonName,
-              firstPersonSurname: booking.firstPersonSurname,
-            },
-          });
-          // Send operator notification
-          if (booking.tour.operator && booking.tour.operator.email) {
-            await this.emailQueueService.addOperatorBookingPaidEmail({
-              email: booking.tour.operator.email,
-              operatorName: `${booking.tour.operator.firstName} ${booking.tour.operator.lastName}`,
+          try {
+            await this.emailQueueService.addBookingConfirmationEmail({
+              email: booking.user.email,
               bookingDetails: {
                 id: booking.id,
                 tourName: booking.tour.title,
                 startDate: new Date(booking.tour.startDate),
                 endDate: new Date(booking.tour.endDate),
-                numberOfPeople: booking.numberOfPeople,
-                totalPrice: parseFloat(booking.totalPrice),
+                price: parseFloat(booking.totalPrice),
                 currency: booking.currency,
-                customerName: `${booking.firstPersonName} ${booking.firstPersonSurname}`,
-                customerEmail: booking.user.email,
+                numberOfPeople: booking.numberOfPeople,
+                firstPersonName: booking.firstPersonName,
+                firstPersonSurname: booking.firstPersonSurname,
               },
             });
+            // Send operator notification
+            if (booking.tour.operator && booking.tour.operator.email) {
+              await this.emailQueueService.addOperatorBookingPaidEmail({
+                email: booking.tour.operator.email,
+                operatorName: `${booking.tour.operator.firstName} ${booking.tour.operator.lastName}`,
+                bookingDetails: {
+                  id: booking.id,
+                  tourName: booking.tour.title,
+                  startDate: new Date(booking.tour.startDate),
+                  endDate: new Date(booking.tour.endDate),
+                  numberOfPeople: booking.numberOfPeople,
+                  totalPrice: parseFloat(booking.totalPrice),
+                  currency: booking.currency,
+                  customerName: `${booking.firstPersonName} ${booking.firstPersonSurname}`,
+                  customerEmail: booking.user.email,
+                },
+              });
+            }
+          } catch (error) {
+            console.error(
+              `Failed to enqueue emails for booking ${booking.id}`,
+              error,
+            );
           }
         }
       }
@@ -224,7 +231,10 @@ export class PaymentsService {
           'confirmed',
           booking.userId.toString(),
         );
-        console.log('Booking user and tour', booking.user, booking.tour);
+        console.log(
+          'Processing booking confirmation email for booking:',
+          booking.id,
+        );
         // Send booking confirmation email
         if (booking.user && booking.tour) {
           try {
