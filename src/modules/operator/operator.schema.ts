@@ -1,4 +1,4 @@
-import { users } from '@app/db/schema/schema';
+import { users } from '../user/user.schema';
 import { pgTable, serial, text, timestamp, integer } from 'drizzle-orm/pg-core';
 
 export const operators = pgTable('operators', {

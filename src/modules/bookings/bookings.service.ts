@@ -1,4 +1,4 @@
-import { count, sum, lt, and, isNotNull, inArray, eq } from 'drizzle-orm';
+import { count, sum, lt, and, isNotNull, inArray, eq, sql } from 'drizzle-orm';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import {
   ConflictException,
@@ -14,6 +14,7 @@ import Stripe from 'stripe';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UserBookingMapper } from './mappers/user-booking.mapper';
+import { EmailQueueService } from '../email-queue/email-queue.service';
 
 function isPgError(err: unknown): err is { cause: { code: string } } {
   return (
@@ -38,6 +39,7 @@ export class BookingsService {
   constructor(
     @Inject('DRIZZLE_CLIENT')
     private db: NodePgDatabase<typeof schema>,
+    private readonly emailQueueService: EmailQueueService,
   ) {
     if (!process.env.STRIPE_SECRET_KEY) {
       throw new Error('STRIPE_SECRET_KEY is not set');
@@ -65,6 +67,7 @@ export class BookingsService {
 
     const tour = await this.db.query.tours.findFirst({
       where: (tours, { eq }) => eq(tours.id, data.tourId),
+      with: { operator: true },
     });
     if (!tour) {
       throw new NotFoundException(`Tour with id ${data.tourId} not found`);
@@ -508,5 +511,17 @@ export class BookingsService {
     if (expiredBookings.length > 0) {
       console.log(`Expired ${expiredBookings.length} bookings.`);
     }
+  }
+  @Cron(CronExpression.EVERY_MINUTE)
+  async updateBookedSpots() {
+    await this.db.execute(sql`
+      UPDATE tours
+      SET booked_spots = COALESCE((
+        SELECT SUM(number_of_people)
+        FROM bookings
+        WHERE bookings.tour_id = tours.id
+          AND bookings.status IN ('pending_payment', 'confirmed')
+      ), 0)
+    `);
   }
 }

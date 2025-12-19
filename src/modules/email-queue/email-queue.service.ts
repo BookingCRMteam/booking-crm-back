@@ -17,12 +17,48 @@ export interface BookingConfirmationEmailData {
   };
 }
 
+export interface OperatorEmailData {
+  email: string;
+  operatorName: string;
+  bookingDetails: {
+    id: number;
+    tourName: string;
+    startDate: Date;
+    endDate: Date;
+    numberOfPeople: number;
+    totalPrice: number;
+    currency: string;
+    customerName: string;
+    customerEmail: string;
+  };
+}
+
 @Injectable()
 export class EmailQueueService {
   constructor(@InjectQueue('email') private emailQueue: Queue) {}
 
   async addBookingConfirmationEmail(data: BookingConfirmationEmailData) {
     await this.emailQueue.add('booking-confirmation', data, {
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 2000,
+      },
+    });
+  }
+
+  async addOperatorNewBookingEmail(data: OperatorEmailData) {
+    await this.emailQueue.add('operator-new-booking', data, {
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 2000,
+      },
+    });
+  }
+
+  async addOperatorBookingPaidEmail(data: OperatorEmailData) {
+    await this.emailQueue.add('operator-booking-paid', data, {
       attempts: 3,
       backoff: {
         type: 'exponential',

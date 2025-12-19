@@ -1,6 +1,6 @@
 {
-  "id": "fc72887b-f13e-41c9-9307-865a747f2aab",
-  "prevId": "7bca3e9f-d4ae-4be4-8f4f-aa9113040b93",
+  "id": "b40775c2-b20d-44d4-98ba-c51045e1b61d",
+  "prevId": "fc72887b-f13e-41c9-9307-865a747f2aab",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -693,8 +693,18 @@
           "name": "booked_spots",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "default": 0
+        },
+        "total_spots": {
+          "name": "total_spots",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "generated": {
+            "as": "\"available_spots\" + COALESCE(\"booked_spots\", 0)",
+            "type": "stored"
+          }
         },
         "conditions": {
           "name": "conditions",

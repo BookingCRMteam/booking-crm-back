@@ -95,7 +95,11 @@ export class PaymentsService {
         where: (bookings, { eq }) => eq(bookings.id, parseInt(bookingId)),
         with: {
           user: true,
-          tour: true,
+          tour: {
+            with: {
+              operator: true,
+            },
+          },
         },
       });
 
@@ -118,7 +122,6 @@ export class PaymentsService {
           'confirmed',
           booking.userId.toString(),
         );
-
         // Send booking confirmation email
         if (booking.user && booking.tour) {
           await this.emailQueueService.addBookingConfirmationEmail({
@@ -135,6 +138,24 @@ export class PaymentsService {
               firstPersonSurname: booking.firstPersonSurname,
             },
           });
+          // Send operator notification
+          if (booking.tour.operator && booking.tour.operator.email) {
+            await this.emailQueueService.addOperatorBookingPaidEmail({
+              email: booking.tour.operator.email,
+              operatorName: `${booking.tour.operator.firstName} ${booking.tour.operator.lastName}`,
+              bookingDetails: {
+                id: booking.id,
+                tourName: booking.tour.title,
+                startDate: new Date(booking.tour.startDate),
+                endDate: new Date(booking.tour.endDate),
+                numberOfPeople: booking.numberOfPeople,
+                totalPrice: parseFloat(booking.totalPrice),
+                currency: booking.currency,
+                customerName: `${booking.firstPersonName} ${booking.firstPersonSurname}`,
+                customerEmail: booking.user.email,
+              },
+            });
+          }
         }
       }
     }
@@ -177,7 +198,11 @@ export class PaymentsService {
         where: (bookings, { eq }) => eq(bookings.id, bookingId),
         with: {
           user: true,
-          tour: true,
+          tour: {
+            with: {
+              operator: true,
+            },
+          },
         },
       });
       if (booking && booking.status === 'pending_payment') {
@@ -199,7 +224,7 @@ export class PaymentsService {
           'confirmed',
           booking.userId.toString(),
         );
-
+        console.log('Booking user and tour', booking.user, booking.tour);
         // Send booking confirmation email
         if (booking.user && booking.tour) {
           try {
@@ -217,6 +242,25 @@ export class PaymentsService {
                 firstPersonSurname: booking.firstPersonSurname,
               },
             });
+
+            // Send operator notification
+            if (booking.tour.operator && booking.tour.operator.email) {
+              await this.emailQueueService.addOperatorBookingPaidEmail({
+                email: booking.tour.operator.email,
+                operatorName: `${booking.tour.operator.firstName} ${booking.tour.operator.lastName}`,
+                bookingDetails: {
+                  id: booking.id,
+                  tourName: booking.tour.title,
+                  startDate: new Date(booking.tour.startDate),
+                  endDate: new Date(booking.tour.endDate),
+                  numberOfPeople: booking.numberOfPeople,
+                  totalPrice: parseFloat(booking.totalPrice),
+                  currency: booking.currency,
+                  customerName: `${booking.firstPersonName} ${booking.firstPersonSurname}`,
+                  customerEmail: booking.user.email,
+                },
+              });
+            }
           } catch (error) {
             // TODO: replace with structured logger if available
             console.error(

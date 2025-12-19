@@ -169,6 +169,13 @@
       "when": 1765174965791,
       "tag": "0024_purple_paladin",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1766127000481,
+      "tag": "0025_plain_krista_starr",
+      "breakpoints": true
     }
   ]
 }
