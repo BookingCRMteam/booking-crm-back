@@ -355,7 +355,31 @@ export class BookingsService {
           eq(bookings.tourId, tourId),
           inArray(bookings.status, ['confirmed', 'pending_payment']),
         ),
-      with: { tour: { with: { photos: true } } },
+      with: {
+        tour: {
+          with: {
+            photos: true,
+            operator: {
+              columns: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                photo: true,
+              },
+            },
+            cityRelation: {
+              with: {
+                translations: true,
+              },
+            },
+            countryRelation: {
+              with: {
+                translations: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!booking) {
@@ -364,7 +388,18 @@ export class BookingsService {
       );
     }
 
-    return booking;
+    const result = {
+      ...booking,
+      tour: {
+        ...booking.tour,
+        city: booking.tour.city ?? booking.tour.cityRelation,
+        country: booking.tour.country ?? booking.tour.countryRelation,
+      },
+    };
+    delete result.tour.cityRelation;
+    delete result.tour.countryRelation;
+
+    return result;
   }
 
   async repayBooking(bookingId: number) {
