@@ -6,8 +6,15 @@ export class UserBookingMapper {
     booking: BookingWithTour,
     paymentLink?: string | null,
   ): UserBookingResponseDto {
-    const cityTranslation = booking.tour.city?.translations?.[0];
-    const countryTranslation = booking.tour.country?.translations?.[0];
+    const cityData = booking.tour.city ?? booking.tour.cityRelation;
+    const countryData = booking.tour.country ?? booking.tour.countryRelation;
+
+    const cityTranslation =
+      cityData?.translations?.find((t) => t.languageCode === 'en') ??
+      cityData?.translations?.[0];
+    const countryTranslation =
+      countryData?.translations?.find((t) => t.languageCode === 'en') ??
+      countryData?.translations?.[0];
 
     return {
       bookingId: booking.id,
@@ -40,16 +47,16 @@ export class UserBookingMapper {
         updatedAt: booking.tour.updatedAt,
         photos: booking.tour.photos ?? [],
 
-        city: booking.tour.city
+        city: cityData
           ? {
-              id: booking.tour.city.id,
+              id: cityData.id,
               name: cityTranslation?.name ?? null,
             }
           : null,
 
-        country: booking.tour.country
+        country: countryData
           ? {
-              iso2: booking.tour.country.iso2,
+              iso2: countryData.iso2,
               name: countryTranslation?.name ?? null,
             }
           : null,

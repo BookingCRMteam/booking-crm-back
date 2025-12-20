@@ -13,7 +13,7 @@ interface Translation {
   [key: string]: any;
 }
 
-interface Country {
+export interface Country {
   id: number;
   iso2: string;
   iso3: string;
@@ -21,7 +21,7 @@ interface Country {
   [key: string]: any;
 }
 
-interface City {
+export interface City {
   id: number;
   countryIso2: string;
   translations: Translation[];

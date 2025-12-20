@@ -253,8 +253,8 @@ export class BookingsService {
                 photo: true,
               },
             },
-            city: { with: { translations: true } },
-            country: { with: { translations: true } },
+            cityRelation: { with: { translations: true } },
+            countryRelation: { with: { translations: true } },
           },
         },
       },
@@ -285,12 +285,12 @@ export class BookingsService {
                 photo: true,
               },
             },
-            city: {
+            cityRelation: {
               with: {
                 translations: true,
               },
             },
-            country: {
+            countryRelation: {
               with: {
                 translations: true,
               },
