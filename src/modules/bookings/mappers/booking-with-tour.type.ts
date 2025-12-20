@@ -19,13 +19,13 @@ export type BookingWithTour = InferSelectModel<typeof bookings> & {
       'id' | 'firstName' | 'lastName' | 'photo'
     > | null;
 
-    city:
+    cityRelation:
       | (InferSelectModel<typeof cities> & {
           translations: InferSelectModel<typeof cityTranslations>[];
         })
       | null;
 
-    country:
+    countryRelation:
       | (InferSelectModel<typeof countries> & {
           translations: InferSelectModel<typeof countryTranslations>[];
         })

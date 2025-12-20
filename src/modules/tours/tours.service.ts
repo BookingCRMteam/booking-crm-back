@@ -27,7 +27,7 @@ export class ToursService {
     db: NodePgDatabase<typeof schema>,
   ) {
     if (!cityId && !countryISO2Code) {
-      return;
+      return null;
     }
 
     if (cityId && !countryISO2Code) {
@@ -36,26 +36,40 @@ export class ToursService {
       );
     }
 
+    const country = await db.query.countries.findFirst({
+      where: eq(schema.countries.iso2, countryISO2Code),
+      with: { translations: true },
+    });
+
+    if (!country) {
+      throw new BadRequestException(
+        `Country with ISO2 code ${countryISO2Code} not found.`,
+      );
+    }
+
     if (!cityId && countryISO2Code) {
-      // Country-only validation could be performed here if needed
-      return;
+      return { country, city: null };
     }
 
     const city = await db.query.cities.findFirst({
       where: eq(schema.cities.id, cityId),
+      with: { translations: true },
     });
-    const cityTranslations = await db.query.cityTranslations.findFirst({
-      where: eq(schema.cityTranslations.cityId, cityId),
-    });
+
     if (!city) {
       throw new BadRequestException(`City with ID ${cityId} not found.`);
     }
 
     if (city.countryIso2 !== countryISO2Code) {
+      const cityEnName =
+        city.translations.find((t) => t.languageCode === 'en')?.name ||
+        'Unknown';
       throw new BadRequestException(
-        `City ${cityTranslations?.name} with ID ${cityId} does not belong to country ${countryISO2Code}.`,
+        `City ${cityEnName} with ID ${cityId} does not belong to country ${countryISO2Code}.`,
       );
     }
+
+    return { country, city };
   }
   private async validateTourOwnership(
     tourId: number,
@@ -82,7 +96,7 @@ export class ToursService {
   ): Promise<Tour> {
     return await this.db.transaction(async (tx): Promise<Tour> => {
       try {
-        await this.validateCityAndCountry(
+        const locationData = await this.validateCityAndCountry(
           createTourDto.cityId,
           createTourDto.countryISO2Code,
           tx,
@@ -91,6 +105,8 @@ export class ToursService {
           operatorId,
           ...createTourDto,
           price: createTourDto.price.toFixed(2),
+          city: locationData?.city ?? null,
+          country: locationData?.country ?? null,
         };
         const result = await tx
           .insert(schema.tours)
@@ -232,14 +248,14 @@ export class ToursService {
         with: {
           photos: true,
           operator: true,
-          country: {
+          countryRelation: {
             with: {
               translations: {
                 where: eq(schema.countryTranslations.languageCode, lang),
               },
             },
           },
-          city: {
+          cityRelation: {
             with: {
               translations: {
                 where: eq(schema.cityTranslations.languageCode, lang),
@@ -248,12 +264,21 @@ export class ToursService {
           },
         },
       });
-      const allTours = preAllTours.map((tour) => ({
-        ...tour,
-        photos: tour.photos.sort((a, b) =>
-          a.isMain === b.isMain ? 0 : a.isMain ? -1 : 1,
-        ),
-      }));
+      const allTours = preAllTours.map((tour) => {
+        const mappedTour = {
+          ...tour,
+          city: tour.city ?? tour.cityRelation,
+          country: tour.country ?? tour.countryRelation,
+          photos: tour.photos.sort((a, b) =>
+            a.isMain === b.isMain ? 0 : a.isMain ? -1 : 1,
+          ),
+        };
+
+        delete mappedTour.cityRelation;
+
+        delete mappedTour.countryRelation;
+        return mappedTour;
+      });
       // Отримання загальної кількості записів для пагінації
       const totalCountResult = await this.db // Використовуйте this.db
         .select({ count: sql<number>`count(*)` }) // Явно вказуємо, що count - це число
@@ -349,14 +374,14 @@ export class ToursService {
       with: {
         photos: true,
         operator: true,
-        country: {
+        countryRelation: {
           with: {
             translations: {
               where: eq(schema.countryTranslations.languageCode, lang),
             },
           },
         },
-        city: {
+        cityRelation: {
           with: {
             translations: {
               where: eq(schema.cityTranslations.languageCode, lang),
@@ -367,12 +392,20 @@ export class ToursService {
     });
 
     // Сортуємо фото — головне перше
-    const tours = rows.map((tour) => ({
-      ...tour,
-      photos: tour.photos.sort((a, b) =>
-        a.isMain === b.isMain ? 0 : a.isMain ? -1 : 1,
-      ),
-    }));
+    const tours = rows.map((tour) => {
+      const mappedTour = {
+        ...tour,
+        city: tour.city ?? tour.cityRelation,
+        country: tour.country ?? tour.countryRelation,
+        photos: tour.photos.sort((a, b) =>
+          a.isMain === b.isMain ? 0 : a.isMain ? -1 : 1,
+        ),
+      };
+      delete mappedTour.cityRelation;
+      delete mappedTour.countryRelation;
+
+      return mappedTour;
+    });
 
     // --- Total count ---
     const totalCountResult = await this.db
@@ -393,14 +426,14 @@ export class ToursService {
       with: {
         photos: true,
         operator: true,
-        country: {
+        countryRelation: {
           with: {
             translations: {
               where: eq(schema.countryTranslations.languageCode, lang),
             },
           },
         },
-        city: {
+        cityRelation: {
           with: {
             translations: {
               where: eq(schema.cityTranslations.languageCode, lang),
@@ -416,7 +449,16 @@ export class ToursService {
       );
     }
     tour.photos.sort((a, b) => (a.isMain === b.isMain ? 0 : a.isMain ? -1 : 1));
-    return tour;
+
+    const result = {
+      ...tour,
+      city: tour.city ?? tour.cityRelation,
+      country: tour.country ?? tour.countryRelation,
+    };
+    delete result.cityRelation;
+    delete result.countryRelation;
+
+    return result;
   }
 
   async checkAvailability(tourId: number, spots: number) {
@@ -497,8 +539,17 @@ export class ToursService {
           const cityId = tourData.cityId ?? existingTour.cityId;
           const countryISO2Code =
             tourData.countryISO2Code ?? existingTour.countryISO2Code;
-          if (cityId && countryISO2Code) {
-            await this.validateCityAndCountry(cityId, countryISO2Code, tx);
+
+          if (cityId || countryISO2Code) {
+            const locationData = await this.validateCityAndCountry(
+              cityId,
+              countryISO2Code,
+              tx,
+            );
+            Object.assign(tourData, {
+              city: locationData?.city ?? null,
+              country: locationData?.country ?? null,
+            });
           }
         }
         const [updatedTour] = await tx

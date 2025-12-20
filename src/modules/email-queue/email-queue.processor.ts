@@ -63,10 +63,12 @@ export class EmailQueueProcessor extends WorkerHost {
       });
 
       await request;
-      this.logger.log(`Operator new booking email sent to ${email}`);
+      this.logger.log(
+        `Operator new booking email sent to ${this.maskEmail(email)}`,
+      );
     } catch (error) {
       this.logger.error(
-        `Failed to send operator new booking email to ${email}`,
+        `Failed to send operator new booking email to ${this.maskEmail(email)}`,
         error instanceof Error ? error.stack : JSON.stringify(error),
       );
       throw error;
@@ -100,14 +102,66 @@ export class EmailQueueProcessor extends WorkerHost {
       });
 
       await request;
-      this.logger.log(`Operator booking paid email sent to ${email}`);
+      this.logger.log(
+        `Operator booking paid email sent to ${this.maskEmail(email)}`,
+      );
     } catch (error) {
       this.logger.error(
-        `Failed to send operator booking paid email to ${email}`,
+        `Failed to send operator booking paid email to ${this.maskEmail(email)}`,
         error instanceof Error ? error.stack : JSON.stringify(error),
       );
       throw error;
     }
+  }
+
+  private async sendBookingConfirmationEmail(
+    data: BookingConfirmationEmailData,
+  ): Promise<void> {
+    const { email, bookingDetails } = data;
+
+    try {
+      const request = this.mailjet.post('send', { version: 'v3.1' }).request({
+        Messages: [
+          {
+            From: {
+              Email: process.env.MAILJET_FROM_EMAIL || 'noreply@bookingcrm.com',
+              Name: process.env.MAILJET_FROM_NAME || 'Booking CRM',
+            },
+            To: [
+              {
+                Email: email,
+                Name: `${bookingDetails.firstPersonName} ${bookingDetails.firstPersonSurname}`,
+              },
+            ],
+            Subject: `Booking Confirmation - #${bookingDetails.id}`,
+            TextPart: this.generateTextContent(bookingDetails),
+            HTMLPart: this.generateHtmlContent(bookingDetails),
+          },
+        ],
+      });
+
+      await request;
+      this.logger.log(
+        `Booking confirmation email sent to ${this.maskEmail(email)}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to send booking confirmation email to ${this.maskEmail(email)}`,
+        error instanceof Error ? error.stack : JSON.stringify(error),
+      );
+      throw error;
+    }
+  }
+
+  private maskEmail(email: string): string {
+    if (!email || !email.includes('@')) {
+      return email;
+    }
+    const [localPart, domain] = email.split('@');
+    if (localPart.length <= 1) {
+      return `${localPart}***@${domain}`;
+    }
+    return `${localPart[0]}***@${domain}`;
   }
 
   private generateOperatorNewBookingText(data: OperatorEmailData): string {
@@ -222,43 +276,6 @@ Booking CRM Team
 </body>
 </html>
     `.trim();
-  }
-
-  private async sendBookingConfirmationEmail(
-    data: BookingConfirmationEmailData,
-  ): Promise<void> {
-    const { email, bookingDetails } = data;
-
-    try {
-      const request = this.mailjet.post('send', { version: 'v3.1' }).request({
-        Messages: [
-          {
-            From: {
-              Email: process.env.MAILJET_FROM_EMAIL || 'noreply@bookingcrm.com',
-              Name: process.env.MAILJET_FROM_NAME || 'Booking CRM',
-            },
-            To: [
-              {
-                Email: email,
-                Name: `${bookingDetails.firstPersonName} ${bookingDetails.firstPersonSurname}`,
-              },
-            ],
-            Subject: `Booking Confirmation - #${bookingDetails.id}`,
-            TextPart: this.generateTextContent(bookingDetails),
-            HTMLPart: this.generateHtmlContent(bookingDetails),
-          },
-        ],
-      });
-
-      await request;
-      this.logger.log(`Booking confirmation email sent to ${email}`);
-    } catch (error) {
-      this.logger.error(
-        `Failed to send booking confirmation email to ${email}`,
-        error instanceof Error ? error.stack : JSON.stringify(error),
-      );
-      throw error;
-    }
   }
 
   private generateTextContent(

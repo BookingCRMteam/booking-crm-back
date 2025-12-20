@@ -12,10 +12,13 @@ import {
   char,
   uniqueIndex,
   check,
+  json,
 } from 'drizzle-orm/pg-core';
 import { operators } from '../operator/operator.schema';
 import { countries } from '../countries/countries.schema';
 import { cities } from '../cities/cities.schema';
+
+import { City, Country } from './tours.types';
 
 export const tours = pgTable(
   'tours',
@@ -37,6 +40,8 @@ export const tours = pgTable(
         onUpdate: 'cascade',
       })
       .notNull(),
+    city: json('city').$type<City>(),
+    country: json('country').$type<Country>(),
     type: varchar('type', { length: 100 }),
     price: decimal('price', { precision: 10, scale: 2 }).notNull(),
     currency: varchar('currency', { length: 3 }).default('UAH'),
@@ -91,11 +96,11 @@ export const toursRelations = relations(tours, ({ one, many }) => ({
     references: [operators.id],
   }),
   photos: many(tourPhotos),
-  country: one(countries, {
+  countryRelation: one(countries, {
     fields: [tours.countryISO2Code],
     references: [countries.iso2],
   }),
-  city: one(cities, {
+  cityRelation: one(cities, {
     fields: [tours.cityId],
     references: [cities.id],
   }),
