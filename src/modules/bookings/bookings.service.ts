@@ -599,15 +599,28 @@ export class BookingsService {
         );
       }
 
-      // 3️⃣ Update availableSpots
-      for (const [tourId, people] of peopleByTour) {
-        await tx
-          .update(tours)
-          .set({
-            availableSpots: sql`${tours.availableSpots} + ${people}`,
-          })
-          .where(eq(tours.id, tourId));
-      }
+      // 3️⃣ Lock all affected tour rows FOR UPDATE to prevent race conditions
+      const tourIds = Array.from(peopleByTour.keys());
+      await tx
+        .select()
+        .from(tours)
+        .where(inArray(tours.id, tourIds))
+        .for('update');
+
+      // 4️⃣ Build a single batched UPDATE using CASE WHEN to add deltas
+      // and clamp the result to ensure availableSpots stays within [0, 100]
+      const whenClauses = Array.from(peopleByTour.entries())
+        .map(
+          ([tourId, delta]) => sql`WHEN ${tours.id} = ${tourId} THEN ${delta}`,
+        )
+        .reduce((acc, clause) => sql`${acc} ${clause}`, sql``);
+
+      await tx
+        .update(tours)
+        .set({
+          availableSpots: sql`LEAST(100, GREATEST(0, ${tours.availableSpots} + CASE ${whenClauses} ELSE 0 END))`,
+        })
+        .where(inArray(tours.id, tourIds));
 
       console.log(`Expired ${expiredBookings.length} bookings.`);
     });
