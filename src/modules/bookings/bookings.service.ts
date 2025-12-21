@@ -569,7 +569,7 @@ export class BookingsService {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
 
     await this.db.transaction(async (tx) => {
-      // 1️⃣ Expire bookings і отримуємо дані
+      // 1️⃣ Expire bookings and get tourId and numberOfPeople
       const expiredBookings = await tx
         .update(bookings)
         .set({ status: 'expired' })
@@ -589,7 +589,7 @@ export class BookingsService {
         return;
       }
 
-      // 2️⃣ Групуємо по tourId
+      // 2️⃣ Group by tourId
       const peopleByTour = new Map<number, number>();
 
       for (const booking of expiredBookings) {
@@ -599,7 +599,7 @@ export class BookingsService {
         );
       }
 
-      // 3️⃣ Оновлюємо availableSpots
+      // 3️⃣ Update availableSpots
       for (const [tourId, people] of peopleByTour) {
         await tx
           .update(tours)
