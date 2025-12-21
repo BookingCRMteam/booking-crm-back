@@ -15,6 +15,7 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UserBookingMapper } from './mappers/user-booking.mapper';
 import { EmailQueueService } from '../email-queue/email-queue.service';
+import { tours } from '@app/db/schema/schema';
 
 function isPgError(err: unknown): err is { cause: { code: string } } {
   return (
@@ -566,23 +567,66 @@ export class BookingsService {
   @Cron(CronExpression.EVERY_MINUTE)
   async handleCron() {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    const expiredBookings = await this.db
-      .update(bookings)
-      .set({ status: 'expired' })
-      .where(
-        and(
-          eq(bookings.status, 'pending_payment'),
-          isNotNull(bookings.paymentSessionId),
-          lt(bookings.updatedAt, oneHourAgo),
-        ),
-      )
-      .returning();
 
-    if (expiredBookings.length > 0) {
+    await this.db.transaction(async (tx) => {
+      // 1️⃣ Expire bookings and get tourId and numberOfPeople
+      const expiredBookings = await tx
+        .update(bookings)
+        .set({ status: 'expired' })
+        .where(
+          and(
+            eq(bookings.status, 'pending_payment'),
+            isNotNull(bookings.paymentSessionId),
+            lt(bookings.updatedAt, oneHourAgo),
+          ),
+        )
+        .returning({
+          tourId: bookings.tourId,
+          people: bookings.numberOfPeople,
+        });
+
+      if (expiredBookings.length === 0) {
+        return;
+      }
+
+      // 2️⃣ Group by tourId
+      const peopleByTour = new Map<number, number>();
+
+      for (const booking of expiredBookings) {
+        peopleByTour.set(
+          booking.tourId,
+          (peopleByTour.get(booking.tourId) ?? 0) + booking.people,
+        );
+      }
+
+      // 3️⃣ Lock all affected tour rows FOR UPDATE to prevent race conditions
+      const tourIds = Array.from(peopleByTour.keys());
+      await tx
+        .select()
+        .from(tours)
+        .where(inArray(tours.id, tourIds))
+        .for('update');
+
+      // 4️⃣ Build a single batched UPDATE using CASE WHEN to add deltas
+      // and clamp the result to ensure availableSpots stays within [0, 100]
+      const whenClauses = Array.from(peopleByTour.entries())
+        .map(
+          ([tourId, delta]) => sql`WHEN ${tours.id} = ${tourId} THEN ${delta}`,
+        )
+        .reduce((acc, clause) => sql`${acc} ${clause}`, sql``);
+
+      await tx
+        .update(tours)
+        .set({
+          availableSpots: sql`LEAST(100, GREATEST(0, ${tours.availableSpots} + CASE ${whenClauses} ELSE 0 END))`,
+        })
+        .where(inArray(tours.id, tourIds));
+
       console.log(`Expired ${expiredBookings.length} bookings.`);
-    }
+    });
   }
-  @Cron(CronExpression.EVERY_MINUTE)
+
+  @Cron(CronExpression.EVERY_10_SECONDS)
   async updateBookedSpots() {
     await this.db.execute(sql`
       UPDATE tours
