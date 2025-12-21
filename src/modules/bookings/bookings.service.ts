@@ -528,6 +528,41 @@ export class BookingsService {
     return { paymentLink, paymentSessionId };
   }
 
+  async getBookingExpirationTime(bookingId: number) {
+    const booking = await this.db.query.bookings.findFirst({
+      where: (bookings, { eq }) => eq(bookings.id, bookingId),
+    });
+
+    if (!booking) {
+      throw new NotFoundException(`Booking with id ${bookingId} not found`);
+    }
+
+    if (booking.status !== 'pending_payment') {
+      throw new BadRequestException(
+        `Booking with id ${bookingId} is not in pending_payment status`,
+      );
+    }
+
+    if (!booking.paymentSessionId) {
+      throw new BadRequestException(
+        `Booking with id ${bookingId} does not have a payment session`,
+      );
+    }
+
+    // Calculate expiration time: updatedAt + 1 hour
+    const expirationTime = new Date(
+      booking.updatedAt.getTime() + 60 * 60 * 1000,
+    );
+
+    return {
+      bookingId: booking.id,
+      status: booking.status,
+      updatedAt: booking.updatedAt,
+      expiresAt: expirationTime,
+      isExpired: expirationTime < new Date(),
+    };
+  }
+
   @Cron(CronExpression.EVERY_MINUTE)
   async handleCron() {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
