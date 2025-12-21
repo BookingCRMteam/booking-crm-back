@@ -4,8 +4,8 @@ import { Type } from 'class-transformer';
 
 export class GetUserBookingsQueryDto {
   @ApiPropertyOptional({
-    description: 'Filter by booking status',
-    example: 'pending_payment',
+    description: 'Filter by booking statuses (comma-separated)',
+    example: 'pending_payment,confirmed',
   })
   @IsOptional()
   @IsString()

@@ -16,6 +16,7 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse,
+  ApiOkResponse,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@app/common/guards/jwt-auth.guard';
 import { AuthenticatedRequest } from '@app/types/authenticated.request';
@@ -25,6 +26,7 @@ import { BookingsService } from '@app/modules/bookings/bookings.service';
 import { UserBookingResponseDto } from '@app/modules/bookings/dto/user-booking-response.dto';
 import { PaymentsService } from '@app/modules/payments/payments.service';
 import { GetUserBookingsQueryDto } from '@app/modules/bookings/dto/get-user-bookings.query.dto';
+import { UserBookingsPaginatedResponseDto } from '@app/modules/bookings/dto/user-bookings-paginated-response.dto';
 
 @ApiTags('User')
 @Controller('user')
@@ -73,6 +75,10 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard)
   @Get('bookings')
+  @ApiOkResponse({
+    description: 'Paginated list of user bookings',
+    type: UserBookingsPaginatedResponseDto,
+  })
   getUserBookings(
     @Req() req: AuthenticatedRequest,
     @Query() query: GetUserBookingsQueryDto,

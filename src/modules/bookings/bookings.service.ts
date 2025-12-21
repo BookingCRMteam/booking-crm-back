@@ -231,17 +231,27 @@ export class BookingsService {
       offset?: number;
     },
   ) {
-    const limit = query?.limit;
+    const limit = query?.limit ?? 10;
     const offset = query?.offset ?? 0;
 
-    const whereConditions = [eq(bookings.userId, userId)];
+    let statuses: string[] = ['confirmed', 'pending_payment'];
 
     if (query?.status) {
-      whereConditions.push(eq(bookings.status, query.status));
+      statuses = query.status.split(',').map((s) => s.trim());
     }
 
+    const whereCondition = and(
+      eq(bookings.userId, userId),
+      inArray(bookings.status, statuses),
+    );
+
+    const [{ total }] = await this.db
+      .select({ total: count() })
+      .from(bookings)
+      .where(whereCondition);
+
     const data = await this.db.query.bookings.findMany({
-      where: and(...whereConditions),
+      where: whereCondition,
       with: {
         tour: {
           with: {
@@ -263,11 +273,18 @@ export class BookingsService {
         sql`CASE WHEN ${b.status} = 'pending_payment' THEN 0 ELSE 1 END`,
         desc(b.createdAt),
       ],
-      limit: limit,
-      offset: offset || 0,
+      limit,
+      offset,
     });
 
-    return data.map((booking) => UserBookingMapper.toResponse(booking));
+    return {
+      data: data.map((booking) => UserBookingMapper.toResponse(booking)),
+      meta: {
+        total: Number(total),
+        limit,
+        offset,
+      },
+    };
   }
 
   async getBookingByUser(userId: number, bookingId: number) {
