@@ -30,6 +30,44 @@ export class BookingsController {
     };
   }
 
+  @Get(':id/expiration')
+  @ApiOperation({
+    summary: 'Get expiration time for a booking with pending_payment status',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Booking expiration details',
+    schema: {
+      type: 'object',
+      properties: {
+        bookingId: { type: 'number' },
+        status: { type: 'string' },
+        updatedAt: { type: 'string', format: 'date-time' },
+        expiresAt: { type: 'string', format: 'date-time' },
+        isExpired: { type: 'boolean' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Booking is not in pending_payment status or missing payment session',
+  })
+  @ApiResponse({ status: 404, description: 'Booking not found' })
+  async getExpiration(@Param('id') id: string) {
+    return this.bookingsService.getBookingExpirationTime(Number(id));
+  }
+
+  @Post(':id/repay')
+  @ApiOperation({ summary: 'Repay a booking that is pending payment' })
+  @ApiResponse({
+    status: 200,
+    description: 'Payment link generated.',
+  })
+  async repay(@Param('id') id: string) {
+    return this.bookingsService.repayBooking(Number(id));
+  }
+
   @Get(':tourId')
   @ApiOperation({ summary: 'Get booking statistics for a tour' })
   @ApiResponse({
@@ -56,15 +94,5 @@ export class BookingsController {
       Number(bookingId),
       Number(tourId),
     );
-  }
-
-  @Post(':id/repay')
-  @ApiOperation({ summary: 'Repay a booking that is pending payment' })
-  @ApiResponse({
-    status: 200,
-    description: 'Payment link generated.',
-  })
-  async repay(@Param('id') id: string) {
-    return this.bookingsService.repayBooking(Number(id));
   }
 }
