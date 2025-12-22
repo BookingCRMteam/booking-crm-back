@@ -1,9 +1,10 @@
-import { Controller, Post, Body, Get, Param } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, UseGuards } from '@nestjs/common';
 import { BookingStatsDto } from './dto/booking-stats.dto';
 import { BookingsService } from './bookings.service';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { ResponseBookingDto } from './dto/response-booking.dto';
+import { JwtAuthGuard } from '@app/common/guards/jwt-auth.guard';
 
 @ApiTags('Bookings')
 @Controller('bookings')
@@ -80,12 +81,14 @@ export class BookingsController {
     return this.bookingsService.getTourBookingStats(id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':tourId/:bookingId')
   @ApiOperation({ summary: 'Get booking details with tour information' })
   @ApiResponse({
     status: 200,
     description: 'Booking and tour details',
   })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getBooking(
     @Param('tourId') tourId: string,
     @Param('bookingId') bookingId: string,
