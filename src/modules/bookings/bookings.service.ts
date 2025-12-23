@@ -357,6 +357,18 @@ export class BookingsService {
           inArray(bookings.status, ['confirmed', 'pending_payment']),
         ),
       with: {
+        user: {
+          columns: {
+            id: true,
+            email: true,
+            firstPersonName: true,
+            firstPersonSurname: true,
+            secondPersonName: true,
+            secondPersonSurname: true,
+            phone: true,
+            role: true,
+          },
+        },
         tour: {
           with: {
             photos: true,
