@@ -99,7 +99,6 @@ class TourShortDto {
   @ApiProperty({ type: [TourPhotoDto], required: false })
   photos?: TourPhotoDto[];
 
-  /* 🔥 ДОДАЛИ */
   @ApiProperty({ nullable: true })
   operator?: OperatorShortDto | null;
 
