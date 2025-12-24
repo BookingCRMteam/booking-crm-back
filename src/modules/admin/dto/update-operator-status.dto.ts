@@ -1,6 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { OperatorStatus } from '@app/types/operator-status';
-import { IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  MinLength,
+  Matches,
+} from 'class-validator';
 
 export class UpdateOperatorStatusDto {
   @ApiProperty({ enum: OperatorStatus })
@@ -15,5 +21,8 @@ export class UpdateOperatorStatusDto {
   @IsOptional()
   @IsString()
   @MinLength(50)
+  @Matches(/^[^<>]*$/, {
+    message: 'HTML tags are not allowed in rejectionReason',
+  })
   rejectionReason?: string;
 }
