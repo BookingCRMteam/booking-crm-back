@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsString,
   MinLength,
+  MaxLength,
   Matches,
 } from 'class-validator';
 
@@ -20,7 +21,8 @@ export class UpdateOperatorStatusDto {
   })
   @IsOptional()
   @IsString()
-  @MinLength(50)
+  @MinLength(10)
+  @MaxLength(500)
   @Matches(/^[^<>]*$/, {
     message: 'HTML tags are not allowed in rejectionReason',
   })
