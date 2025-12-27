@@ -66,7 +66,6 @@ export class PaymentsService {
     });
 
     const paymentLink = session.url ?? null;
-
     return { paymentLink };
   }
   async handleStripeWebhook(req: RawBodyRequest<Request>, signature: string) {
@@ -212,6 +211,7 @@ export class PaymentsService {
           },
         },
       });
+
       if (booking && booking.status === 'pending_payment') {
         // Update booking status in a transaction
         await this.db.transaction(async (tx) => {
@@ -231,10 +231,7 @@ export class PaymentsService {
           'confirmed',
           booking.userId.toString(),
         );
-        console.log(
-          'Processing booking confirmation email for booking:',
-          booking.id,
-        );
+
         // Send booking confirmation email
         if (booking.user && booking.tour) {
           try {
@@ -252,7 +249,6 @@ export class PaymentsService {
                 firstPersonSurname: booking.firstPersonSurname,
               },
             });
-
             // Send operator notification
             if (booking.tour.operator && booking.tour.operator.email) {
               await this.emailQueueService.addOperatorBookingPaidEmail({

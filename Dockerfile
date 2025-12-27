@@ -4,7 +4,7 @@ FROM node:22-alpine AS builder
 
 
 # Встановлюємо pnpm
-RUN npm install -g pnpm@8.8.0
+RUN npm install -g pnpm@latest
 
 WORKDIR /usr/src/app
 
@@ -26,7 +26,7 @@ RUN pnpm exec tsc --noEmit
 RUN pnpm run build
 
 # Видаляємо dev-залежності для продакшн
-RUN pnpm prune --prod --ignore-scripts
+RUN pnpm config set ignore-scripts true && pnpm prune --prod
 
 
 # ===== Runner Stage (Prod) =====
@@ -35,7 +35,7 @@ FROM node:22-alpine AS runner
 WORKDIR /usr/src/app
 
 # Встановлюємо pnpm
-RUN npm install -g pnpm@8.8.0
+RUN npm install -g pnpm@10.25.0
 
 # Копіюємо необхідне з builder
 COPY --from=builder /usr/src/app/node_modules ./node_modules
