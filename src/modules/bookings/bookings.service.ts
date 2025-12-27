@@ -177,6 +177,29 @@ export class BookingsService {
       .set({ paymentSessionId })
       .where(eq(bookings.id, newBooking.id));
 
+    // Send email to operator
+    if (tour.operator && tour.operator.email) {
+      this.emailQueueService
+        .addOperatorNewBookingEmail({
+          email: tour.operator.email,
+          operatorName: `${tour.operator.firstName} ${tour.operator.lastName}`,
+          bookingDetails: {
+            id: newBooking.id,
+            tourName: tour.title,
+            startDate: new Date(tour.startDate),
+            endDate: new Date(tour.endDate),
+            numberOfPeople: newBooking.numberOfPeople,
+            totalPrice: Number(newBooking.totalPrice),
+            currency: newBooking.currency,
+            customerName: `${newBooking.firstPersonName} ${newBooking.firstPersonSurname}`,
+            customerEmail: user.email ?? '',
+          },
+        })
+        .catch((err) =>
+          console.error('Failed to queue operator new booking email', err),
+        );
+    }
+
     return {
       booking: newBooking,
       paymentLink: paymentLink,
