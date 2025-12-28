@@ -212,6 +212,15 @@ export class EmailQueueProcessor extends WorkerHost {
     return `${localPart[0]}***@${domain}`;
   }
 
+  private escapeHtml(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
   private generateOperatorNewBookingText(data: OperatorEmailData): string {
     const { operatorName, bookingDetails } = data;
     return `
@@ -354,6 +363,7 @@ Booking CRM Team
     data: OperatorStatusChangeEmailData,
   ): string {
     const { operatorName, status, rejectionReason } = data;
+    const safeOperatorName = this.escapeHtml(operatorName);
     let message = `
 <!DOCTYPE html>
 <html>
@@ -364,15 +374,16 @@ Booking CRM Team
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
   <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
     <h2 style="color: ${status === 'approved' ? '#4CAF50' : '#F44336'};">Operator Status Updated</h2>
-    <p>Dear ${operatorName},</p>
+    <p>Dear ${safeOperatorName},</p>
     <p>Your operator status has been changed to <strong>${status.toUpperCase()}</strong>.</p>
 `;
 
     if (status === 'rejected' && rejectionReason) {
+      const safeRejectionReason = this.escapeHtml(rejectionReason);
       message += `
     <div style="background-color: #ffebee; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 5px solid #F44336;">
       <h3 style="color: #D32F2F; margin-top: 0;">Reason for rejection:</h3>
-      <p>${rejectionReason}</p>
+      <p>${safeRejectionReason}</p>
     </div>
 `;
     }
