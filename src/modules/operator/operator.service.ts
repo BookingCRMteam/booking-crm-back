@@ -102,7 +102,7 @@ export class OperatorService {
       .where(eq(operators.id, id))
       .returning();
 
-    if (operator.email) {
+    if ((operator.status as OperatorStatus) !== status && operator.email) {
       await this.emailQueueService.addOperatorStatusChangeEmail({
         email: operator.email,
         operatorName: `${operator.firstName} ${operator.lastName}`,

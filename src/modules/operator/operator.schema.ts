@@ -1,5 +1,18 @@
 import { users } from '../user/user.schema';
-import { pgTable, serial, text, timestamp, integer } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  integer,
+  pgEnum,
+} from 'drizzle-orm/pg-core';
+
+export const operatorStatusEnum = pgEnum('operator_status', [
+  'pending',
+  'approved',
+  'rejected',
+]);
 
 export const operators = pgTable('operators', {
   id: serial('id').primaryKey(),
@@ -16,7 +29,7 @@ export const operators = pgTable('operators', {
   lastName: text('last_name').notNull(),
   website: text('website').notNull(),
   phone: text('phone').notNull(),
-  status: text('status').default('pending').notNull(),
+  status: operatorStatusEnum('status').default('pending').notNull(),
   philosophy: text('philosophy'),
   photo: text('photo'),
   rejectionReason: text('rejection_reason'),
