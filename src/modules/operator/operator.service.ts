@@ -18,12 +18,15 @@ import { operators } from '@app/modules/operator/operator.schema';
 
 type OperatorSelect = typeof operators.$inferSelect;
 
+import { EmailQueueService } from '../email-queue/email-queue.service';
+
 @Injectable()
 export class OperatorService {
   constructor(
     @Inject('DRIZZLE_CLIENT') private db: NodePgDatabase<typeof schema>,
     private userService: UserService,
     private readonly cloudinaryService: CloudinaryService,
+    private readonly emailQueueService: EmailQueueService,
   ) {}
 
   async getOperatorByIdForAdmin(id: number): Promise<OperatorSelect> {
@@ -98,6 +101,15 @@ export class OperatorService {
       })
       .where(eq(operators.id, id))
       .returning();
+
+    if ((operator.status as OperatorStatus) !== status && operator.email) {
+      await this.emailQueueService.addOperatorStatusChangeEmail({
+        email: operator.email,
+        operatorName: `${operator.firstName} ${operator.lastName}`,
+        status,
+        rejectionReason,
+      });
+    }
 
     return updated[0];
   }

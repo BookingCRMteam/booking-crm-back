@@ -11,6 +11,8 @@ import { CloudinaryService } from '@app/cloudinary/cloudinary.service';
 import { UserService } from '../user/user.service';
 import { OperatorService } from './operator.service';
 import { Test, TestingModule } from '@nestjs/testing';
+import { EmailQueueService } from '../email-queue/email-queue.service';
+import { OperatorStatus } from '@app/types/operator-status';
 /* eslint-disable @typescript-eslint/unbound-method */
 
 type Operator = typeof operators.$inferSelect;
@@ -20,6 +22,7 @@ describe('OperatorService', () => {
   let mockDb: DeepMockProxy<NodePgDatabase<typeof schema>>;
   let mockUserService: DeepMockProxy<UserService>;
   let mockCloudinaryService: DeepMockProxy<CloudinaryService>;
+  let mockEmailQueueService: DeepMockProxy<EmailQueueService>;
 
   const mockUser: User = {
     id: 1,
@@ -58,6 +61,7 @@ describe('OperatorService', () => {
     mockDb = mockDeep<NodePgDatabase<typeof schema>>();
     mockUserService = mockDeep<UserService>();
     mockCloudinaryService = mockDeep<CloudinaryService>();
+    mockEmailQueueService = mockDeep<EmailQueueService>();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -65,6 +69,7 @@ describe('OperatorService', () => {
         { provide: 'DRIZZLE_CLIENT', useValue: mockDb },
         { provide: UserService, useValue: mockUserService },
         { provide: CloudinaryService, useValue: mockCloudinaryService },
+        { provide: EmailQueueService, useValue: mockEmailQueueService },
       ],
     }).compile();
 
@@ -148,6 +153,153 @@ describe('OperatorService', () => {
 
       const result = await service.updateOperator(updateOperatorDto, req);
       expect(result).toEqual(updatedOperator);
+    });
+  });
+
+  describe('updateOperatorStatus', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('should throw NotFoundException if operator not found', async () => {
+      mockDb.query.operators.findFirst.mockResolvedValue(undefined);
+      await expect(
+        service.updateOperatorStatus(1, OperatorStatus.APPROVED),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException if rejection reason is too short', async () => {
+      mockDb.query.operators.findFirst.mockResolvedValue(mockOperator);
+      await expect(
+        service.updateOperatorStatus(1, OperatorStatus.REJECTED, 'Too short'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should update operator status to approved and send email notification', async () => {
+      const operatorWithEmail = { ...mockOperator, status: 'pending' };
+      const updatedOperator = { ...operatorWithEmail, status: 'approved' };
+
+      mockDb.query.operators.findFirst.mockResolvedValue(operatorWithEmail);
+      (mockDb.update as jest.Mock).mockReturnValue({
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockResolvedValue([updatedOperator]),
+      });
+      mockEmailQueueService.addOperatorStatusChangeEmail.mockResolvedValue(
+        undefined,
+      );
+
+      const result = await service.updateOperatorStatus(
+        1,
+        OperatorStatus.APPROVED,
+      );
+
+      expect(result).toEqual(updatedOperator);
+      expect(
+        mockEmailQueueService.addOperatorStatusChangeEmail,
+      ).toHaveBeenCalledWith({
+        email: operatorWithEmail.email,
+        operatorName: `${operatorWithEmail.firstName} ${operatorWithEmail.lastName}`,
+        status: 'approved',
+        rejectionReason: undefined,
+      });
+      expect(
+        mockEmailQueueService.addOperatorStatusChangeEmail,
+      ).toHaveBeenCalledTimes(1);
+    });
+
+    it('should update operator status to rejected with reason and send email notification', async () => {
+      const operatorWithEmail = { ...mockOperator, status: 'pending' };
+      const rejectionReason =
+        'Your application does not meet our requirements because of insufficient documentation and experience.';
+      const updatedOperator = {
+        ...operatorWithEmail,
+        status: 'rejected',
+        rejectionReason,
+      };
+
+      mockDb.query.operators.findFirst.mockResolvedValue(operatorWithEmail);
+      (mockDb.update as jest.Mock).mockReturnValue({
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockResolvedValue([updatedOperator]),
+      });
+      mockEmailQueueService.addOperatorStatusChangeEmail.mockResolvedValue(
+        undefined,
+      );
+
+      const result = await service.updateOperatorStatus(
+        1,
+        OperatorStatus.REJECTED,
+        rejectionReason,
+      );
+
+      expect(result).toEqual(updatedOperator);
+      expect(
+        mockEmailQueueService.addOperatorStatusChangeEmail,
+      ).toHaveBeenCalledWith({
+        email: operatorWithEmail.email,
+        operatorName: `${operatorWithEmail.firstName} ${operatorWithEmail.lastName}`,
+        status: 'rejected',
+        rejectionReason,
+      });
+      expect(
+        mockEmailQueueService.addOperatorStatusChangeEmail,
+      ).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not send email notification if operator has no email', async () => {
+      const operatorWithoutEmail = { ...mockOperator, email: null };
+      const updatedOperator = { ...operatorWithoutEmail, status: 'approved' };
+
+      mockDb.query.operators.findFirst.mockResolvedValue(operatorWithoutEmail);
+      (mockDb.update as jest.Mock).mockReturnValue({
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockResolvedValue([updatedOperator]),
+      });
+
+      const result = await service.updateOperatorStatus(
+        1,
+        OperatorStatus.APPROVED,
+      );
+
+      expect(result).toEqual(updatedOperator);
+      expect(
+        mockEmailQueueService.addOperatorStatusChangeEmail,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should not send email notification if status has not changed', async () => {
+      // The service should only send email when the status actually changes
+      const operatorAlreadyApproved = { ...mockOperator, status: 'approved' };
+      const updatedOperator = {
+        ...operatorAlreadyApproved,
+        status: 'approved',
+      };
+
+      mockDb.query.operators.findFirst.mockResolvedValue(
+        operatorAlreadyApproved,
+      );
+      (mockDb.update as jest.Mock).mockReturnValue({
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockResolvedValue([updatedOperator]),
+      });
+      mockEmailQueueService.addOperatorStatusChangeEmail.mockResolvedValue(
+        undefined,
+      );
+
+      const result = await service.updateOperatorStatus(
+        1,
+        OperatorStatus.APPROVED,
+      );
+
+      expect(result).toEqual(updatedOperator);
+      // Email should NOT be sent when status hasn't changed
+      expect(
+        mockEmailQueueService.addOperatorStatusChangeEmail,
+      ).not.toHaveBeenCalled();
     });
   });
 
