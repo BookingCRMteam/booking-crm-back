@@ -11,6 +11,7 @@ import { CloudinaryService } from '@app/cloudinary/cloudinary.service';
 import { UserService } from '../user/user.service';
 import { OperatorService } from './operator.service';
 import { Test, TestingModule } from '@nestjs/testing';
+import { EmailQueueService } from '../email-queue/email-queue.service';
 /* eslint-disable @typescript-eslint/unbound-method */
 
 type Operator = typeof operators.$inferSelect;
@@ -20,6 +21,7 @@ describe('OperatorService', () => {
   let mockDb: DeepMockProxy<NodePgDatabase<typeof schema>>;
   let mockUserService: DeepMockProxy<UserService>;
   let mockCloudinaryService: DeepMockProxy<CloudinaryService>;
+  let mockEmailQueueService: DeepMockProxy<EmailQueueService>;
 
   const mockUser: User = {
     id: 1,
@@ -58,6 +60,7 @@ describe('OperatorService', () => {
     mockDb = mockDeep<NodePgDatabase<typeof schema>>();
     mockUserService = mockDeep<UserService>();
     mockCloudinaryService = mockDeep<CloudinaryService>();
+    mockEmailQueueService = mockDeep<EmailQueueService>();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -65,6 +68,7 @@ describe('OperatorService', () => {
         { provide: 'DRIZZLE_CLIENT', useValue: mockDb },
         { provide: UserService, useValue: mockUserService },
         { provide: CloudinaryService, useValue: mockCloudinaryService },
+        { provide: EmailQueueService, useValue: mockEmailQueueService },
       ],
     }).compile();
 
