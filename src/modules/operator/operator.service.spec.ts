@@ -270,8 +270,8 @@ describe('OperatorService', () => {
       ).not.toHaveBeenCalled();
     });
 
-    it('should update operator and send email even if status appears unchanged', async () => {
-      // Note: The service doesn't check if status changed, it always sends email
+    it('should not send email notification if status has not changed', async () => {
+      // The service should only send email when the status actually changes
       const operatorAlreadyApproved = { ...mockOperator, status: 'approved' };
       const updatedOperator = {
         ...operatorAlreadyApproved,
@@ -296,15 +296,10 @@ describe('OperatorService', () => {
       );
 
       expect(result).toEqual(updatedOperator);
-      // Email is sent regardless of whether status actually changed
+      // Email should NOT be sent when status hasn't changed
       expect(
         mockEmailQueueService.addOperatorStatusChangeEmail,
-      ).toHaveBeenCalledWith({
-        email: operatorAlreadyApproved.email,
-        operatorName: `${operatorAlreadyApproved.firstName} ${operatorAlreadyApproved.lastName}`,
-        status: 'approved',
-        rejectionReason: undefined,
-      });
+      ).not.toHaveBeenCalled();
     });
   });
 
