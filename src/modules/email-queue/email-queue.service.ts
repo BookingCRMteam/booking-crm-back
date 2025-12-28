@@ -33,6 +33,13 @@ export interface OperatorEmailData {
   };
 }
 
+export interface OperatorStatusChangeEmailData {
+  email: string;
+  operatorName: string;
+  status: string;
+  rejectionReason?: string;
+}
+
 @Injectable()
 export class EmailQueueService {
   constructor(@InjectQueue('email') private emailQueue: Queue) {}
@@ -59,6 +66,16 @@ export class EmailQueueService {
 
   async addOperatorBookingPaidEmail(data: OperatorEmailData) {
     await this.emailQueue.add('operator-booking-paid', data, {
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 2000,
+      },
+    });
+  }
+
+  async addOperatorStatusChangeEmail(data: OperatorStatusChangeEmailData) {
+    await this.emailQueue.add('operator-status-change', data, {
       attempts: 3,
       backoff: {
         type: 'exponential',
