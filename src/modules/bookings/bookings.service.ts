@@ -57,13 +57,13 @@ export class BookingsService {
     );
   }
 
-  async createBooking(data: CreateBookingDto) {
+  async createBooking(data: CreateBookingDto, userId: number) {
     // 1. Check if user and tour exist
     const user = await this.db.query.users.findFirst({
-      where: (users, { eq }) => eq(users.id, data.userId),
+      where: (users, { eq }) => eq(users.id, userId),
     });
     if (!user) {
-      throw new NotFoundException(`User with id ${data.userId} not found`);
+      throw new NotFoundException(`User with id ${userId} not found`);
     }
 
     const tour = await this.db.query.tours.findFirst({
@@ -130,7 +130,7 @@ export class BookingsService {
         const [booking] = await tx
           .insert(bookings)
           .values({
-            userId: data.userId,
+            userId: userId,
             tourId: data.tourId,
             numberOfPeople: data.numberOfPeople,
             firstPersonName: data.firstPersonName,

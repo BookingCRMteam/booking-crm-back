@@ -5,6 +5,7 @@ import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { ResponseBookingDto } from './dto/response-booking.dto';
 import { JwtAuthGuard } from '@app/common/guards/jwt-auth.guard';
+import { CurrentUser } from '@app/common/decorators/current-user.decorator';
 
 @ApiTags('Bookings')
 @Controller('bookings')
@@ -12,6 +13,7 @@ export class BookingsController {
   constructor(private readonly bookingsService: BookingsService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Create a new booking and generate a payment link' })
   @ApiResponse({
     status: 201,
@@ -23,8 +25,12 @@ export class BookingsController {
   async create(
     @Body()
     data: CreateBookingDto,
+    @CurrentUser() user: { id: number },
   ) {
-    const bookingDetails = await this.bookingsService.createBooking(data);
+    const bookingDetails = await this.bookingsService.createBooking(
+      data,
+      user.id,
+    );
     return {
       message: 'Booking created. Redirect to payment link to complete.',
       ...bookingDetails,
