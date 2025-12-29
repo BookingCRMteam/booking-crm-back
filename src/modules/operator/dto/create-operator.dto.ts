@@ -19,7 +19,9 @@ const WEBSITE_URL_PATTERN =
 const WEBSITE_URL_ERROR_MESSAGE =
   'Website must start with http:// or https://, contain a valid domain, and not include spaces';
 
-const COUNTRY_CODES = ['+380', '+1']; // список дозволених кодів країн
+const NO_HTML_PATTERN = /^[^<>]*$/;
+
+const COUNTRY_CODES = ['+380', '+1'];
 const COUNTRY_CODE_REGEX = COUNTRY_CODES.map((code) =>
   code.replace('+', '\\+'),
 ).join('|');
@@ -35,6 +37,9 @@ export class CreateOperatorDto {
   @IsString()
   @Length(10, 500, {
     message: 'Description must be between 10 and 500 characters',
+  })
+  @Matches(NO_HTML_PATTERN, {
+    message: 'HTML tags are not allowed in description',
   })
   description?: string;
 
