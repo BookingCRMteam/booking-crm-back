@@ -19,16 +19,6 @@ export class CreateBookingDto {
   tourId: number;
 
   @ApiProperty({
-    example: 101,
-    description: 'ID of the user making the booking',
-  })
-  @IsNumber()
-  @IsNotEmpty()
-  @IsInt()
-  @Max(2147483647)
-  userId: number;
-
-  @ApiProperty({
     example: 2,
     description: 'Number of people for the booking',
     default: 2,

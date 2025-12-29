@@ -149,6 +149,7 @@ describe('BookingsService', () => {
     });
 
     it('should throw ConflictException if status is not pending_payment', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       mockDb.query.bookings.findFirst.mockResolvedValue({
         id: 1,
         status: 'confirmed',
@@ -168,6 +169,7 @@ describe('BookingsService', () => {
         tour: { title: 'Test Tour' },
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       mockDb.query.bookings.findFirst.mockResolvedValue(mockBooking as any);
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
@@ -181,6 +183,7 @@ describe('BookingsService', () => {
       const mockWhere = jest.fn().mockResolvedValue({});
       const mockSet = jest.fn().mockReturnValue({ where: mockWhere });
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       mockDb.update.mockReturnValue({
         set: mockSet,
       } as any);
@@ -205,6 +208,7 @@ describe('BookingsService', () => {
         tour: { title: 'Test Tour' },
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       mockDb.query.bookings.findFirst.mockResolvedValue(mockBooking as any);
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
@@ -215,6 +219,7 @@ describe('BookingsService', () => {
       const mockWhere = jest.fn().mockResolvedValue({});
       const mockSet = jest.fn().mockReturnValue({ where: mockWhere });
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       mockDb.update.mockReturnValue({
         set: mockSet,
       } as any);
