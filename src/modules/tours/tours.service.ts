@@ -90,6 +90,15 @@ export class ToursService {
     }
     return tour;
   }
+
+  async getTourPhotoCount(tourId: number): Promise<number> {
+    const result = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.tourPhotos)
+      .where(eq(schema.tourPhotos.tourId, tourId));
+    return Number(result[0].count);
+  }
+
   async create(
     createTourDto: CreateTourDto,
     operatorId: number,
