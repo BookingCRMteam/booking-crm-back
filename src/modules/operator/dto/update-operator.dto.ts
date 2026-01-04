@@ -6,7 +6,6 @@ import {
   ValidateIf,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { IsFileValid } from '../../../common/validators/file-type-size.validator';
 
 const NAME_PATTERN =
   /^(?!.*(--|''))(?!(?:.*[-']$)|(?:^[-']))[A-Za-zА-Яа-яЁёЇїІіЄєҐґ'-]{2,50}$/;
@@ -104,11 +103,4 @@ export class UpdateOperatorDto {
     message: WEBSITE_URL_ERROR_MESSAGE,
   })
   website?: string;
-
-  @IsOptional()
-  @ValidateIf((o: UpdateOperatorDto) => !!o.photo)
-  @IsFileValid(['image/jpeg', 'image/png', 'image/webp'], 5, {
-    message: 'Photo must be JPEG, PNG or WEBP and up to 5MB',
-  })
-  photo?: Express.Multer.File;
 }
