@@ -348,24 +348,19 @@ describe('OperatorService', () => {
 
   describe('getAllOperators', () => {
     it('should get all operators with meta', async () => {
-      const operators = [mockOperator];
+      const operatorsList = [mockOperator];
 
-      (mockDb.select as jest.Mock)
-        .mockReturnValueOnce({
-          from: jest.fn().mockReturnThis(),
-          where: jest.fn().mockResolvedValue([{ count: 1 }]),
-        })
-        .mockReturnValueOnce({
-          from: jest.fn().mockReturnThis(),
-          where: jest.fn().mockReturnThis(),
-          limit: jest.fn().mockReturnThis(),
-          offset: jest.fn().mockResolvedValue(operators),
-        });
+      (mockDb.select as jest.Mock).mockReturnValueOnce({
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockResolvedValue([{ count: 1 }]),
+      });
+
+      mockDb.query.operators.findMany.mockResolvedValue(operatorsList);
 
       const result = await service.getAllOperators(10, 0);
 
       expect(result).toEqual({
-        items: operators,
+        items: operatorsList,
         meta: {
           total: 1,
           limit: 10,
