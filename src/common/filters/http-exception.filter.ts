@@ -17,10 +17,20 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const status = exception.getStatus();
     const exceptionResponse = exception.getResponse();
 
+    let message =
+      (exceptionResponse as ExceptionResponse).message || exception.message;
+
+    if (
+      typeof message === 'string' &&
+      message.startsWith('Unexpected field - ')
+    ) {
+      const fieldName = message.split(' - ')[1];
+      message = `Maximum number of files exceeded for field '${fieldName}'. Please reduce the number of files and try again.`;
+    }
+
     response.status(status).json({
       statusCode: status,
-      message:
-        (exceptionResponse as ExceptionResponse).message || exception.message,
+      message,
       error: (exceptionResponse as ExceptionResponse).error || 'Http Exception',
     });
   }
