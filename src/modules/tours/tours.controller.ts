@@ -193,6 +193,15 @@ export class ToursController {
           );
         }
 
+        const currentPhotoCount = await this.toursService.getTourPhotoCount(id);
+        const allowedNewPhotos = 10 - currentPhotoCount;
+
+        if (files.length > allowedNewPhotos) {
+          throw new BadRequestException(
+            `You can only upload ${allowedNewPhotos} more photos. Current photos: ${currentPhotoCount}.`,
+          );
+        }
+
         const uploadedPhotos = await Promise.all(
           files.map(async (file, index) => {
             const uploadResult = await this.cloudinaryService.uploadImage(

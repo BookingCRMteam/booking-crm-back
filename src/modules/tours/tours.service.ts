@@ -90,6 +90,15 @@ export class ToursService {
     }
     return tour;
   }
+
+  async getTourPhotoCount(tourId: number): Promise<number> {
+    const result = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.tourPhotos)
+      .where(eq(schema.tourPhotos.tourId, tourId));
+    return Number(result[0].count);
+  }
+
   async create(
     createTourDto: CreateTourDto,
     operatorId: number,
@@ -573,6 +582,22 @@ export class ToursService {
         }
 
         if (photos !== undefined) {
+          // Validate photo limit within transaction
+          const currentPhotoCount = await tx
+            .select({ count: sql<number>`count(*)` })
+            .from(schema.tourPhotos)
+            .where(eq(schema.tourPhotos.tourId, id));
+
+          const newPhotosToAdd = photos.filter(
+            (p) => p.url && !existingDbPhotoUrls.has(p.url),
+          ).length;
+
+          if (Number(currentPhotoCount[0].count) + newPhotosToAdd > 10) {
+            throw new BadRequestException(
+              `Cannot exceed 10 photos per tour. Current: ${currentPhotoCount[0].count}, attempting to add: ${newPhotosToAdd}.`,
+            );
+          }
+
           const mainPhotos = photos.filter((p) => p.isMain);
           if (mainPhotos.length > 1) {
             throw new BadRequestException('Only one photo can be set as main.');
