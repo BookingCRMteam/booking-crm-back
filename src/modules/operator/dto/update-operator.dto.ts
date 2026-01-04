@@ -53,6 +53,9 @@ export class UpdateOperatorDto {
   @Length(10, 500, {
     message: 'Description must be between 10 and 500 characters',
   })
+  @Matches(NO_HTML_PATTERN, {
+    message: 'HTML tags are not allowed in description',
+  })
   description?: string;
 
   @IsOptional()
