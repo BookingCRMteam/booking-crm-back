@@ -362,6 +362,9 @@ export class ToursService {
       case 'startDate':
         orderByColumn = schema.tours.startDate;
         break;
+      default:
+        orderByColumn = schema.tours.id;
+        break;
     }
 
     // --- Основний запит ---
