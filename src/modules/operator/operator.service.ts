@@ -57,6 +57,7 @@ export class OperatorService {
       .select()
       .from(operatorSchema.operators)
       .where(status ? eq(operatorSchema.operators.status, status) : undefined)
+      .orderBy(operatorSchema.operators.id)
       .limit(limit)
       .offset(offset);
 
