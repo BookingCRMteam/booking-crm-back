@@ -16,7 +16,8 @@ export class UpdateOperatorStatusDto {
 
   @ApiProperty({
     required: false,
-    minLength: 50,
+    minLength: 10,
+    maxLength: 500,
     description: 'Причина відмови (обовʼязково якщо статус rejected)',
   })
   @IsOptional()
