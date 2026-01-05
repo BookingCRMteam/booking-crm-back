@@ -46,6 +46,9 @@ export class OperatorService {
     offset?: number,
     status?: OperatorStatus,
   ) {
+    const safeLimit = limit ?? 50;
+    const safeOffset = offset ?? 0;
+
     const totalResult = await this.db
       .select({ count: sql<number>`COUNT(*)` })
       .from(operatorSchema.operators)
@@ -57,15 +60,15 @@ export class OperatorService {
       .select()
       .from(operatorSchema.operators)
       .where(status ? eq(operatorSchema.operators.status, status) : undefined)
-      .limit(limit)
-      .offset(offset);
+      .limit(safeLimit)
+      .offset(safeOffset);
 
     return {
       items,
       meta: {
         total,
-        limit,
-        offset,
+        limit: safeLimit,
+        offset: safeOffset,
       },
     };
   }
