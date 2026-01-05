@@ -46,26 +46,29 @@ export class OperatorService {
     offset?: number,
     status?: OperatorStatus,
   ) {
+    const safeLimit = limit ?? 50;
+    const safeOffset = offset ?? 0;
+
     const totalResult = await this.db
       .select({ count: sql<number>`COUNT(*)` })
       .from(operatorSchema.operators)
       .where(status ? eq(operatorSchema.operators.status, status) : undefined);
 
     const total = Number(totalResult[0].count);
-
-    const items = await this.db.query.operators.findMany({
-      where: status ? eq(operators.status, status) : undefined,
-      orderBy: (o) => [asc(o.id)],
-      limit,
-      offset,
-    });
+      
+    const items = await this.db
+      .select()
+      .from(operatorSchema.operators)
+      .where(status ? eq(operatorSchema.operators.status, status) : undefined)
+      .limit(safeLimit)
+      .offset(safeOffset);
 
     return {
       items,
       meta: {
         total,
-        limit,
-        offset,
+        limit: safeLimit,
+        offset: safeOffset,
       },
     };
   }

@@ -14,7 +14,7 @@ const NAME_ERROR_MESSAGE =
   'must be 2–50 characters long, contain only letters (Latin or Cyrillic), single hyphens or apostrophes. ' +
   'Digits, spaces, special characters, consecutive or leading/trailing separators are not allowed.';
 const WEBSITE_URL_PATTERN =
-  /^(https?:\/\/)([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?::\d{1,5})?(\/[^\s]*)?$/;
+  /^(https?:\/\/)([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?::\d{1,5})?(\/(?:[A-Za-z0-9\-._~!$&'()*+,;=:@/]|%[0-9A-Fa-f]{2})*)?$/;
 
 const WEBSITE_URL_ERROR_MESSAGE =
   'Website must start with http:// or https://, contain a valid domain, and not include spaces';
