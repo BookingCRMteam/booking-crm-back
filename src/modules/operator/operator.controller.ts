@@ -154,7 +154,17 @@ export class OperatorController {
     @Req() req: AuthenticatedRequest,
     @UploadedFile() file?: Express.Multer.File,
   ) {
-    if (file) operatorInfoDTO.photo = file;
+    if (file) {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+
+      if (!allowedTypes.includes(file.mimetype)) {
+        throw new BadRequestException('Photo must be JPEG, PNG or WEBP');
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        throw new BadRequestException('Photo size must be up to 5MB');
+      }
+    }
 
     const errors = await validate(operatorInfoDTO);
     if (errors.length > 0) {
