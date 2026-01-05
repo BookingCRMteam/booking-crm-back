@@ -14,7 +14,6 @@ import {
   ApiOperation,
   ApiResponse,
   ApiTags,
-  ApiQuery,
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { OperatorService } from '@app/modules/operator/operator.service';
@@ -22,8 +21,7 @@ import { JwtAuthGuard } from '@app/common/guards/jwt-auth.guard';
 import { AdminOperatorFullDto } from './dto/admin-operator-full.dto';
 import { UpdateOperatorStatusDto } from './dto/update-operator-status.dto';
 import { Request } from 'express';
-import { OperatorStatus } from '@app/types/operator-status';
-
+import { GetOperatorsQueryDto } from './dto/get-operators.query.dto';
 @ApiTags('Admin')
 @ApiBearerAuth()
 @Controller('admin/operators')
@@ -33,14 +31,6 @@ export class AdminOperatorsController {
   // ================= GET ALL WITH FILTERS =================
   @UseGuards(JwtAuthGuard)
   @Get()
-  @ApiQuery({ name: 'limit', required: false, type: Number, example: 50 })
-  @ApiQuery({ name: 'offset', required: false, type: Number, example: 0 })
-  @ApiQuery({
-    name: 'status',
-    required: false,
-    enum: OperatorStatus,
-    description: 'pending | approved | rejected',
-  })
   @ApiOperation({ summary: 'Отримати всіх операторів з фільтром і пагінацією' })
   @ApiResponse({
     status: 200,
@@ -49,22 +39,15 @@ export class AdminOperatorsController {
   })
   async getOperators(
     @Req() req: Request & { user: { role: string } },
-    @Query('limit') limit?: string,
-    @Query('offset') offset?: string,
-    @Query('status') status?: OperatorStatus,
+    @Query() query: GetOperatorsQueryDto,
   ) {
     if (req.user?.role !== 'admin') {
       throw new ForbiddenException('Доступ дозволено лише адміністраторам');
     }
 
-    const limitNumber = limit ? Number(limit) : undefined;
-    const offsetNumber = offset ? Number(offset) : undefined;
+    const { limit, offset, status } = query;
 
-    return await this.operatorService.getAllOperators(
-      limitNumber,
-      offsetNumber,
-      status,
-    );
+    return await this.operatorService.getAllOperators(limit, offset, status);
   }
 
   // ================= GET ONE =================
