@@ -89,21 +89,21 @@ describe('OperatorBookingsService', () => {
       expect(result[0].bookingId).toBe(bookingsData[0].bookingId);
       expect(result[0].totalPriceUAH).toBe('4000.00'); // 100 * 40
     });
-    it('should throw ForbiddenException if operator status is "На перевірці"', async () => {
+    it('should throw ForbiddenException if operator status is pending', async () => {
       mockDb.where.mockResolvedValueOnce([
-        { operatorId: 1, status: 'На перевірці' },
+        { operatorId: 1, status: 'pending' },
       ]);
-      await expect(service.getOperatorBookings(1)).rejects.toThrow(
-        'Доступ заборонено для вашого статусу оператора',
+      await expect(service.getOperatorBookings(1)).rejects.toThrowError(
+        'Access denied',
       );
     });
 
-    it('should throw ForbiddenException if operator status is "Відхилено"', async () => {
+    it('should throw ForbiddenException if operator status is rejected', async () => {
       mockDb.where.mockResolvedValueOnce([
-        { operatorId: 1, status: 'Відхилено' },
+        { operatorId: 1, status: 'rejected' },
       ]);
-      await expect(service.getOperatorBookings(1)).rejects.toThrow(
-        'Доступ заборонено для вашого статусу оператора',
+      await expect(service.getOperatorBookings(1)).rejects.toThrowError(
+        'Access denied',
       );
     });
   });
