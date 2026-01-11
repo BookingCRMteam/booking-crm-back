@@ -87,9 +87,9 @@ export class OperatorService {
     }
 
     if (status === OperatorStatus.REJECTED) {
-      if (!rejectionReason || rejectionReason.length < 50) {
+      if (!rejectionReason || rejectionReason.length < 10) {
         throw new BadRequestException(
-          'Rejection reason must be at least 50 characters long',
+          'Rejection reason must be at least 10 characters long',
         );
       }
     }
