@@ -33,9 +33,9 @@ export class OperatorBookingsService {
 
     if (!operator) return [];
 
-    if (['На перевірці', 'Відхилено'].includes(operator.status)) {
+    if (['pending', 'rejected'].includes(operator.status)) {
       throw new ForbiddenException(
-        'Доступ заборонено для вашого статусу оператора',
+        'Access denied: your operator status does not allow viewing bookings',
       );
     }
     const toursList = await this.db
