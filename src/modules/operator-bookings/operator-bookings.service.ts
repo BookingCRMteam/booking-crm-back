@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, ForbiddenException } from '@nestjs/common';
 import { eq, inArray, and, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { bookings, tours, operators } from '@app/db/schema/schema';
@@ -27,12 +27,17 @@ export class OperatorBookingsService {
     if (!operatorUserId) return [];
 
     const [operator] = await this.db
-      .select({ operatorId: operators.id })
+      .select({ operatorId: operators.id, status: operators.status })
       .from(operators)
       .where(eq(operators.userId, operatorUserId));
 
     if (!operator) return [];
 
+    if (['На перевірці', 'Відхилено'].includes(operator.status)) {
+      throw new ForbiddenException(
+        'Доступ заборонено для вашого статусу оператора',
+      );
+    }
     const toursList = await this.db
       .select({ id: tours.id })
       .from(tours)

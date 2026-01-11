@@ -89,8 +89,24 @@ describe('OperatorBookingsService', () => {
       expect(result[0].bookingId).toBe(bookingsData[0].bookingId);
       expect(result[0].totalPriceUAH).toBe('4000.00'); // 100 * 40
     });
-  });
+    it('should throw ForbiddenException if operator status is "На перевірці"', async () => {
+      mockDb.where.mockResolvedValueOnce([
+        { operatorId: 1, status: 'На перевірці' },
+      ]);
+      await expect(service.getOperatorBookings(1)).rejects.toThrow(
+        'Доступ заборонено для вашого статусу оператора',
+      );
+    });
 
+    it('should throw ForbiddenException if operator status is "Відхилено"', async () => {
+      mockDb.where.mockResolvedValueOnce([
+        { operatorId: 1, status: 'Відхилено' },
+      ]);
+      await expect(service.getOperatorBookings(1)).rejects.toThrow(
+        'Доступ заборонено для вашого статусу оператора',
+      );
+    });
+  });
   describe('convertToUAH', () => {
     it('should convert USD to UAH', () => {
       // @ts-expect-error --- IGNORE --
