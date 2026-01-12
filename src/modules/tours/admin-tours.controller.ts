@@ -8,44 +8,55 @@ import {
   Param,
   Body,
   ParseIntPipe,
+  Req,
+  ForbiddenException,
 } from '@nestjs/common';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { UpdateTourFeatureDto } from './dto/update-tour-feature.dto';
-
 import { ToursService } from './tours.service';
 import { AdminGetToursQueryDto } from './dto/admin-get-tours-query.dto';
-
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { Request } from 'express';
 
 @Controller('admin/tours')
-@UseGuards(JwtAuthGuard) // додай RolesGuard лише якщо він у тебе є
+@UseGuards(JwtAuthGuard, new RolesGuard('admin'))
 export class AdminToursController {
   private readonly logger = new Logger(AdminToursController.name);
 
   constructor(private readonly toursService: ToursService) {}
 
-  @Get()
-  async findAll(@Query() query: AdminGetToursQueryDto) {
-    try {
-      const result = await this.toursService.findAllAdmin(query);
+  private readonly MAX_LIMIT = 100;
 
-      return {
-        message: 'Admin tours loaded successfully',
-        data: result.tours,
-        meta: {
-          total: result.total,
-          limit: result.limit,
-          offset: result.offset,
-        },
-      };
-    } catch (error) {
-      this.logger.error('Error loading admin tours', error);
-      throw error;
+  @Get()
+  async findAll(
+    @Req() req: Request & { user: { role: string } },
+    @Query() query: AdminGetToursQueryDto,
+  ) {
+    if (req.user?.role !== 'admin') {
+      throw new ForbiddenException('Доступ дозволено лише адміністраторам');
     }
+
+    const limit = Math.min(query.limit ?? 10, this.MAX_LIMIT);
+    const offset = query.offset ?? 0;
+
+    const result = await this.toursService.findAllAdmin({
+      ...query,
+      limit,
+      offset,
+    });
+
+    return {
+      message: 'Admin tours loaded successfully',
+      data: result.tours,
+      meta: {
+        total: result.total,
+        limit,
+        offset,
+      },
+    };
   }
 
   @Patch(':id/feature')
-  @UseGuards(JwtAuthGuard, new RolesGuard('admin'))
   async updateFeatureStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateTourFeatureDto: UpdateTourFeatureDto,
