@@ -89,8 +89,24 @@ describe('OperatorBookingsService', () => {
       expect(result[0].bookingId).toBe(bookingsData[0].bookingId);
       expect(result[0].totalPriceUAH).toBe('4000.00'); // 100 * 40
     });
-  });
+    it('should throw ForbiddenException if operator status is pending', async () => {
+      mockDb.where.mockResolvedValueOnce([
+        { operatorId: 1, status: 'pending' },
+      ]);
+      await expect(service.getOperatorBookings(1)).rejects.toThrowError(
+        'Access denied',
+      );
+    });
 
+    it('should throw ForbiddenException if operator status is rejected', async () => {
+      mockDb.where.mockResolvedValueOnce([
+        { operatorId: 1, status: 'rejected' },
+      ]);
+      await expect(service.getOperatorBookings(1)).rejects.toThrowError(
+        'Access denied',
+      );
+    });
+  });
   describe('convertToUAH', () => {
     it('should convert USD to UAH', () => {
       // @ts-expect-error --- IGNORE --

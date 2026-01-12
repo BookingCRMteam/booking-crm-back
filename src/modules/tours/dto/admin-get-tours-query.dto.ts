@@ -1,4 +1,4 @@
-import { IsOptional, IsEnum, IsString } from 'class-validator';
+import { IsOptional, IsEnum, IsString, IsDateString } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { GetToursQueryDto } from './get-tours-query.dto';
 
@@ -18,12 +18,19 @@ export class AdminGetToursQueryDto extends GetToursQueryDto {
         return lower as TourStatus;
       }
     }
-    return undefined; // повертаємо undefined якщо value некоректне
+    return undefined;
   })
   status?: TourStatus;
 
   @IsOptional()
   @IsString()
   search?: string;
-  // limit/offset inherited from GetToursQueryDto
+
+  @IsOptional()
+  @IsDateString({}, { message: 'minDate must be a valid ISO date string' })
+  declare minDate?: string;
+
+  @IsOptional()
+  @IsDateString({}, { message: 'maxEndDate must be a valid ISO date string' })
+  declare maxEndDate?: string;
 }
