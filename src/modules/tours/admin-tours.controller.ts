@@ -10,6 +10,8 @@ import {
   ParseIntPipe,
   Req,
   ForbiddenException,
+  ValidationPipe,
+  UsePipes,
 } from '@nestjs/common';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { UpdateTourFeatureDto } from './dto/update-tour-feature.dto';
@@ -55,8 +57,15 @@ export class AdminToursController {
       },
     };
   }
-
   @Patch(':id/feature')
+  @UsePipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      errorHttpStatusCode: 422, // або прибери — буде 400
+    }),
+  )
   async updateFeatureStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateTourFeatureDto: UpdateTourFeatureDto,
