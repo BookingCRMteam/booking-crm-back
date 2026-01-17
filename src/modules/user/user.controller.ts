@@ -9,6 +9,8 @@ import {
   Post,
   ParseIntPipe,
   Query,
+  ValidationPipe,
+  UsePipes,
 } from '@nestjs/common';
 import {
   ApiConsumes,
@@ -75,6 +77,14 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard)
   @Get('bookings')
+  @UsePipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      errorHttpStatusCode: 400,
+    }),
+  )
   @ApiOkResponse({
     description: 'Paginated list of user bookings',
     type: UserBookingsPaginatedResponseDto,
