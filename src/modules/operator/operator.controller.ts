@@ -267,7 +267,14 @@ export class OperatorController {
     },
   })
   async getPopular(@Query() query: GetPopularOperatorsDto) {
-    const limit = query.limit ?? 6; // дефолтне значення
+    const DEFAULT_LIMIT = 6;
+    const MAX_LIMIT = 100;
+
+    let limit = query.limit ?? DEFAULT_LIMIT;
+    if (limit > MAX_LIMIT) {
+      limit = MAX_LIMIT;
+    }
+
     return this.operatorService.getPopularOperators(limit);
   }
   @Get(':id')
