@@ -30,6 +30,14 @@ export class AdminToursController {
   private readonly MAX_LIMIT = 100;
 
   @Get()
+  @UsePipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      errorHttpStatusCode: 400,
+    }),
+  )
   async findAll(
     @Req() req: Request & { user: { role: string } },
     @Query() query: AdminGetToursQueryDto,

@@ -1,6 +1,7 @@
-import { IsOptional, IsEnum, IsString, IsDateString } from 'class-validator';
+import { IsOptional, IsEnum, IsString } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { GetToursQueryDto } from './get-tours-query.dto';
+import { IsValidDate } from '@app/common/validators/is-valid-date.validator';
 
 export enum TourStatus {
   ACTIVE = 'active',
@@ -27,10 +28,14 @@ export class AdminGetToursQueryDto extends GetToursQueryDto {
   search?: string;
 
   @IsOptional()
-  @IsDateString({}, { message: 'minDate must be a valid ISO date string' })
+  @IsValidDate({
+    message: 'minDate must be a valid calendar date (YYYY-MM-DD)',
+  })
   declare minDate?: string;
 
   @IsOptional()
-  @IsDateString({}, { message: 'maxEndDate must be a valid ISO date string' })
+  @IsValidDate({
+    message: 'maxEndDate must be a valid calendar date (YYYY-MM-DD)',
+  })
   declare maxEndDate?: string;
 }
