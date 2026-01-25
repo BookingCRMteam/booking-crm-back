@@ -74,6 +74,12 @@ export class BookingsService {
       throw new NotFoundException(`Tour with id ${data.tourId} not found`);
     }
 
+    if (new Date(tour.startDate) < new Date()) {
+      throw new BadRequestException(
+        'Tour has already started or ended. Booking is not allowed.',
+      );
+    }
+
     if (
       data.numberOfPeople > 100 ||
       data.numberOfPeople < 2 ||

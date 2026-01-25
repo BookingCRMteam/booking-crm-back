@@ -3,7 +3,11 @@ import { BookingsService } from './bookings.service';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '@app/db/schema/schema';
 import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
-import { NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { EmailQueueService } from '../email-queue/email-queue.service';
 
 // Mock Stripe and LiqPay
@@ -228,6 +232,41 @@ describe('BookingsService', () => {
       expect(result.paymentLink).toBe('http://liqpay.com/pay');
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockDb.update).toHaveBeenCalled();
+    });
+  });
+
+  describe('createBooking', () => {
+    it('should throw BadRequestException if tour start date is in the past', async () => {
+      const userId = 1;
+      const tourId = 1;
+      const pastDate = new Date();
+      pastDate.setDate(pastDate.getDate() - 1); // Yesterday
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      mockDb.query.users.findFirst.mockResolvedValue({ id: userId } as any);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      mockDb.query.tours.findFirst.mockResolvedValue({
+        id: tourId,
+        startDate: pastDate,
+        endDate: pastDate,
+        availableSpots: 10,
+        price: '100',
+        currency: 'USD',
+        operator: { email: 'operator@example.com' },
+      } as any);
+
+      const createBookingDto = {
+        tourId,
+        numberOfPeople: 2,
+        firstPersonName: 'First',
+        firstPersonSurname: 'Last',
+        phone: '+1234567890',
+        paymentProvider: 'stripe',
+      };
+
+      await expect(
+        service.createBooking(createBookingDto as any, userId),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });
