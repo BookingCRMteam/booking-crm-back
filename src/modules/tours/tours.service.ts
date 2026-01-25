@@ -486,13 +486,15 @@ export class ToursService {
       throw new BadRequestException(`Tour with ID ${tourId} is not active.`);
     }
 
-    const isAvailable = tour.availableSpots >= spots;
+    if (tour.availableSpots < spots) {
+      throw new BadRequestException('Not enough available spots');
+    }
 
     return {
       tourId: tour.id,
       requestedSpots: spots,
       availableSpots: tour.availableSpots,
-      isAvailable,
+      isAvailable: true,
     };
   }
 
