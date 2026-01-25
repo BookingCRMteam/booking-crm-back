@@ -121,20 +121,16 @@ describe('ToursController', () => {
       expect(toursService.checkAvailability).toHaveBeenCalledWith(1, 5);
     });
 
-    it('should return isAvailable false when not enough spots', async () => {
+    it('should propagate BadRequestException when not enough spots', async () => {
       const checkAvailabilityDto = { tourId: 1, spots: 15 };
-      const expectedResult = {
-        tourId: 1,
-        requestedSpots: 15,
-        availableSpots: 10,
-        isAvailable: false,
-      };
 
-      mockToursService.checkAvailability.mockResolvedValue(expectedResult);
+      mockToursService.checkAvailability.mockRejectedValue(
+        new BadRequestException('Not enough available spots'),
+      );
 
-      const result = await controller.checkAvailability(checkAvailabilityDto);
-
-      expect(result.isAvailable).toBe(false);
+      await expect(
+        controller.checkAvailability(checkAvailabilityDto),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw NotFoundException when tour does not exist', async () => {

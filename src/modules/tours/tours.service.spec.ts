@@ -113,18 +113,16 @@ describe('ToursService', () => {
       expect(mockDb.query.tours.findFirst).toHaveBeenCalled();
     });
 
-    it('should return isAvailable false when not enough spots', async () => {
+    it('should throw BadRequestException when not enough spots', async () => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       mockDb.query.tours.findFirst.mockResolvedValue(mockTour as any);
 
-      const result = await service.checkAvailability(1, 15);
-
-      expect(result).toEqual({
-        tourId: 1,
-        requestedSpots: 15,
-        availableSpots: 10,
-        isAvailable: false,
-      });
+      await expect(service.checkAvailability(1, 15)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.checkAvailability(1, 15)).rejects.toThrow(
+        'Not enough available spots',
+      );
     });
 
     it('should throw NotFoundException when tour does not exist', async () => {
