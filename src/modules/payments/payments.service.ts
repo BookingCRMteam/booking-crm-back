@@ -97,6 +97,16 @@ export class PaymentsService {
           tour: {
             with: {
               operator: true,
+              cityRelation: {
+                with: {
+                  translations: true,
+                },
+              },
+              countryRelation: {
+                with: {
+                  translations: true,
+                },
+              },
             },
           },
         },
@@ -136,6 +146,18 @@ export class PaymentsService {
                 numberOfPeople: booking.numberOfPeople,
                 firstPersonName: booking.firstPersonName,
                 firstPersonSurname: booking.firstPersonSurname,
+                operatorFirstName: booking.tour.operator?.firstName ?? '',
+                operatorLastName: booking.tour.operator?.lastName ?? '',
+
+                operatorPhone: booking.tour.operator?.phone ?? '',
+                tourCity:
+                  booking.tour.cityRelation?.translations.find(
+                    (t) => t.languageCode === 'en',
+                  )?.name ?? 'Unknown',
+                tourCountry:
+                  booking.tour.countryRelation?.translations.find(
+                    (t) => t.languageCode === 'en',
+                  )?.name ?? 'Unknown',
               },
             });
             // Send operator notification
@@ -153,6 +175,11 @@ export class PaymentsService {
                   currency: booking.currency,
                   customerName: `${booking.firstPersonName} ${booking.firstPersonSurname}`,
                   customerEmail: booking.user.email,
+                  firstPersonName: booking.firstPersonName,
+                  firstPersonSurname: booking.firstPersonSurname,
+                  secondPersonName: booking.secondPersonName ?? undefined,
+                  secondPersonSurname: booking.secondPersonSurname ?? undefined,
+                  phone: booking.phone,
                 },
               });
             }
@@ -207,6 +234,16 @@ export class PaymentsService {
           tour: {
             with: {
               operator: true,
+              cityRelation: {
+                with: {
+                  translations: true,
+                },
+              },
+              countryRelation: {
+                with: {
+                  translations: true,
+                },
+              },
             },
           },
         },
@@ -247,6 +284,18 @@ export class PaymentsService {
                 numberOfPeople: booking.numberOfPeople,
                 firstPersonName: booking.firstPersonName,
                 firstPersonSurname: booking.firstPersonSurname,
+                operatorFirstName: booking.tour.operator?.firstName ?? '',
+                operatorLastName: booking.tour.operator?.lastName ?? '',
+
+                operatorPhone: booking.tour.operator?.phone ?? '',
+                tourCity:
+                  booking.tour.cityRelation?.translations.find(
+                    (t) => t.languageCode === 'en',
+                  )?.name ?? 'Unknown',
+                tourCountry:
+                  booking.tour.countryRelation?.translations.find(
+                    (t) => t.languageCode === 'en',
+                  )?.name ?? 'Unknown',
               },
             });
             // Send operator notification
@@ -264,6 +313,11 @@ export class PaymentsService {
                   currency: booking.currency,
                   customerName: `${booking.firstPersonName} ${booking.firstPersonSurname}`,
                   customerEmail: booking.user.email,
+                  firstPersonName: booking.firstPersonName,
+                  firstPersonSurname: booking.firstPersonSurname,
+                  secondPersonName: booking.secondPersonName ?? undefined,
+                  secondPersonSurname: booking.secondPersonSurname ?? undefined,
+                  phone: booking.phone,
                 },
               });
             }

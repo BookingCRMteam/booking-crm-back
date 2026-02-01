@@ -65,6 +65,8 @@ describe('PaymentsService', () => {
       email: 'test@test.com',
       companyName: 'test',
       phone: '123',
+      firstName: 'John',
+      lastName: 'Doe',
     },
   };
 
@@ -198,6 +200,50 @@ describe('PaymentsService', () => {
         'confirmed',
         '1',
       );
+      expect(
+        mockEmailQueueService.addBookingConfirmationEmail,
+      ).toHaveBeenCalledWith({
+        email: mockUser.email,
+        bookingDetails: {
+          id: mockBooking.id,
+          tourName: mockTour.title,
+          startDate: new Date(mockTour.startDate),
+          endDate: new Date(mockTour.endDate),
+          price: parseFloat(mockBooking.totalPrice),
+          currency: mockBooking.currency,
+          numberOfPeople: mockBooking.numberOfPeople,
+          firstPersonName: mockBooking.firstPersonName,
+          firstPersonSurname: mockBooking.firstPersonSurname,
+          operatorFirstName: 'John',
+          operatorLastName: 'Doe',
+          operatorPhone: '123',
+          tourCity: 'Unknown',
+          tourCountry: 'Unknown',
+        },
+      });
+
+      expect(
+        mockEmailQueueService.addOperatorBookingPaidEmail,
+      ).toHaveBeenCalledWith({
+        email: 'test@test.com',
+        operatorName: 'John Doe',
+        bookingDetails: {
+          id: 1,
+          tourName: 'Test Tour',
+          startDate: new Date(mockTour.startDate),
+          endDate: new Date(mockTour.endDate),
+          numberOfPeople: 2,
+          totalPrice: 1000,
+          currency: 'USD',
+          customerName: 'test test',
+          customerEmail: 'test@example.com',
+          firstPersonName: 'test',
+          firstPersonSurname: 'test',
+          secondPersonName: 'test',
+          secondPersonSurname: 'test',
+          phone: '123',
+        },
+      });
     });
 
     it('should not update booking if status is not pending_payment', async () => {

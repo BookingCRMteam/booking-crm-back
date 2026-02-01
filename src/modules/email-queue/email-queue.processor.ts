@@ -235,7 +235,13 @@ Booking Details:
 - Start Date: ${new Date(bookingDetails.startDate).toLocaleDateString()}
 - End Date: ${new Date(bookingDetails.endDate).toLocaleDateString()}
 - Number of People: ${bookingDetails.numberOfPeople}
+- Number of People: ${bookingDetails.numberOfPeople}
 - Total Price: ${bookingDetails.totalPrice} ${bookingDetails.currency}
+
+Customer Details:
+- First Person: ${bookingDetails.firstPersonName} ${bookingDetails.firstPersonSurname}
+- Second Person: ${bookingDetails.secondPersonName ? `${bookingDetails.secondPersonName} ${bookingDetails.secondPersonSurname}` : 'N/A'}
+- Phone: ${bookingDetails.phone}
 
 Please check your dashboard for more details.
 
@@ -270,6 +276,13 @@ Booking CRM Team
       <p><strong>Total Price:</strong> ${bookingDetails.totalPrice} ${bookingDetails.currency}</p>
     </div>
     
+    <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 15px 0;">
+      <h3>Customer Details:</h3>
+      <p><strong>First Person:</strong> ${bookingDetails.firstPersonName} ${bookingDetails.firstPersonSurname}</p>
+      <p><strong>Second Person:</strong> ${bookingDetails.secondPersonName ? `${bookingDetails.secondPersonName} ${bookingDetails.secondPersonSurname}` : 'N/A'}</p>
+      <p><strong>Phone:</strong> ${bookingDetails.phone}</p>
+    </div>
+    
     <p>Please check your dashboard for more details.</p>
     <p>Best regards,<br>Booking CRM Team</p>
   </div>
@@ -292,7 +305,13 @@ Booking Details:
 - Start Date: ${new Date(bookingDetails.startDate).toLocaleDateString()}
 - End Date: ${new Date(bookingDetails.endDate).toLocaleDateString()}
 - Number of People: ${bookingDetails.numberOfPeople}
+- Number of People: ${bookingDetails.numberOfPeople}
 - Total Price: ${bookingDetails.totalPrice} ${bookingDetails.currency}
+
+Customer Details:
+- First Person: ${bookingDetails.firstPersonName} ${bookingDetails.firstPersonSurname}
+- Second Person: ${bookingDetails.secondPersonName ? `${bookingDetails.secondPersonName} ${bookingDetails.secondPersonSurname}` : 'N/A'}
+- Phone: ${bookingDetails.phone}
 
 The payment has been processed.
 
@@ -325,6 +344,13 @@ Booking CRM Team
       <p><strong>End Date:</strong> ${new Date(bookingDetails.endDate).toLocaleDateString()}</p>
       <p><strong>Number of People:</strong> ${bookingDetails.numberOfPeople}</p>
       <p><strong>Total Price:</strong> ${bookingDetails.totalPrice} ${bookingDetails.currency}</p>
+    </div>
+    
+    <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 15px 0;">
+      <h3>Customer Details:</h3>
+      <p><strong>First Person:</strong> ${bookingDetails.firstPersonName} ${bookingDetails.firstPersonSurname}</p>
+      <p><strong>Second Person:</strong> ${bookingDetails.secondPersonName ? `${bookingDetails.secondPersonName} ${bookingDetails.secondPersonSurname}` : 'N/A'}</p>
+      <p><strong>Phone:</strong> ${bookingDetails.phone}</p>
     </div>
     
     <p>The payment has been processed.</p>
@@ -410,10 +436,15 @@ Your booking has been successfully confirmed!
 Booking Details:
 - Booking ID: ${bookingDetails.id}
 - Tour: ${bookingDetails.tourName}
+- Location: ${bookingDetails.tourCity}, ${bookingDetails.tourCountry}
 - Start Date: ${new Date(bookingDetails.startDate).toLocaleDateString()}
 - End Date: ${new Date(bookingDetails.endDate).toLocaleDateString()}
 - Number of People: ${bookingDetails.numberOfPeople}
 - Total Price: ${bookingDetails.price} ${bookingDetails.currency}
+
+Operator Details:
+- Name: ${bookingDetails.operatorFirstName} ${bookingDetails.operatorLastName}
+- Phone: ${bookingDetails.operatorPhone}
 
 Thank you for choosing us!
 
@@ -496,6 +527,9 @@ Booking CRM Team
         <span class="label">Tour:</span> ${bookingDetails.tourName}
       </div>
       <div class="detail-row">
+        <span class="label">Location:</span> ${bookingDetails.tourCity}, ${bookingDetails.tourCountry}
+      </div>
+      <div class="detail-row">
         <span class="label">Start Date:</span> ${new Date(bookingDetails.startDate).toLocaleDateString()}
       </div>
       <div class="detail-row">
@@ -506,6 +540,16 @@ Booking CRM Team
       </div>
       <div class="detail-row">
         <span class="label">Total Price:</span> ${bookingDetails.price} ${bookingDetails.currency}
+      </div>
+    </div>
+    
+    <div class="booking-details">
+      <h2>Operator Details:</h2>
+      <div class="detail-row">
+        <span class="label">Name:</span> ${bookingDetails.operatorFirstName} ${bookingDetails.operatorLastName}
+      </div>
+      <div class="detail-row">
+        <span class="label">Phone:</span> ${bookingDetails.operatorPhone}
       </div>
     </div>
     

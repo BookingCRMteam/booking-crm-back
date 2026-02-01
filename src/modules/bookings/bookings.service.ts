@@ -199,6 +199,11 @@ export class BookingsService {
             currency: newBooking.currency,
             customerName: `${newBooking.firstPersonName} ${newBooking.firstPersonSurname}`,
             customerEmail: user.email ?? '',
+            firstPersonName: newBooking.firstPersonName,
+            firstPersonSurname: newBooking.firstPersonSurname,
+            secondPersonName: newBooking.secondPersonName ?? undefined,
+            secondPersonSurname: newBooking.secondPersonSurname ?? undefined,
+            phone: newBooking.phone,
           },
         })
         .catch((err) =>
