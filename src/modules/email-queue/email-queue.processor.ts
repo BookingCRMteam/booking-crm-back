@@ -235,7 +235,13 @@ Booking Details:
 - Start Date: ${new Date(bookingDetails.startDate).toLocaleDateString()}
 - End Date: ${new Date(bookingDetails.endDate).toLocaleDateString()}
 - Number of People: ${bookingDetails.numberOfPeople}
+- Number of People: ${bookingDetails.numberOfPeople}
 - Total Price: ${bookingDetails.totalPrice} ${bookingDetails.currency}
+
+Customer Details:
+- First Person: ${bookingDetails.firstPersonName} ${bookingDetails.firstPersonSurname}
+- Second Person: ${bookingDetails.secondPersonName ? `${bookingDetails.secondPersonName} ${bookingDetails.secondPersonSurname}` : 'N/A'}
+- Phone: ${bookingDetails.phone}
 
 Please check your dashboard for more details.
 
@@ -262,12 +268,19 @@ Booking CRM Team
     <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 15px 0;">
       <h3>Booking Details:</h3>
       <p><strong>Booking ID:</strong> ${bookingDetails.id}</p>
-      <p><strong>Tour:</strong> ${bookingDetails.tourName}</p>
-      <p><strong>Customer:</strong> ${bookingDetails.customerName} (<a href="mailto:${bookingDetails.customerEmail}">${bookingDetails.customerEmail}</a>)</p>
+      <p><strong>Tour:</strong> ${this.escapeHtml(bookingDetails.tourName)}</p>
+      <p><strong>Customer:</strong> ${this.escapeHtml(bookingDetails.customerName)} (<a href="mailto:${this.escapeHtml(bookingDetails.customerEmail)}">${this.escapeHtml(bookingDetails.customerEmail)}</a>)</p>
       <p><strong>Start Date:</strong> ${new Date(bookingDetails.startDate).toLocaleDateString()}</p>
       <p><strong>End Date:</strong> ${new Date(bookingDetails.endDate).toLocaleDateString()}</p>
       <p><strong>Number of People:</strong> ${bookingDetails.numberOfPeople}</p>
-      <p><strong>Total Price:</strong> ${bookingDetails.totalPrice} ${bookingDetails.currency}</p>
+      <p><strong>Total Price:</strong> ${bookingDetails.totalPrice} ${this.escapeHtml(bookingDetails.currency)}</p>
+    </div>
+    
+    <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 15px 0;">
+      <h3>Customer Details:</h3>
+      <p><strong>First Person:</strong> ${this.escapeHtml(bookingDetails.firstPersonName)} ${this.escapeHtml(bookingDetails.firstPersonSurname)}</p>
+      <p><strong>Second Person:</strong> ${bookingDetails.secondPersonName ? `${this.escapeHtml(bookingDetails.secondPersonName)} ${this.escapeHtml(bookingDetails.secondPersonSurname || '')}` : 'N/A'}</p>
+      <p><strong>Phone:</strong> ${this.escapeHtml(bookingDetails.phone)}</p>
     </div>
     
     <p>Please check your dashboard for more details.</p>
@@ -292,7 +305,13 @@ Booking Details:
 - Start Date: ${new Date(bookingDetails.startDate).toLocaleDateString()}
 - End Date: ${new Date(bookingDetails.endDate).toLocaleDateString()}
 - Number of People: ${bookingDetails.numberOfPeople}
+- Number of People: ${bookingDetails.numberOfPeople}
 - Total Price: ${bookingDetails.totalPrice} ${bookingDetails.currency}
+
+Customer Details:
+- First Person: ${bookingDetails.firstPersonName} ${bookingDetails.firstPersonSurname}
+- Second Person: ${bookingDetails.secondPersonName ? `${bookingDetails.secondPersonName} ${bookingDetails.secondPersonSurname}` : 'N/A'}
+- Phone: ${bookingDetails.phone}
 
 The payment has been processed.
 
@@ -319,12 +338,19 @@ Booking CRM Team
     <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 15px 0;">
       <h3>Booking Details:</h3>
       <p><strong>Booking ID:</strong> ${bookingDetails.id}</p>
-      <p><strong>Tour:</strong> ${bookingDetails.tourName}</p>
-      <p><strong>Customer:</strong> ${bookingDetails.customerName} (<a href="mailto:${bookingDetails.customerEmail}">${bookingDetails.customerEmail}</a>)</p>
+      <p><strong>Tour:</strong> ${this.escapeHtml(bookingDetails.tourName)}</p>
+      <p><strong>Customer:</strong> ${this.escapeHtml(bookingDetails.customerName)} (<a href="mailto:${this.escapeHtml(bookingDetails.customerEmail)}">${this.escapeHtml(bookingDetails.customerEmail)}</a>)</p>
       <p><strong>Start Date:</strong> ${new Date(bookingDetails.startDate).toLocaleDateString()}</p>
       <p><strong>End Date:</strong> ${new Date(bookingDetails.endDate).toLocaleDateString()}</p>
       <p><strong>Number of People:</strong> ${bookingDetails.numberOfPeople}</p>
-      <p><strong>Total Price:</strong> ${bookingDetails.totalPrice} ${bookingDetails.currency}</p>
+      <p><strong>Total Price:</strong> ${bookingDetails.totalPrice} ${this.escapeHtml(bookingDetails.currency)}</p>
+    </div>
+    
+    <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 15px 0;">
+      <h3>Customer Details:</h3>
+      <p><strong>First Person:</strong> ${this.escapeHtml(bookingDetails.firstPersonName)} ${this.escapeHtml(bookingDetails.firstPersonSurname)}</p>
+      <p><strong>Second Person:</strong> ${bookingDetails.secondPersonName ? `${this.escapeHtml(bookingDetails.secondPersonName)} ${this.escapeHtml(bookingDetails.secondPersonSurname || '')}` : 'N/A'}</p>
+      <p><strong>Phone:</strong> ${this.escapeHtml(bookingDetails.phone)}</p>
     </div>
     
     <p>The payment has been processed.</p>
@@ -410,10 +436,15 @@ Your booking has been successfully confirmed!
 Booking Details:
 - Booking ID: ${bookingDetails.id}
 - Tour: ${bookingDetails.tourName}
+- Location: ${bookingDetails.tourCity}, ${bookingDetails.tourCountry}
 - Start Date: ${new Date(bookingDetails.startDate).toLocaleDateString()}
 - End Date: ${new Date(bookingDetails.endDate).toLocaleDateString()}
 - Number of People: ${bookingDetails.numberOfPeople}
 - Total Price: ${bookingDetails.price} ${bookingDetails.currency}
+
+Operator Details:
+- Name: ${bookingDetails.operatorFirstName} ${bookingDetails.operatorLastName}
+- Phone: ${bookingDetails.operatorPhone}
 
 Thank you for choosing us!
 
@@ -484,7 +515,7 @@ Booking CRM Team
     <h1>Booking Confirmation</h1>
   </div>
   <div class="content">
-    <p>Dear ${bookingDetails.firstPersonName} ${bookingDetails.firstPersonSurname},</p>
+    <p>Dear ${this.escapeHtml(bookingDetails.firstPersonName)} ${this.escapeHtml(bookingDetails.firstPersonSurname)},</p>
     <p>Your booking has been successfully confirmed!</p>
     
     <div class="booking-details">
@@ -493,7 +524,10 @@ Booking CRM Team
         <span class="label">Booking ID:</span> ${bookingDetails.id}
       </div>
       <div class="detail-row">
-        <span class="label">Tour:</span> ${bookingDetails.tourName}
+        <span class="label">Tour:</span> ${this.escapeHtml(bookingDetails.tourName)}
+      </div>
+      <div class="detail-row">
+        <span class="label">Location:</span> ${this.escapeHtml(bookingDetails.tourCity)}, ${this.escapeHtml(bookingDetails.tourCountry)}
       </div>
       <div class="detail-row">
         <span class="label">Start Date:</span> ${new Date(bookingDetails.startDate).toLocaleDateString()}
@@ -505,7 +539,17 @@ Booking CRM Team
         <span class="label">Number of People:</span> ${bookingDetails.numberOfPeople}
       </div>
       <div class="detail-row">
-        <span class="label">Total Price:</span> ${bookingDetails.price} ${bookingDetails.currency}
+        <span class="label">Total Price:</span> ${bookingDetails.price} ${this.escapeHtml(bookingDetails.currency)}
+      </div>
+    </div>
+    
+    <div class="booking-details">
+      <h2>Operator Details:</h2>
+      <div class="detail-row">
+        <span class="label">Name:</span> ${this.escapeHtml(bookingDetails.operatorFirstName)} ${this.escapeHtml(bookingDetails.operatorLastName)}
+      </div>
+      <div class="detail-row">
+        <span class="label">Phone:</span> ${this.escapeHtml(bookingDetails.operatorPhone)}
       </div>
     </div>
     

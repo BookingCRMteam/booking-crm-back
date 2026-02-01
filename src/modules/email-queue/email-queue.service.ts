@@ -14,6 +14,11 @@ export interface BookingConfirmationEmailData {
     numberOfPeople: number;
     firstPersonName: string;
     firstPersonSurname: string;
+    operatorFirstName: string;
+    operatorLastName: string;
+    operatorPhone: string;
+    tourCity: string;
+    tourCountry: string;
   };
 }
 
@@ -30,6 +35,11 @@ export interface OperatorEmailData {
     currency: string;
     customerName: string;
     customerEmail: string;
+    firstPersonName: string;
+    firstPersonSurname: string;
+    secondPersonName?: string;
+    secondPersonSurname?: string;
+    phone: string;
   };
 }
 
