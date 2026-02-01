@@ -521,6 +521,7 @@ export class ToursService {
           const allowedUpdates: (keyof UpdateTourDto)[] = [
             'description',
             'availableSpots',
+            'price',
           ];
           const requestedUpdates = Object.keys(tourData).filter(
             (key) => tourData[key] !== undefined,
