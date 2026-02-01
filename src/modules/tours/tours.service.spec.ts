@@ -6,6 +6,7 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '@app/db/schema/schema';
 import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
 import { GetToursQueryDto } from './dto/get-tours-query.dto';
+import { UpdateTourDto } from './dto/update-tour.dto';
 import { Tour } from './tours.types';
 
 describe('ToursService', () => {
@@ -274,6 +275,63 @@ describe('ToursService', () => {
       await service.findAll(query);
 
       expect(mockDb.query.tours.findMany).toHaveBeenCalled();
+    });
+  });
+
+  describe('update', () => {
+    it('should allow price update when bookings count > 0', async () => {
+      const updateTourDto = {
+        price: 200,
+      } as UpdateTourDto;
+
+      // Mock existing tour (first call for ownership check)
+      mockDb.query.tours.findFirst.mockResolvedValueOnce(mockTour as any);
+
+      // Mock updated tour (second call after update)
+      const mockUpdatedTourResult = { ...mockTour, price: '200.00' };
+      mockDb.query.tours.findFirst.mockResolvedValueOnce(
+        mockUpdatedTourResult as any,
+      );
+
+      // Mock bookings exist
+      mockDb.query.bookings.findMany.mockResolvedValue([{ id: 1 }] as any);
+
+      // Mock update result
+      const mockUpdatedTour = { ...mockTour, price: '200.00' };
+      const mockReturning = {
+        returning: jest.fn().mockResolvedValue([mockUpdatedTour] as any),
+      };
+      const mockWhere = {
+        where: jest.fn().mockReturnValue(mockReturning),
+      };
+      const mockSet = {
+        set: jest.fn().mockReturnValue(mockWhere),
+      };
+      (mockDb.update as jest.Mock).mockReturnValue(mockSet);
+
+      const result = await service.update(1, updateTourDto, 1);
+
+      expect(result.price).toBe(200);
+      expect(mockDb.update).toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException when updating disallowed fields with bookings', async () => {
+      const updateTourDto = {
+        title: 'New Title', // disallowed
+      } as UpdateTourDto;
+
+      // Mock existing tour
+      mockDb.query.tours.findFirst.mockResolvedValue(mockTour as any);
+
+      // Mock bookings exist
+      mockDb.query.bookings.findMany.mockResolvedValue([{ id: 1 }] as any);
+
+      await expect(service.update(1, updateTourDto, 1)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.update(1, updateTourDto, 1)).rejects.toThrow(
+        'This tour has bookings. Only description and available spots can be updated.',
+      );
     });
   });
 
