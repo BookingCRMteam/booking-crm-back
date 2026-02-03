@@ -79,7 +79,21 @@ export class BookingsService {
         'Tour has already started or ended. Booking is not allowed.',
       );
     }
+    const existingBooking = await this.db.query.bookings.findFirst({
+      where: (b, { and, eq, inArray }) =>
+        and(
+          eq(b.tourId, data.tourId),
+          eq(b.firstPersonName, data.firstPersonName),
+          eq(b.firstPersonSurname, data.firstPersonSurname),
+          eq(b.secondPersonName, data.secondPersonName),
+          eq(b.secondPersonSurname, data.secondPersonSurname),
+          inArray(b.status, ['confirmed', 'pending_payment']),
+        ),
+    });
 
+    if (existingBooking) {
+      throw new ConflictException('This pair has already booked this tour.');
+    }
     if (
       data.numberOfPeople > 100 ||
       data.numberOfPeople < 2 ||
