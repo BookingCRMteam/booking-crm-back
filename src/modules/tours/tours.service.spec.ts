@@ -336,12 +336,17 @@ describe('ToursService', () => {
   });
 
   describe('remove', () => {
-    it('should deactivate a tour', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    it('should deactivate a tour if there are no bookings', async () => {
       mockDb.query.tours.findFirst.mockResolvedValue(mockTour as any);
+
+      (mockDb.select as jest.Mock).mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockResolvedValue([{ count: 0 }]),
+        }),
+      });
+
       const mockReturning = {
         returning: jest
-
           .fn()
           .mockResolvedValue([{ ...mockTour, isActive: false }] as any),
       };
@@ -367,10 +372,19 @@ describe('ToursService', () => {
       );
     });
 
-    it('should throw NotFoundException when operator does not own the tour', async () => {
-      mockDb.query.tours.findFirst.mockResolvedValue(undefined);
+    it('should throw BadRequestException when tour has bookings', async () => {
+      mockDb.query.tours.findFirst.mockResolvedValue(mockTour as any);
 
-      await expect(service.remove(1, 999)).rejects.toThrow(NotFoundException);
+      (mockDb.select as jest.Mock).mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockResolvedValue([{ count: 3 }]),
+        }),
+      });
+
+      await expect(service.remove(1, 1)).rejects.toThrow(BadRequestException);
+      await expect(service.remove(1, 1)).rejects.toThrow(
+        'Cannot delete a tour that has existing bookings.',
+      );
     });
   });
 });
