@@ -284,6 +284,11 @@ export class OperatorService {
   }
 
   async getPopularOperators(limit = 4) {
+    const activeTourCondition = sql`
+      ${schema.tours.isActive} = true
+      AND ${schema.tours.endDate} >= NOW()
+    `;
+
     const operatorsWithActiveTours = await this.db
       .select({
         id: operatorSchema.operators.id,
@@ -307,48 +312,42 @@ export class OperatorService {
 
         activeToursCount: sql<number>`
           COUNT(
-            DISTINCT CASE 
-            WHEN ${schema.tours.isActive} = true 
-            THEN ${schema.tours.id} 
+            DISTINCT CASE
+              WHEN ${activeTourCondition}
+              THEN ${schema.tours.id}
             END
           )
         `,
       })
       .from(operatorSchema.operators)
-
       .where(eq(operatorSchema.operators.status, 'approved'))
-
       .leftJoin(
         schema.tours,
         eq(schema.tours.operatorId, operatorSchema.operators.id),
       )
       .leftJoin(schema.bookings, eq(schema.bookings.tourId, schema.tours.id))
-
       .groupBy(operatorSchema.operators.id)
-
       .having(
         sql`
-          COUNT(
-            DISTINCT CASE 
-            WHEN ${schema.tours.isActive} = true 
-            THEN ${schema.tours.id} 
-            END
-          ) > 0
-        `,
+        COUNT(
+          DISTINCT CASE
+            WHEN ${activeTourCondition}
+            THEN ${schema.tours.id}
+          END
+        ) > 0
+      `,
       )
-
       .orderBy(
         sql`
-          COUNT(
-            DISTINCT CASE 
-            WHEN ${schema.tours.isActive} = true 
-            THEN ${schema.tours.id} 
-            END
-          ) DESC,
-          COUNT(DISTINCT ${schema.bookings.id}) DESC
-        `,
+        COUNT(
+          DISTINCT CASE
+            WHEN ${activeTourCondition}
+            THEN ${schema.tours.id}
+          END
+        ) DESC,
+        COUNT(DISTINCT ${schema.bookings.id}) DESC
+      `,
       )
-
       .limit(limit);
 
     return operatorsWithActiveTours.map((op) => ({
