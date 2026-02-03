@@ -17,6 +17,7 @@ import { UserBookingMapper } from './mappers/user-booking.mapper';
 import { EmailQueueService } from '../email-queue/email-queue.service';
 import { tours } from '@app/db/schema/schema';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function isPgError(err: unknown): err is { cause: { code: string } } {
   return (
     typeof err === 'object' &&
@@ -58,69 +59,45 @@ export class BookingsService {
   }
 
   async createBooking(data: CreateBookingDto, userId: number) {
-    // 1. Check if user and tour exist
     const user = await this.db.query.users.findFirst({
       where: (users, { eq }) => eq(users.id, userId),
     });
-    if (!user) {
-      throw new NotFoundException(`User with id ${userId} not found`);
-    }
+    if (!user) throw new NotFoundException(`User with id ${userId} not found`);
 
     const tour = await this.db.query.tours.findFirst({
       where: (tours, { eq }) => eq(tours.id, data.tourId),
       with: { operator: true },
     });
-    if (!tour) {
+    if (!tour)
       throw new NotFoundException(`Tour with id ${data.tourId} not found`);
-    }
 
     if (new Date(tour.startDate) < new Date()) {
-      throw new BadRequestException(
-        'Tour has already started or ended. Booking is not allowed.',
-      );
+      throw new BadRequestException('Tour has already started or ended.');
     }
-    const existingBooking = await this.db.query.bookings.findFirst({
-      where: (b, { and, eq, inArray }) =>
-        and(
-          eq(b.tourId, data.tourId),
-          eq(b.firstPersonName, data.firstPersonName),
-          eq(b.firstPersonSurname, data.firstPersonSurname),
-          eq(b.secondPersonName, data.secondPersonName),
-          eq(b.secondPersonSurname, data.secondPersonSurname),
-          inArray(b.status, ['confirmed', 'pending_payment']),
-        ),
-    });
 
-    if (existingBooking) {
-      throw new ConflictException('This pair has already booked this tour.');
-    }
+    const firstName1 = data.firstPersonName.trim().toLowerCase();
+    const lastName1 = data.firstPersonSurname.trim().toLowerCase();
+    const firstName2 = data.secondPersonName.trim().toLowerCase();
+    const lastName2 = data.secondPersonSurname.trim().toLowerCase();
+
+    const [person1, person2] = [
+      [firstName1, lastName1],
+      [firstName2, lastName2],
+    ].sort((a, b) => a[1].localeCompare(b[1]) || a[0].localeCompare(b[0]));
+
     if (
       data.numberOfPeople > 100 ||
       data.numberOfPeople < 2 ||
       data.numberOfPeople % 2 !== 0
     ) {
       throw new ConflictException(
-        `Booking for ${data.numberOfPeople} people for tour with id ${data.tourId} is invalid. Number of people must be between 2 and 100 (inclusive) and an even number.`,
+        `Booking for ${data.numberOfPeople} people is invalid. Must be even, 2–100.`,
       );
     }
 
-    if (tour.availableSpots < data.numberOfPeople) {
-      throw new ConflictException(
-        `Not enough available spots for this tour. Available spots: ${tour.availableSpots}`,
-      );
-    }
-
-    const newAvailableSpots = tour.availableSpots - data.numberOfPeople;
-
-    if (newAvailableSpots > 100) {
-      throw new ConflictException(
-        `Booking for ${data.numberOfPeople} people would result in an invalid number of available spots (${newAvailableSpots}) for tour with id ${data.tourId}. Available spots must be between 0 and 100 (inclusive).`,
-      );
-    }
-
-    // Price is per couple (2 people), so divide numberOfPeople by 2 to get number of couples
     const numberOfCouples = data.numberOfPeople / 2;
     const totalPrice = Number(tour.price) * numberOfCouples;
+
     const newBooking = await this.db.transaction(async (tx) => {
       const [tourForUpdate] = await tx
         .select()
@@ -128,77 +105,70 @@ export class BookingsService {
         .where(eq(schema.tours.id, data.tourId))
         .for('update');
 
-      if (!tourForUpdate) {
-        throw new NotFoundException(`Tour with id ${data.tourId} not found`);
-      }
+      if (!tourForUpdate) throw new NotFoundException(`Tour not found`);
 
       if (tourForUpdate.availableSpots < data.numberOfPeople) {
         throw new ConflictException(
-          `Not enough available spots for this tour. Available spots: ${tourForUpdate.availableSpots}`,
+          `Not enough available spots: ${tourForUpdate.availableSpots}`,
         );
       }
+
       const newAvailableSpots =
         tourForUpdate.availableSpots - data.numberOfPeople;
 
-      if (newAvailableSpots > 100) {
-        throw new ConflictException(
-          `Booking for ${data.numberOfPeople} people would result in an invalid number of available spots (${newAvailableSpots}) for tour with id ${data.tourId}. Available spots must be between 0 and 100 (inclusive).`,
-        );
+      const existingBooking = await tx.query.bookings.findFirst({
+        where: (b, { and, eq, inArray }) =>
+          and(
+            eq(b.tourId, data.tourId),
+            eq(b.firstPersonName, person1[0]),
+            eq(b.firstPersonSurname, person1[1]),
+            eq(b.secondPersonName, person2[0]),
+            eq(b.secondPersonSurname, person2[1]),
+            inArray(b.status, ['confirmed', 'pending_payment']),
+          ),
+      });
+
+      if (existingBooking) {
+        throw new ConflictException('This pair has already booked this tour.');
       }
 
-      try {
-        const [booking] = await tx
-          .insert(bookings)
-          .values({
-            userId: userId,
-            tourId: data.tourId,
-            numberOfPeople: data.numberOfPeople,
-            firstPersonName: data.firstPersonName,
-            firstPersonSurname: data.firstPersonSurname,
-            secondPersonName: data.secondPersonName,
-            secondPersonSurname: data.secondPersonSurname,
-            phone: data.phone,
-            totalPrice: totalPrice.toString(),
-            currency: tour.currency,
-            paymentProvider: data.paymentProvider,
-            status: 'pending_payment',
-          })
-          .returning();
+      const [booking] = await tx
+        .insert(bookings)
+        .values({
+          userId,
+          tourId: data.tourId,
+          numberOfPeople: data.numberOfPeople,
+          firstPersonName: person1[0],
+          firstPersonSurname: person1[1],
+          secondPersonName: person2[0],
+          secondPersonSurname: person2[1],
+          phone: data.phone,
+          totalPrice: totalPrice.toString(),
+          currency: tour.currency,
+          paymentProvider: data.paymentProvider,
+          status: 'pending_payment',
+        })
+        .returning();
 
-        await tx
-          .update(schema.tours)
-          .set({
-            availableSpots: newAvailableSpots,
-          })
-          .where(eq(schema.tours.id, data.tourId));
+      await tx
+        .update(schema.tours)
+        .set({ availableSpots: newAvailableSpots })
+        .where(eq(schema.tours.id, data.tourId));
 
-        return booking;
-      } catch (error: unknown) {
-        if (isPgError(error) && error.cause.code === '23505') {
-          console.error('Error during booking transaction:', error.cause.code);
-
-          throw new ConflictException(
-            'Booking already exists for this user and tour.',
-          );
-        }
-        throw error;
-      }
+      return booking;
     });
 
-    // 3. Згенерувати посилання для оплати залежно від провайдера
     const { paymentLink, paymentSessionId } = await this.generatePaymentLink(
       newBooking,
       tour.title,
     );
 
-    // 4. Оновити бронювання з ідентифікатором сесії оплати
     await this.db
       .update(bookings)
       .set({ paymentSessionId })
       .where(eq(bookings.id, newBooking.id));
 
-    // Send email to operator
-    if (tour.operator && tour.operator.email) {
+    if (tour.operator?.email) {
       this.emailQueueService
         .addOperatorNewBookingEmail({
           email: tour.operator.email,
@@ -220,15 +190,10 @@ export class BookingsService {
             phone: newBooking.phone,
           },
         })
-        .catch((err) =>
-          console.error('Failed to queue operator new booking email', err),
-        );
+        .catch((err) => console.error('Failed to queue operator email', err));
     }
 
-    return {
-      booking: newBooking,
-      paymentLink: paymentLink,
-    };
+    return { booking: newBooking, paymentLink };
   }
 
   async findOne(id: number) {
