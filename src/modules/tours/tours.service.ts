@@ -726,6 +726,16 @@ export class ToursService {
         `Tour with ID ${id} not found or you don't have permission to delete it.`,
       );
     }
+    const bookingsCount = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.bookings)
+      .where(eq(schema.bookings.tourId, id));
+
+    if (Number(bookingsCount[0].count) > 0) {
+      throw new BadRequestException(
+        'Cannot delete a tour that has existing bookings.',
+      );
+    }
 
     const [deletedTour] = await this.db
       .update(schema.tours)
