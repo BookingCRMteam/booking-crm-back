@@ -23,7 +23,7 @@ import {
 import { ToursService } from './tours.service';
 import { CreateTourDto } from './dto/create-tour.dto';
 import { Tour } from './tours.types';
-import { GetToursQueryDto } from './dto/get-tours-query.dto';
+import { AdminGetToursQueryDto } from './dto/admin-get-tours-query.dto';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import multer from 'multer';
 import { CloudinaryService } from '@app/cloudinary/cloudinary.service';
@@ -123,7 +123,7 @@ export class ToursController {
       forbidNonWhitelisted: true,
     }),
   )
-  async findAll(@Query() query: GetToursQueryDto) {
+  async findAll(@Query() query: AdminGetToursQueryDto) {
     try {
       const toursData = await this.toursService.findAll(query);
       return {

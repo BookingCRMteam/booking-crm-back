@@ -713,7 +713,6 @@ export class ToursService {
   }
 
   async remove(id: number, operatorId: number) {
-    // 1. Перевіряємо, чи тур існує і чи належить він цьому оператору
     const existingTour = await this.db.query.tours.findFirst({
       where: and(
         eq(schema.tours.id, id),
