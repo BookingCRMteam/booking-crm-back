@@ -29,9 +29,9 @@ export class AdminGetToursQueryDto extends GetToursQueryDto {
 
   @IsOptional()
   @IsValidDate({
-    message: 'minDate must be a valid calendar date (YYYY-MM-DD)',
+    message: 'minEndDate must be a valid calendar date (YYYY-MM-DD)',
   })
-  declare minDate?: string;
+  declare minEndDate?: string;
 
   @IsOptional()
   @IsValidDate({
